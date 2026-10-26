@@ -710,6 +710,7 @@ html[data-theme="foret"] .auth{background:radial-gradient(900px 500px at 15% -10
         <button type="button" id="navGuide">Réafficher le guide de démarrage</button>
         <button type="button" id="navRates">Tarifs automatiques</button>
         <button type="button" id="navDir">Annuaire public</button>
+        <button type="button" id="navNaya">NAYA : réservations en ligne</button>
         <button type="button" id="navLegal">Documents légaux</button>
         <button type="button" id="navRefresh"> Actualiser l’application</button>
         <button type="button" id="navPrint">Impression &amp; reçus</button>
@@ -823,7 +824,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.10.26-12';
+const APP_VERSION = '2026.10.26-13';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -1294,6 +1295,7 @@ $('navAsk').onclick = () => openAssistant();
 $('navLang').onclick = () => openLang();
 $('navLegal').onclick = () => openLegal('cgu');
 $('navRates').onclick = () => openRateRules();
+$('navNaya').onclick = () => openNaya();
 $('navDir').onclick = async () => {
   const { data: e } = await sb.from('establishments').select('id,name,slug,public_enabled,directory_listed').eq('id', S.est).single();
   const url = location.origin + location.pathname + '?annuaire=1';
@@ -1737,7 +1739,8 @@ async function renderAdmin(){
 /* ================= Modules métier ================= */
 const RSTATUS = { pending:'En attente', confirmed:'Confirmée', checked_in:'En séjour', checked_out:'Partie', cancelled:'Annulée', no_show:'Non présentée' };
 const RSTCLS = { pending:'st-pending', confirmed:'st-trial', checked_in:'st-active', checked_out:'st-cancelled', cancelled:'st-expired', no_show:'st-expired' };
-const SOURCE = { direct:'Direct', telephone:'Téléphone', walk_in:'Walk-in', whatsapp:'WhatsApp', agence:'Agence', en_ligne:'En ligne' };
+const SOURCE = { direct:'Direct', telephone:'Téléphone', walk_in:'Walk-in', whatsapp:'WhatsApp', agence:'Agence', en_ligne:'En ligne', naya:'NAYA' };
+const srcOpts = (cur) => cur === 'naya' ? opt({ naya: 'NAYA' }, 'naya') : opt(Object.fromEntries(Object.entries(SOURCE).filter(([k]) => k !== 'naya')), cur);
 const PMETHOD = { cash:'Espèces', orange_money:'Orange Money', mtn_money:'MTN MoMo', moov_money:'Moov Money', wave:'Wave', card:'Carte', bank_transfer:'Virement' };
 const HKS = { clean:'Propre', dirty:'Sale', cleaning:'En nettoyage', ready:'Prête', out_of_service:'Hors service' };
 const money = (n) => { const c = (typeof CURRENCIES !== 'undefined' && CURRENCIES[S.currency]) || [0, 'F', 0]; const v = Number(n || 0); const t = new Intl.NumberFormat('fr-FR', { minimumFractionDigits: c[2] && v % 1 ? 2 : 0, maximumFractionDigits: c[2] }).format(c[2] ? v : Math.round(v)).replace(/[\u202f\u00a0]/g, ' '); return c[1] === '$' ? '$' + t : t + ' ' + c[1]; };
@@ -2071,6 +2074,58 @@ async function recordDeposit(resaId, amount, method, ref, refresh){
   if (error) return toast(errMsg(error), true);
   toast('Acompte de ' + money(amount) + ' enregistré.'); refresh && refresh();
 }
+
+/* ---------- Branchement NAYA : publication sur la place de marché et suivi des commissions ---------- */
+const NAYA_URL = 'https://naya-ci.netlify.app';
+async function openNaya(){
+  const nb = $('navMore'); if (nb) nb.open = false;
+  const owner = can(['owner','admin']);
+  const est = S.ests.find(x => x.id === S.est) || {};
+  const m0 = new Date(); const mStart = `${m0.getFullYear()}-${String(m0.getMonth() + 1).padStart(2, '0')}-01`;
+  const st = { month: mStart };
+  const [{ data: lst }, { data: e2 }] = await Promise.all([
+    sb.from('marketplace_listings').select('*').eq('establishment_id', S.est).maybeSingle(),
+    sb.from('establishments').select('slug').eq('id', S.est).maybeSingle()]);
+  let L = lst || { listed: false, commission_pct: 10, auto_confirm: false }, slug = e2 && e2.slug;
+  const draw = async () => {
+    const end = addDays(st.month, 40).slice(0, 8) + '01';
+    const { data: rs } = await sb.from('reservation_balances').select('id,guest_name,room_number,check_in,check_out,status,total_amount,paid,balance,created_at')
+      .eq('establishment_id', S.est).eq('source', 'naya').gte('check_in', st.month).lt('check_in', end).order('check_in');
+    const { data: pc } = await sb.from('reservations').select('id,commission_pct').eq('establishment_id', S.est).eq('source', 'naya').gte('check_in', st.month).lt('check_in', end);
+    const P = Object.fromEntries((pc || []).map(x => [x.id, Number(x.commission_pct) || 0]));
+    const R = rs || [], due = R.filter(r => !['cancelled','no_show','pending'].includes(r.status));
+    const ca = due.reduce((a, r) => a + Number(r.total_amount), 0), com = due.reduce((a, r) => a + Math.round(Number(r.total_amount) * (P[r.id] || 0) / 100), 0);
+    const mLabel = new Date(st.month + 'T00:00:00').toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+    modal(`<div class="row between" style="margin-bottom:6px"><h2 style="font-size:24px">NAYA</h2><button class="small ghost" data-close aria-label="Fermer">✕</button></div>
+      <p class="muted" style="margin:0 0 14px">Les voyageurs trouvent et réservent votre établissement sur <a href="${NAYA_URL}" target="_blank" rel="noopener">NAYA</a>. Les réservations arrivent directement dans votre planning avec l’origine « NAYA ».</p>
+      <div class="card" style="margin-bottom:14px;${L.listed ? 'border-color:var(--green)' : ''}">
+        <div class="row between" style="gap:10px"><div><strong>${L.listed ? 'Publié sur NAYA' : 'Non publié'}</strong><div class="muted" style="font-size:13px">Commission NAYA : <strong>${Number(L.commission_pct)} %</strong> du séjour, uniquement sur les réservations venues de NAYA et honorées. Vos réservations directes restent sans commission.</div></div>
+        ${owner ? `<button class="${L.listed ? 'ghost' : 'primary'}" id="nyToggle">${L.listed ? 'Retirer de NAYA' : 'Publier sur NAYA'}</button>` : ''}</div>
+        ${L.listed ? `<label class="row" style="gap:8px;margin:12px 0 0;font-weight:600;flex-wrap:nowrap;color:var(--ink)"><input type="checkbox" id="nyAuto" ${L.auto_confirm ? 'checked' : ''} ${owner ? '' : 'disabled'} style="width:20px;min-height:20px"> Confirmer automatiquement les réservations NAYA</label>
+          <p class="muted" style="font-size:12px;margin:4px 0 0">Sinon, elles arrivent « en attente » dans Réservations → Demandes en ligne, et vous les confirmez.</p>
+          ${slug ? `<p style="font-size:13px;margin:10px 0 0">Votre fiche : <a href="${NAYA_URL}/hotel/${esc(slug)}" target="_blank" rel="noopener">${NAYA_URL.replace('https://', '')}/hotel/${esc(slug)}</a></p>` : ''}` : (owner ? `<p class="muted" style="font-size:12px;margin:10px 0 0">En publiant, vous acceptez la commission indiquée et les conditions partenaires NAYA. Pensez à ajouter des photos de vos chambres.</p>` : '')}
+      </div>
+      <div class="row between" style="margin-bottom:8px;gap:8px"><h3 style="font-size:18px">Réservations NAYA · ${mLabel}</h3><div class="row" style="gap:6px"><button class="small ghost" id="nyPrev" aria-label="Mois précédent">←</button><button class="small ghost" id="nyNext" aria-label="Mois suivant">→</button></div></div>
+      <div class="grid" style="grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:12px">
+        <div class="card" style="padding:12px"><div class="muted" style="font-size:12px">Réservations</div><div style="font-weight:800;font-size:20px">${R.length}</div></div>
+        <div class="card" style="padding:12px"><div class="muted" style="font-size:12px">Chiffre d’affaires</div><div style="font-weight:800;font-size:20px">${money(ca)}</div></div>
+        <div class="card" style="padding:12px"><div class="muted" style="font-size:12px">Commission due</div><div style="font-weight:800;font-size:20px">${money(com)}</div></div></div>
+      ${R.length ? `<div class="tablewrap"><table class="table"><thead><tr><th>Client</th><th>Séjour</th><th>Statut</th><th style="text-align:right">Total</th><th style="text-align:right">Commission</th></tr></thead><tbody>
+        ${R.map(r => { const c = ['cancelled','no_show','pending'].includes(r.status) ? 0 : Math.round(Number(r.total_amount) * (P[r.id] || 0) / 100); return `<tr><td><strong>${esc(r.guest_name)}</strong></td><td>Ch. ${esc(r.room_number)} · ${dfr(r.check_in)} → ${dfr(r.check_out)}</td><td>${esc(RSTATUS[r.status] || r.status)}</td><td style="text-align:right;white-space:nowrap">${money(r.total_amount)}</td><td style="text-align:right;white-space:nowrap">${c ? money(c) : '<span class="muted">—</span>'}</td></tr>`; }).join('')}
+      </tbody></table></div><p class="muted" style="font-size:12px;margin:8px 0 0">La commission ne compte pas les demandes en attente, les annulations ni les absences.</p>` : '<p class="muted">Aucune réservation NAYA ce mois-ci.</p>'}`);
+    $('modalBody').style.maxWidth = '720px';
+    const tg = $('nyToggle'); if (tg) tg.onclick = async () => { tg.disabled = true;
+      const { data, error } = await sb.rpc('marketplace_set_listing', { p_establishment: S.est, p_listed: !L.listed, p_auto_confirm: null });
+      if (error) { tg.disabled = false; return toast(errMsg(error), true); }
+      L = { ...L, listed: data.listed, commission_pct: data.commission_pct, auto_confirm: data.auto_confirm }; slug = data.slug;
+      toast(data.listed ? 'Votre établissement est publié sur NAYA.' : 'Votre établissement est retiré de NAYA.'); draw(); };
+    const au = $('nyAuto'); if (au) au.onchange = async () => { const { data, error } = await sb.rpc('marketplace_set_listing', { p_establishment: S.est, p_listed: true, p_auto_confirm: au.checked });
+      if (error) { au.checked = !au.checked; return toast(errMsg(error), true); } L.auto_confirm = data.auto_confirm; toast(data.auto_confirm ? 'Réservations NAYA confirmées automatiquement.' : 'Réservations NAYA à confirmer par vous.'); };
+    $('nyPrev').onclick = () => { const d = new Date(st.month + 'T00:00:00'); d.setMonth(d.getMonth() - 1); st.month = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`; draw(); };
+    $('nyNext').onclick = () => { const d = new Date(st.month + 'T00:00:00'); d.setMonth(d.getMonth() + 1); st.month = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`; draw(); };
+  };
+  draw();
+}
 /* ---------- Réservation rapide : un seul écran, la chambre libre proposée d'office (objectif : moins de 30 secondes) ---------- */
 async function openQuickResa(pre, refresh){
   if (!S.rooms.length) await loadEst();
@@ -2122,7 +2177,7 @@ async function openQuickResa(pre, refresh){
       <details id="qMore" ${st.more ? 'open' : ''} style="margin-bottom:12px"><summary style="cursor:pointer;font-weight:600;font-size:14px;min-height:32px">Plus d’options : prix, remise, origine, notes</summary>
         <div class="row" style="gap:10px;margin-top:10px"><div class="field" style="flex:1 1 110px"><label for="qRt">Prix / nuit (F)</label><input id="qRt" type="number" min="0" value="${st.rate ?? ''}"></div>
           <div class="field" style="flex:1 1 110px"><label for="qDs">Remise (F)</label><input id="qDs" type="number" min="0" value="${st.disc || 0}"></div>
-          <div class="field" style="flex:1 1 130px"><label for="qSr">Origine</label><select id="qSr">${opt(SOURCE, st.src)}</select></div></div>
+          <div class="field" style="flex:1 1 130px"><label for="qSr">Origine</label><select id="qSr">${srcOpts(st.src)}</select></div></div>
         <div class="field"><label for="qNo">Notes</label><input id="qNo" value="${esc(st.notes)}" placeholder="Heure d’arrivée, demande particulière…"></div>
       </details>
       <button class="primary" id="qGo" style="width:100%;min-height:50px;font-size:16px" ${n < 1 || !f.length ? 'disabled' : ''}>${pre.walkin ? 'Créer et faire le check-in' : 'Créer la réservation'} · ${money(total())}</button>
@@ -2230,7 +2285,7 @@ async function openResaForm(pre, refresh){
         <div class="field ${known ? 'hidden' : ''}"><label for="wNm">Nom complet</label><input id="wNm" value="${esc(st.name)}" autocomplete="off" list="wGl"><datalist id="wGl">${G.slice(0, 300).map(g => `<option value="${esc(g.full_name)}">${esc(g.phone || '')}</option>`).join('')}</datalist></div>
         <div class="row"><div class="field" style="flex:1 1 120px"><label for="wRt">Prix / nuit (F)</label><input id="wRt" type="number" min="0" value="${st.rate ?? ''}"></div>${st.rateNote ? `<p class="muted" style="flex:1 1 100%;font-size:12px;margin:-6px 0 6px;color:var(--green)">${esc(st.rateNote)}</p>` : ''}
           <div class="field" style="flex:1 1 110px"><label for="wDs">Remise (F) <span title="Au-delà de ${discPct} % de remise, le propriétaire est prévenu automatiquement." style="display:inline-grid;place-items:center;width:17px;height:17px;border-radius:50%;background:var(--ink);color:#fff;font-size:11px;cursor:help">?</span></label><input id="wDs" type="number" min="0" value="${st.disc}"></div>
-          <div class="field" style="flex:1 1 130px"><label for="wSr">Origine</label><select id="wSr">${opt(SOURCE, st.src)}</select></div></div>
+          <div class="field" style="flex:1 1 130px"><label for="wSr">Origine</label><select id="wSr">${srcOpts(st.src)}</select></div></div>
         <div id="wDW" class="hidden" style="margin:-6px 0 12px;font-size:13px;color:#6B4A00;background:#FFF4E5;border-radius:10px;padding:8px 10px">Remise supérieure à ${discPct} % : le propriétaire sera prévenu.</div>
         <div class="field"><label for="wNo">Notes</label><input id="wNo" value="${esc(st.notes)}" placeholder="Heure d’arrivée, demande particulière…"></div>
         ${pre.id ? '' : `<div style="border-top:1px solid var(--line);padding-top:12px"><div style="font-weight:700;margin-bottom:8px">Acompte reçu maintenant (facultatif)</div>

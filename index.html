@@ -746,6 +746,7 @@ html nav.side [data-view="naya"]{--ic:url("data:image/svg+xml,%3Csvg xmlns='http
         <button data-view="abonnement">Mon abonnement</button>
         <button data-view="tarifs">Tarifs</button>
         <button data-view="admin" id="navAdmin" class="hidden">Administration</button>
+        <button type="button" id="navPwd">Changer mon mot de passe</button>
         <button data-logout>Se déconnecter</button>
       </div>
     </details>
@@ -810,6 +811,8 @@ const authStore = {
   setItem(k, v){ try { const a = this.area(); (a === localStorage ? sessionStorage : localStorage).removeItem(k); a && a.setItem(k, v); } catch (_) {} },
   removeItem(k){ try { localStorage.removeItem(k); sessionStorage.removeItem(k); } catch (_) {} }
 };
+/* Lien « mot de passe oublié » : détecté avant que la session ne soit lue */
+const RECOVERY = { pending: /type=recovery/.test(location.hash + location.search) };
 /* ---------- Réseau : barre de progression + mode hors connexion (lecture des dernières données) ---------- */
 const NET = { n: 0, cachedAt: null };
 const READ_RPC = /\/rpc\/(is_platform_admin|get_subscription_overview|admin_platform_stats|admin_orgs_overview|admin_naya_overview|financial_report|daily_report|org_team|org_team_v2|business_analytics|pos_summary|my_invitations|stay_price|public_directory|public_reviews|public_get_establishment|public_quote)\b/;
@@ -883,7 +886,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.10.26-21';
+const APP_VERSION = '2026.10.26-22';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -1142,8 +1145,36 @@ $('staffForm').addEventListener('submit', async e => {
 function rememberCredential(id, password, name){ try { if (window.PasswordCredential && navigator.credentials && id && password) navigator.credentials.store(new PasswordCredential({ id, password, name: name || id })).catch(() => {}); } catch (_) {} }
 $('sUser').addEventListener('input', () => { const v = $('sUser').value.trim(); const m = /^([a-z0-9]{2,20})@([a-z0-9]{3,20})$/i.exec(v); if (m) { $('sUser').value = m[1].toLowerCase(); $('sCode').value = m[2].toLowerCase(); } });
 $('sUser').addEventListener('change', () => $('sUser').dispatchEvent(new Event('input')));
+$('navPwd').onclick = () => { const md = (S.session && S.session.user.user_metadata) || {}; const nb = $('navMore'); if (nb) nb.open = false; if (md.staff) { forcePinChange(); delete $('modal').dataset.locked; } else openNewPassword(false); };
 let _am = 'mail'; try { _am = localStorage.getItem('hh_auth_mode') === 'staff' ? 'staff' : 'mail'; } catch (_) {} setAuthMode(_am);
 
+/* Choisir un nouveau mot de passe : obligatoire après un lien « mot de passe oublié », possible à tout moment depuis Réglages */
+function openNewPassword(forced){
+  modal(`<div class="eyebrow">${forced ? 'Réinitialisation' : 'Mon compte'}</div><h2 style="font-size:24px;margin:4px 0 6px">Choisissez un nouveau mot de passe</h2>
+    <p class="muted" style="margin:0 0 14px">${forced ? 'Vous avez demandé à réinitialiser votre mot de passe. Choisissez-en un nouveau pour continuer.' : 'Il remplacera votre mot de passe actuel sur tous vos appareils.'}</p>
+    <form id="npF" method="post" action="#"><input type="email" name="username" autocomplete="username" value="${esc((S.session && S.session.user.email) || '')}" hidden readonly>
+      <div class="field"><label for="npw">Nouveau mot de passe</label><div style="position:relative"><input id="npw" type="password" minlength="8" required autocomplete="new-password" style="padding-right:96px"><button type="button" id="npShow" class="small ghost" style="position:absolute;right:6px;top:6px;min-height:36px">Afficher</button></div>
+        <div class="muted" style="font-size:12px;margin-top:4px" id="npHint">8 caractères minimum, avec au moins une lettre et un chiffre.</div></div>
+      <div class="field"><label for="npw2">Confirmez le mot de passe</label><input id="npw2" type="password" minlength="8" required autocomplete="new-password"></div>
+      <div class="row" style="gap:8px">${forced ? '' : '<button type="button" class="ghost" data-close>Annuler</button>'}<button class="primary" id="npGo" style="flex:1">Enregistrer le mot de passe</button></div></form>`);
+  if (forced) $('modal').dataset.locked = '1';
+  $('npShow').onclick = () => { const on = $('npw').type === 'password'; $('npw').type = $('npw2').type = on ? 'text' : 'password'; $('npShow').textContent = on ? 'Masquer' : 'Afficher'; };
+  $('npw').oninput = () => { const v = $('npw').value, ok = v.length >= 8 && /[A-Za-z]/.test(v) && /\d/.test(v); $('npHint').style.color = v ? (ok ? 'var(--ok, #1F5C4A)' : 'var(--red, #B42318)') : ''; };
+  setTimeout(() => $('npw').focus(), 50);
+  $('npF').onsubmit = async (ev) => {
+    ev.preventDefault(); const v = $('npw').value;
+    if (v.length < 8 || !/[A-Za-z]/.test(v) || !/\d/.test(v)) return toast('8 caractères minimum, avec au moins une lettre et un chiffre.', true);
+    if (v !== $('npw2').value) return toast('Les deux mots de passe ne correspondent pas.', true);
+    $('npGo').disabled = true;
+    const { error } = await sb.auth.updateUser({ password: v });
+    if (error) { $('npGo').disabled = false; return toast(/same|different/i.test(error.message) ? 'Choisissez un mot de passe différent de l’ancien.' : /session|expired|JWT/i.test(error.message) ? 'Le lien a expiré : redemandez « Mot de passe oublié ».' : errMsg(error), true); }
+    const { data: u } = await sb.auth.getUser(); if (u && u.user && u.user.email) rememberCredential(u.user.email, v);
+    RECOVERY.pending = false; delete $('modal').dataset.locked; closeModal();
+    try { history.replaceState(null, '', location.pathname); } catch (_) {}
+    toast('Mot de passe enregistré.');
+    if (forced) { S.view = 'dashboard'; boot(); }
+  };
+}
 function forcePinChange(){
   const meta = (S.session.user.user_metadata) || {};
   modal(`<div class="eyebrow">Première connexion</div><h2 style="font-size:24px;margin:4px 0 8px">Choisissez votre code personnel</h2>
@@ -1244,6 +1275,7 @@ async function boot(){
   const { data: { session } } = await sb.auth.getSession();
   S.session = session;
   if (!session) { renderAuth(); renderProfiles(); show('auth'); setTimeout(() => { const f = $('email').value ? $('password') : $('email'); if (f) f.focus(); }, 50); return; }
+  if (RECOVERY.pending && !(session.user.user_metadata || {}).staff) { show('auth'); return openNewPassword(true); }
   if (!(await ensureLegalAccepted())) return;
   const [mem, adm] = await Promise.all([
     sb.from('organization_members').select('organization_id, role, username, display_name, must_change_password, organizations(name)').eq('user_id', session.user.id).eq('is_active', true).limit(1),
@@ -5235,8 +5267,7 @@ async function renderPublicPage(slug){
 
 sb.auth.onAuthStateChange((evt) => { if (PUBLIC_SLUG) return;
   if (evt === 'PASSWORD_RECOVERY') {
-    modal(`<h2 style="font-size:24px;margin-bottom:10px">Nouveau mot de passe</h2><form id="npF"><div class="field"><label for="npw">Nouveau mot de passe (8 caractères minimum)</label><input id="npw" type="password" minlength="8" required autocomplete="new-password"></div><button class="primary">Enregistrer</button></form>`);
-    $('npF').onsubmit = async (ev) => { ev.preventDefault(); const npw = $('npw').value; const { error } = await sb.auth.updateUser({ password: npw }); if (error) return toast(errMsg(error), true); { const { data: u } = await sb.auth.getUser(); if (u && u.user && u.user.email) rememberCredential(u.user.email, npw); } closeModal(); toast('Mot de passe modifié.'); };
+    RECOVERY.pending = true; setTimeout(() => openNewPassword(true), 300);
     return;
   } if (['SIGNED_IN','SIGNED_OUT'].includes(evt)) { S.view = 'dashboard'; boot(); } });
 boot();

@@ -883,7 +883,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.10.26-19';
+const APP_VERSION = '2026.10.26-20';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -1193,7 +1193,15 @@ $('authForm').addEventListener('submit', async e => {
       try { localStorage.setItem('hh_legal_ok', LEGAL_VERSION); } catch (_) {}
       const { data, error } = await sb.auth.signUp({ email, password, options: { emailRedirectTo: location.origin + location.pathname } });
       if (error) throw error;
-      if (!data.session) { toast('Compte créé. Confirmez votre adresse e-mail puis connectez-vous.'); S.signup = false; renderAuth(); }
+      if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+        S.signup = false; renderAuth(); $('email').value = email; $('password').value = '';
+        return modal(`<h2 style="font-size:22px;margin-bottom:8px">Un compte existe déjà</h2><p>L’adresse <strong>${esc(email)}</strong> est déjà inscrite sur Horus Hotel : aucun nouvel e-mail n’est envoyé.</p><p class="muted">Connectez-vous avec votre mot de passe, ou utilisez « Mot de passe oublié ? » pour en choisir un nouveau.</p><div class="row" style="gap:8px;margin-top:12px"><button class="primary" data-close style="flex:1">Se connecter</button></div>`);
+      }
+      if (!data.session) {
+        S.signup = false; renderAuth(); $('email').value = email; $('password').value = '';
+        modal(`<h2 style="font-size:22px;margin-bottom:8px">Vérifiez votre boîte mail</h2><p>Un e-mail de confirmation a été envoyé à <strong>${esc(email)}</strong>. Cliquez sur le lien qu’il contient, puis connectez-vous.</p><p class="muted" style="font-size:14px">Rien reçu après quelques minutes ? Regardez dans les courriers indésirables (spam) ou l’onglet « Promotions ».</p><div class="row" style="gap:8px;margin-top:12px"><button class="ghost" id="reSend">Renvoyer l’e-mail</button><button class="primary" data-close style="flex:1">Compris</button></div>`);
+        $('reSend').onclick = async () => { const b = $('reSend'); b.disabled = true; const { error: e2 } = await sb.auth.resend({ type: 'signup', email, options: { emailRedirectTo: location.origin + location.pathname } }); toast(e2 ? (/rate|seconds/i.test(e2.message) ? 'Patientez une minute avant de renvoyer l’e-mail.' : errMsg(e2)) : 'E-mail renvoyé.', !!e2); setTimeout(() => { b.disabled = false; }, 60000); };
+      }
     } else {
       try { localStorage.setItem('hh_remember', $('remember').checked ? '1' : '0'); } catch (_) {}
       const { error } = await sb.auth.signInWithPassword({ email, password });

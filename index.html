@@ -702,6 +702,7 @@ html[data-theme="foret"] .auth{background:radial-gradient(900px 500px at 15% -10
         <button type="button" id="navMods">Fonctionnalités utilisées</button>
         <button type="button" id="navCur">Devise</button>
         <button type="button" id="navTheme">Thème de l’application</button>
+        <button type="button" id="navGuide">Réafficher le guide de démarrage</button>
         <button type="button" id="navRates">Tarifs automatiques</button>
         <button type="button" id="navDir">Annuaire public</button>
         <button type="button" id="navLegal">Documents légaux</button>
@@ -817,7 +818,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.10.26-8';
+const APP_VERSION = '2026.10.26-9';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -1281,6 +1282,7 @@ if (isStandalone() || IN_APP) $('navInstall').classList.add('hidden');
 $('navEsts').onclick = () => openEstablishments();
 $('navNotif').onclick = () => openNotifs();
 $('navTheme').onclick = () => openThemes();
+$('navGuide').onclick = () => { try { localStorage.removeItem('hh_guide_hidden_' + S.org); } catch (_) {} const nb = $('navMore'); if (nb) nb.open = false; closeModal && closeModal(); go('dashboard'); toast('Guide de démarrage réaffiché.'); };
 $('navRefresh').onclick = () => refreshApp();
 $('navClock').onclick = () => toggleClock();
 $('navAsk').onclick = () => openAssistant();
@@ -1818,14 +1820,14 @@ async function renderDashboard(){
   const hello = (() => { const h = new Date().getHours(); return h < 12 ? 'Bonjour' : h < 18 ? 'Bon après-midi' : 'Bonsoir'; })();
   const kpi = (l, v, sub, accent) => `<div class="card" style="display:flex;flex-direction:column;gap:2px;${accent ? 'background:var(--ink);color:var(--card);border-color:var(--ink)' : ''}"><div style="font-size:13px;font-weight:600;opacity:.75">${l}</div><div style="font-family:var(--display);font-weight:800;font-size:34px;letter-spacing:-.5px">${v}</div><div style="font-size:12px;opacity:.75">${sub}</div></div>`;
   const person = (r, action, label) => `<div class="row" style="padding:12px 0;border-bottom:1px dashed var(--line);flex-wrap:nowrap"><div style="width:40px;height:40px;flex-shrink:0;border-radius:50%;background:var(--green-l);color:var(--green-d);display:grid;place-items:center;font-weight:800">${esc((r.guest_name || '?').split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase())}</div><div style="flex:1;min-width:0"><div style="font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(r.guest_name)}</div><div class="muted" style="font-size:12px">Ch. ${esc(r.room_number)} · ${plur(r.nights, 'nuit', 'nuits')}${r.source === 'en_ligne' ? ' · en ligne' : ''}</div></div>${r.balance > 0 ? `<span class="pill st-pending">${money(r.balance)}</span>` : '<span class="pill st-active">Réglé</span>'}<button class="small primary" data-${action}="${r.id}">${label}</button></div>`;
-  const guideHtml = await dashGuide(R);
+  const guide = await dashGuide(R);
   el.innerHTML = `
     <div class="row between" style="margin-bottom:20px;align-items:flex-end">
-      <div><div class="muted" style="font-size:14px">${new Date().toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long' })}</div><h1 style="font-size:clamp(28px,4vw,40px)">${hello}</h1></div>
+      <div><div class="muted" style="font-size:14px">${hello} · ${new Date().toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long' })}</div><h1 style="font-size:clamp(28px,4vw,40px)">Aujourd’hui</h1></div>
       <div class="row">${upgradeBtn()}<button data-walkin>Walk-in</button><button class="primary" data-newresa>Nouvelle réservation</button></div>
     </div>
     ${readOnlyNote()}
-    ${guideHtml}
+    ${guide.checklist}
     ${alertCount ? `<div class="banner b-danger"><span>${plur(alertCount, 'alerte de contrôle non lue', 'alertes de contrôle non lues')}.</span><button class="small primary" data-go="controle">Voir</button></div>` : ''}
     <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:16px">
       <div class="card row" style="gap:14px;flex-wrap:nowrap">${donut(occPct)}<div><div style="font-size:13px;font-weight:600;color:var(--muted)">Occupation</div><div style="font-weight:700">${inHouse.length} / ${total} chambres</div></div></div>
@@ -1833,6 +1835,11 @@ async function renderDashboard(){
       ${kpi('Départs', departures.length, departures.length ? 'à libérer aujourd’hui' : 'aucun aujourd’hui')}
       ${kpi('Encaissé aujourd’hui', money(cashIn), 'toutes méthodes', true)}
     </div>
+    <div class="grid g2" style="margin-bottom:16px;align-items:start">
+      <div class="card"><h3 style="font-size:20px;margin-bottom:4px">Arrivées du jour</h3>${arrivals.length ? arrivals.map(r => person(r, 'checkin', 'Check-in')).join('') : '<p class="muted">Aucune arrivée prévue.</p>'}</div>
+      <div class="card"><h3 style="font-size:20px;margin-bottom:4px">Départs du jour</h3>${departures.length ? departures.map(r => person(r, 'checkout', 'Check-out')).join('') : '<p class="muted">Aucun départ prévu.</p>'}</div>
+    </div>
+    ${guide.reminders}
     <div id="dashResult"></div>
     <div class="card" style="margin-bottom:16px">
       <div class="row between" style="margin-bottom:12px"><h3 style="font-size:22px">Chambres en direct</h3><div class="row" style="gap:6px">${Object.entries(LIVE).map(([k, v]) => `<span class="pill" style="background:${v[1]};color:${v[2]}">${v[0]} · ${countSt(k)}</span>`).join('')}</div></div>
@@ -1842,10 +1849,6 @@ async function renderDashboard(){
           <span style="font-size:12px;font-weight:600;opacity:.9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${x.resa ? esc(x.resa.guest_name) : esc(x.rm.room_type || c[0])}</span>
           <span style="font-size:11px;opacity:.8">${c[0]}</span></button>`; }).join('')}</div>` : '<p class="muted">Aucune chambre.</p>'}
     </div>
-    <div class="grid g2" style="margin-bottom:16px;align-items:start">
-      <div class="card"><h3 style="font-size:20px;margin-bottom:4px">Arrivées du jour</h3>${arrivals.length ? arrivals.map(r => person(r, 'checkin', 'Check-in')).join('') : '<p class="muted">Aucune arrivée prévue.</p>'}</div>
-      <div class="card"><h3 style="font-size:20px;margin-bottom:4px">Départs du jour</h3>${departures.length ? departures.map(r => person(r, 'checkout', 'Check-out')).join('') : '<p class="muted">Aucun départ prévu.</p>'}</div>
-    </div>
     <div class="grid g2" style="align-items:start">
       <div class="card"><h3 style="font-size:20px;margin-bottom:14px">Occupation des 7 prochains jours</h3>
         <div style="display:flex;align-items:flex-end;gap:10px;height:150px">${week.map((w, i) => `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end" title="${plur(w.n, 'chambre réservée', 'chambres réservées')}${w.p ? ', ' + w.p + ' en attente' : ''}"><span style="font-size:12px;font-weight:700">${w.pct}%</span><div style="width:100%;height:${Math.max(4, w.pct)}%;border-radius:10px 10px 4px 4px;background:${i === 0 ? 'var(--green)' : '#D9A184'}"></div><span class="muted" style="font-size:12px">${new Date(w.d + 'T00:00:00').toLocaleDateString('fr-FR', { weekday:'short' })}</span></div>`).join('')}</div>
@@ -1854,6 +1857,7 @@ async function renderDashboard(){
         ${(pend.data || []).length ? pend.data.map(p => `<div class="row" style="padding:10px 0;border-bottom:1px dashed var(--line);flex-wrap:nowrap"><div style="flex:1;min-width:0"><div style="font-weight:700">${esc(p.guest_name)}</div><div class="muted" style="font-size:12px">Ch. ${esc(p.room_number)} · ${dfr(p.check_in)} → ${dfr(p.check_out)} · ${money(p.total_amount)}</div></div><button class="small" data-open="${p.id}">Traiter</button></div>`).join('') : '<p class="muted">Aucune demande en attente.</p>'}
       </div>
     </div>`;
+  const gh = $('gHide'); if (gh) gh.onclick = () => { try { localStorage.setItem('hh_guide_hidden_' + S.org, '1'); } catch (_) {} const sec = gh.closest('section'); if (sec) sec.remove(); toast('Guide de démarrage masqué. Vous pouvez le réafficher dans Réglages.'); };
   bindResaActions(el, renderDashboard);
   el.querySelectorAll('[data-room]:not([data-open])').forEach(b => b.onclick = () => openRoomForm(S.rooms.find(r => r.id === b.dataset.room), renderDashboard));
 }
@@ -1882,7 +1886,7 @@ async function dashGuide(R){
   let hide = false; try { hide = localStorage.getItem('hh_guide_hidden_' + S.org) === '1'; } catch (e) {}
   const nextS = steps.find(s => !s[1]);
   const checklist = (!hide && done < steps.length) ? `<section class="card" style="background:var(--ink);color:#FBF6EE;border-color:var(--ink);margin-bottom:16px">
-    <div class="row between" style="align-items:flex-start"><div><div style="font-size:13px;color:#E9DCC8;font-weight:600">Démarrage</div><h3 style="font-size:24px;margin:4px 0 0">Votre hôtel est prêt à ${pct}&nbsp;%</h3></div><button class="small" id="gHide" style="color:#E9DCC8;border-color:#6E5A4A">Masquer</button></div>
+    <div class="row between" style="align-items:flex-start"><div><div style="font-size:13px;color:#E9DCC8;font-weight:600">Démarrage</div><h3 style="font-size:24px;margin:4px 0 0">Votre hôtel est prêt à ${pct}&nbsp;%</h3></div><button type="button" class="small" id="gHide" style="color:#E9DCC8;border-color:#6E5A4A">Masquer</button></div>
     <div style="height:10px;border-radius:5px;background:rgba(255,255,255,.15);margin:12px 0"><div style="width:${pct}%;height:10px;border-radius:5px;background:var(--prog,#E9A27A)"></div></div>
     <div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:6px 18px;font-size:14px">${steps.map(s => s[1] ? `<span style="color:#CFE0C0">✓ ${s[0]}</span>` : `<a href="#" data-go="${s[2]}" style="color:#F2C7A8">○ ${s[0]}</a>`).join('')}</div>
     ${nextS ? `<button class="primary" data-go="${nextS[2]}" style="margin-top:14px">Étape suivante : ${nextS[0]} →</button>` : ''}</section>` : '';
@@ -1897,7 +1901,7 @@ async function dashGuide(R){
   if (moduleOn('depenses')) (dues.data || []).forEach(d => rem.push(['#2B1E16', `${esc(d.label)} (${money(d.amount)}) à payer le ${dfr(d.due_date)}`, 'Voir', 'depenses']));
   const reminders = rem.length ? `<section class="card" style="margin-bottom:16px"><h3 style="font-size:20px;margin-bottom:10px">À faire aujourd’hui</h3><div style="display:flex;flex-direction:column;gap:8px">
     ${rem.map(([c, txt, lbl, v, tab]) => `<div class="row" style="gap:10px;padding:10px 12px;border-radius:14px;background:#fff;border:1px solid var(--line);flex-wrap:nowrap"><span style="width:10px;height:10px;flex-shrink:0;border-radius:50%;background:${c}"></span><span style="flex:1">${txt}</span><button class="small ghost" data-go="${v}" ${tab ? `data-rtabgo="${tab}"` : ''}>${lbl}</button></div>`).join('')}</div></section>` : '';
-  return checklist + reminders;
+  return { checklist, reminders };
 }
 document.addEventListener('click', e => { const b = e.target.closest('[data-rtabgo]'); if (b) { S._rf = Object.assign(S._rf || { q: '', unpaid: false }, { tab: b.dataset.rtabgo }); } }, true);
 

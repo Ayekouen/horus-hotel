@@ -883,7 +883,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.10.26-20';
+const APP_VERSION = '2026.10.26-21';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -1134,9 +1134,14 @@ $('staffForm').addEventListener('submit', async e => {
     const r = await sb.auth.setSession({ access_token: data.access_token, refresh_token: data.refresh_token });
     if (r.error) throw r.error;
     saveProfile({ type: 'staff', code, user });
+    rememberCredential(`${user}@${code}`, pin, `${user} · ${code}`);
   } catch (err) { $('sPin').value = ''; toast(err.message || errMsg(err), true); }
   finally { btn.disabled = false; }
 });
+/* Gestionnaire de mots de passe du navigateur : proposer d'enregistrer les identifiants après une connexion réussie */
+function rememberCredential(id, password, name){ try { if (window.PasswordCredential && navigator.credentials && id && password) navigator.credentials.store(new PasswordCredential({ id, password, name: name || id })).catch(() => {}); } catch (_) {} }
+$('sUser').addEventListener('input', () => { const v = $('sUser').value.trim(); const m = /^([a-z0-9]{2,20})@([a-z0-9]{3,20})$/i.exec(v); if (m) { $('sUser').value = m[1].toLowerCase(); $('sCode').value = m[2].toLowerCase(); } });
+$('sUser').addEventListener('change', () => $('sUser').dispatchEvent(new Event('input')));
 let _am = 'mail'; try { _am = localStorage.getItem('hh_auth_mode') === 'staff' ? 'staff' : 'mail'; } catch (_) {} setAuthMode(_am);
 
 function forcePinChange(){
@@ -1157,6 +1162,7 @@ function forcePinChange(){
     if (error && !msg) { try { msg = (await error.context.json()).error; } catch (_) { msg = 'Enregistrement impossible. Vérifiez votre réseau.'; } }
     if (msg) return toast(/same|different/i.test(msg) ? 'Choisissez un code différent du code provisoire.' : msg, true);
     delete $('modal').dataset.locked; S.member.must_change_password = false; closeModal(); toast('Code enregistré. Bienvenue !');
+    { const md = (S.session && S.session.user.user_metadata) || {}; if (md.username && md.staff_code) rememberCredential(`${md.username}@${md.staff_code}`, a, `${md.username} · ${md.staff_code}`); }
   };
 }
 
@@ -1207,6 +1213,7 @@ $('authForm').addEventListener('submit', async e => {
       const { error } = await sb.auth.signInWithPassword({ email, password });
       if (error) throw error;
       try { localStorage.setItem('hh_last_email', email); } catch (_) {}
+      rememberCredential(email.toLowerCase(), password);
       saveProfile({ type: 'mail', email: email.toLowerCase() });
       try { if (window.PasswordCredential && navigator.credentials) await navigator.credentials.store(new PasswordCredential({ id: email, password, name: email })); } catch (_) {}
     }
@@ -5229,7 +5236,7 @@ async function renderPublicPage(slug){
 sb.auth.onAuthStateChange((evt) => { if (PUBLIC_SLUG) return;
   if (evt === 'PASSWORD_RECOVERY') {
     modal(`<h2 style="font-size:24px;margin-bottom:10px">Nouveau mot de passe</h2><form id="npF"><div class="field"><label for="npw">Nouveau mot de passe (8 caractères minimum)</label><input id="npw" type="password" minlength="8" required autocomplete="new-password"></div><button class="primary">Enregistrer</button></form>`);
-    $('npF').onsubmit = async (ev) => { ev.preventDefault(); const { error } = await sb.auth.updateUser({ password: $('npw').value }); if (error) return toast(errMsg(error), true); closeModal(); toast('Mot de passe modifié.'); };
+    $('npF').onsubmit = async (ev) => { ev.preventDefault(); const npw = $('npw').value; const { error } = await sb.auth.updateUser({ password: npw }); if (error) return toast(errMsg(error), true); { const { data: u } = await sb.auth.getUser(); if (u && u.user && u.user.email) rememberCredential(u.user.email, npw); } closeModal(); toast('Mot de passe modifié.'); };
     return;
   } if (['SIGNED_IN','SIGNED_OUT'].includes(evt)) { S.view = 'dashboard'; boot(); } });
 boot();

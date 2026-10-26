@@ -827,7 +827,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.10.26-17';
+const APP_VERSION = '2026.10.26-18';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -1211,6 +1211,60 @@ function enterAdminOnly(){
   $('orgLabel').textContent = 'Administrateur plateforme';
   show('app'); go('admin');
 }
+/* ---------- Alerte immédiate à chaque nouvelle réservation NAYA ---------- */
+let NAYA_TIMER = null;
+const nayaKey = () => 'hh_naya_seen_' + S.org;
+function nayaChime(){
+  try { const C = window.AudioContext || window.webkitAudioContext; if (!C) return; const a = new C(); const t = a.currentTime;
+    [[880, 0], [1320, .16]].forEach(([f, d]) => { const o = a.createOscillator(), g = a.createGain(); o.type = 'sine'; o.frequency.value = f; g.gain.setValueAtTime(.0001, t + d); g.gain.exponentialRampToValueAtTime(.25, t + d + .02); g.gain.exponentialRampToValueAtTime(.0001, t + d + .35); o.connect(g).connect(a.destination); o.start(t + d); o.stop(t + d + .4); });
+  } catch (_) {}
+}
+function startNayaWatch(){
+  clearInterval(NAYA_TIMER);
+  if (!S.org || !can(['owner','admin','manager','receptionist'])) return;
+  try { if (!localStorage.getItem(nayaKey())) localStorage.setItem(nayaKey(), new Date().toISOString()); } catch (_) {}
+  const tick = async () => {
+    if (!S.org || !navigator.onLine || !$('modal').classList.contains('hidden')) return; // on attend qu'aucune fenêtre ne soit ouverte
+    let last; try { last = localStorage.getItem(nayaKey()); } catch (_) {}
+    last = last || new Date(Date.now() - 60000).toISOString();
+    const { data } = await sb.from('reservation_balances').select('id,establishment_id,guest_name,guest_phone,room_number,check_in,check_out,nights,adults,status,total_amount,created_at')
+      .eq('organization_id', S.org).eq('source', 'naya').gt('created_at', last).order('created_at').limit(10);
+    if (!data || !data.length) return;
+    try { localStorage.setItem(nayaKey(), data[data.length - 1].created_at); } catch (_) {}
+    showNayaPopup(data);
+  };
+  setTimeout(tick, 3000); NAYA_TIMER = setInterval(tick, 20000);
+}
+function showNayaPopup(list){
+  const r = list[list.length - 1], more = list.length - 1, pending = r.status === 'pending';
+  const est = (S.ests || []).find(e => e.id === r.establishment_id) || {};
+  nayaChime();
+  try { if ('Notification' in window && Notification.permission === 'granted' && document.hidden) new Notification('Nouvelle réservation NAYA', { body: `${r.guest_name} · ${dfr(r.check_in)} → ${dfr(r.check_out)} · ${money(r.total_amount)}`, icon: 'icon-192.png', tag: 'naya-' + r.id }); } catch (_) {}
+  modal(`<div style="text-align:center">
+      <div style="width:64px;height:64px;margin:0 auto 10px;border-radius:20px;display:grid;place-items:center;background:var(--green-l);color:var(--green)"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"></path></svg></div>
+      <div class="eyebrow">Nouvelle réservation NAYA${(S.ests || []).length > 1 && est.name ? ' · ' + esc(est.name) : ''}</div>
+      <h2 style="font-size:26px;margin:6px 0 2px">${esc(r.guest_name)}</h2>
+      <p class="muted" style="margin:0 0 14px">${pending ? 'En attente de votre confirmation' : 'Confirmée automatiquement'}</p></div>
+    <div class="card" style="margin-bottom:14px"><div class="grid" style="grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 16px;font-size:15px">
+      <div><div class="muted" style="font-size:12px">Séjour</div><strong>${dfr(r.check_in)} → ${dfr(r.check_out)}</strong><div class="muted" style="font-size:13px">${plur(r.nights, 'nuit', 'nuits')}${r.adults ? ' · ' + plur(r.adults, 'personne', 'personnes') : ''}</div></div>
+      <div><div class="muted" style="font-size:12px">Chambre</div><strong>${esc(r.room_number || '—')}</strong></div>
+      <div><div class="muted" style="font-size:12px">Montant du séjour</div><strong>${money(r.total_amount)}</strong></div>
+      <div><div class="muted" style="font-size:12px">Téléphone</div><strong>${esc(r.guest_phone || '—')}</strong></div></div></div>
+    ${more > 0 ? `<p class="muted" style="text-align:center;margin:-4px 0 12px">+ ${plur(more, 'autre réservation NAYA', 'autres réservations NAYA')} reçue${more > 1 ? 's' : ''} — voir l’écran NAYA.</p>` : ''}
+    <div class="row" style="gap:8px;flex-wrap:wrap">
+      ${pending ? `<button class="primary" id="nyOk" style="flex:1 1 160px;min-height:52px">Confirmer la réservation</button>` : ''}
+      <button class="${pending ? 'ghost' : 'primary'}" id="nyOpen" style="flex:1 1 140px;min-height:52px">Voir la réservation</button>
+      <button class="ghost" data-close style="flex:0 1 auto">Plus tard</button></div>`);
+  $('nyOpen').onclick = () => { closeModal(); openResa(r.id, () => { if (S.view === 'naya') renderNaya(); else if (S.view === 'reservations') renderReservations(); }); };
+  const ok = $('nyOk'); if (ok) ok.onclick = async () => {
+    ok.disabled = true; const w = waPhone(r.guest_phone) ? window.open('', '_blank') : null;
+    const { error } = await sb.from('reservations').update({ status: 'confirmed' }).eq('id', r.id);
+    if (error) { ok.disabled = false; if (w) w.close(); return toast(errMsg(error), true); }
+    if (w) w.location = `https://wa.me/${waPhone(r.guest_phone)}?text=${encodeURIComponent(waConfirmText(r))}`;
+    closeModal(); toast(w ? 'Réservation confirmée. Le message WhatsApp est prêt à envoyer.' : 'Réservation confirmée. Prévenez le client par téléphone.');
+    if (S.view === 'naya') renderNaya(); else if (S.view === 'reservations') renderReservations(); else if (S.view === 'planning') renderPlanning();
+  };
+}
 async function loadCommon(){
   const [ov, pl, pr] = await Promise.all([
     sb.rpc('get_subscription_overview', { p_org: S.org }),
@@ -1223,6 +1277,7 @@ async function loadCommon(){
   renderBanner();
   refreshAlertBadge();
   startNotifs();
+  startNayaWatch();
 }
 function renderBanner(){
   const o = S.overview, el = $('banner');

@@ -817,7 +817,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.10.26-7';
+const APP_VERSION = '2026.10.26-8';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -2045,7 +2045,113 @@ function bindResaActions(el, refresh){
   el.querySelectorAll('[data-checkout]').forEach(b => b.onclick = () => openResa(b.dataset.checkout, refresh, true));
 }
 
+/* ---------- Réservation rapide : un seul écran, la chambre libre proposée d'office (objectif : moins de 30 secondes) ---------- */
+async function openQuickResa(pre, refresh){
+  if (!S.rooms.length) await loadEst();
+  if (!S.rooms.length) return toast('Ajoutez d’abord des chambres.', true);
+  const { data: guests } = await sb.from('guests').select('id,full_name,phone').eq('organization_id', S.org).order('full_name').limit(1000);
+  const G = guests || [];
+  const st = { ci: pre.walkin ? today() : (pre.check_in || today()), co: pre.check_out || addDays(pre.walkin ? today() : (pre.check_in || today()), 1), adults: pre.adults || 2, room: pre.room_id || null,
+    rate: null, disc: 0, rateNote: '', gid: '', name: '', phone: '', src: pre.walkin ? 'walk_in' : 'telephone', notes: '', dep: 0, depM: 'cash', depR: '', busy: new Set(), more: false, depOpen: false, rateKey: '' };
+  const nights = () => Math.max(0, Math.round((new Date(st.co) - new Date(st.ci)) / 864e5));
+  const roomOf = (id) => S.rooms.find(r => r.id === id);
+  const total = () => Math.max(0, nights() * (+st.rate || 0) - (+st.disc || 0));
+  const usable = (r) => !st.busy.has(r.id) && r.housekeeping_status !== 'out_of_service';
+  const rank = (r) => (r.capacity && r.capacity < st.adults ? 2 : 0) + (['dirty', 'cleaning'].includes(r.housekeeping_status) ? 1 : 0);
+  const freeRooms = () => S.rooms.filter(usable).sort((a, b) => rank(a) - rank(b) || (a.base_rate || 0) - (b.base_rate || 0) || String(a.number).localeCompare(String(b.number), 'fr', { numeric: true }));
+  const loadBusy = async () => { const { data } = await sb.from('reservations').select('id,room_id').eq('establishment_id', S.est).not('status', 'in', '(cancelled,no_show,checked_out)').lt('check_in', st.co).gt('check_out', st.ci);
+    st.busy = new Set((data || []).map(x => x.room_id)); };
+  const price = async () => { if (!st.room || nights() < 1) return; const key = st.room + '|' + st.ci + '|' + st.co; if (st.rateKey === key) return; st.rateKey = key; st.rateNote = ''; st.disc = 0;
+    st.rate = roomOf(st.room).base_rate || 0;
+    try { const { data } = await sb.rpc('stay_price', { p_room: st.room, p_in: st.ci, p_out: st.co });
+      if (data && data.adjusted) { st.rate = Number(data.rate); st.disc = Number(data.rounding) || 0; st.rateNote = 'Tarif automatique appliqué'; } } catch (_) {} };
+  const pickRoom = () => { const f = freeRooms(); if (!st.room || !f.some(r => r.id === st.room)) st.room = f.length ? f[0].id : null; };
+  const refreshAvail = async () => { if (nights() < 1) { draw(); return; } await loadBusy(); pickRoom(); await price(); draw(); };
+  const save = () => { const v = (id) => $(id) ? $(id).value : undefined;
+    if ($('qPh')) st.phone = v('qPh'); if ($('qNm')) st.name = v('qNm'); if ($('qRt')) st.rate = +v('qRt') || 0; if ($('qDs')) st.disc = +v('qDs') || 0;
+    if ($('qSr')) st.src = v('qSr'); if ($('qNo')) st.notes = v('qNo'); if ($('qDp')) st.dep = +v('qDp') || 0; if ($('qDm')) st.depM = v('qDm'); if ($('qDr')) st.depR = v('qDr'); };
+  modal('<div id="qz"></div>'); $('modalBody').style.maxWidth = '620px';
+  const draw = () => {
+    const n = nights(), f = freeRooms(), rm = roomOf(st.room), known = st.gid ? G.find(g => g.id === st.gid) : null, momo = MOMO.includes(st.depM);
+    $('qz').innerHTML = `<div class="row between" style="margin-bottom:6px"><h2 style="font-size:24px">${pre.walkin ? 'Walk-in' : 'Nouvelle réservation'}</h2><button class="small ghost" data-close aria-label="Fermer">✕</button></div>
+      <form id="qForm" novalidate>
+      <div class="row" style="gap:10px"><div class="field" style="flex:1 1 140px;margin-bottom:8px"><label for="qIn">Arrivée</label><input id="qIn" type="date" value="${st.ci}" ${pre.walkin ? 'readonly' : ''}></div>
+        <div class="field" style="flex:1 1 140px;margin-bottom:8px"><label for="qOut">Départ</label><input id="qOut" type="date" value="${st.co}" min="${addDays(st.ci, 1)}"></div>
+        <div class="field" style="flex:0 1 96px;margin-bottom:8px"><label for="qAd">Personnes</label><input id="qAd" type="number" min="1" inputmode="numeric" value="${st.adults}"></div></div>
+      <div class="row" style="gap:6px;margin-bottom:14px">${[1, 2, 3, 7].map(d => `<button type="button" class="small ${n === d ? 'primary' : 'ghost'}" data-nn="${d}">${d === 7 ? '1 semaine' : plur(d, 'nuit', 'nuits')}</button>`).join('')}</div>
+      <div class="field"><label for="qRm">Chambre ${n > 0 ? `<span class="muted" style="font-weight:500">· ${plur(f.length, 'libre', 'libres')} sur ces dates</span>` : ''}</label>
+        ${n < 1 ? '<p style="color:var(--red);font-weight:600;margin:0">La date de départ doit suivre la date d’arrivée.</p>' : f.length ? `<select id="qRm">${f.map(r => `<option value="${r.id}" ${r.id === st.room ? 'selected' : ''}>${esc(r.number)}${r.room_type ? ' · ' + esc(r.room_type) : ''} · ${money(r.base_rate || 0)} / nuit${r.capacity && r.capacity < st.adults ? ' · prévue pour ' + plur(r.capacity, 'personne', 'personnes') : ''}${['dirty', 'cleaning'].includes(r.housekeeping_status) ? ' · à nettoyer' : ''}</option>`).join('')}</select>` : '<p style="color:var(--red);font-weight:600;margin:0">Aucune chambre libre sur ces dates : changez les dates.</p>'}</div>
+      <div class="row" style="gap:10px"><div class="field" style="flex:1 1 180px"><label for="qPh">Téléphone du client</label><input id="qPh" type="tel" inputmode="tel" autocomplete="off" value="${esc(st.phone)}" placeholder="07 07 00 00 01"></div>
+        <div class="field" style="flex:1 1 200px"><label for="qNm">Nom du client</label><input id="qNm" autocomplete="off" value="${esc(known ? known.full_name : st.name)}" ${known ? 'readonly' : ''} list="qGl"><datalist id="qGl">${G.slice(0, 300).map(g => `<option value="${esc(g.full_name)}">${esc(g.phone || '')}</option>`).join('')}</datalist></div></div>
+      ${known ? `<p class="muted" style="margin:-8px 0 12px;font-size:13px">Client déjà venu : sa fiche est reprise. <a href="#" id="qNew">Autre client</a></p>` : ''}
+      <div style="border-radius:14px;background:var(--bg);padding:12px 14px;margin-bottom:12px">
+        <div class="row between" style="font-size:14px"><span>${rm ? 'Chambre ' + esc(rm.number) + ' · ' : ''}${plur(n, 'nuit', 'nuits')} × ${money(st.rate || 0)}${st.disc ? ' − ' + money(st.disc) : ''}</span><strong style="font-size:20px">${money(total())}</strong></div>
+        ${st.rateNote ? `<div class="muted" style="font-size:12px;margin-top:2px">${esc(st.rateNote)}</div>` : ''}
+        ${st.depOpen ? `<div class="row" style="gap:10px;margin-top:10px"><div class="field" style="flex:1 1 110px;margin:0"><label for="qDp">Acompte (F)</label><input id="qDp" type="number" min="0" inputmode="numeric" value="${st.dep || ''}"></div>
+          <div class="field" style="flex:1 1 130px;margin:0"><label for="qDm">Moyen</label><select id="qDm">${opt(PMETHOD, st.depM)}</select></div>
+          ${momo ? `<div class="field" style="flex:1 1 140px;margin:0"><label for="qDr">N° de transaction</label><input id="qDr" value="${esc(st.depR)}"></div>` : ''}</div>
+          ${st.dep > 0 ? `<div class="row between" style="font-size:14px;margin-top:8px"><span>Reste à payer</span><strong>${money(Math.max(0, total() - st.dep))}</strong></div>` : ''}`
+        : `<button type="button" class="small ghost" id="qDepB" style="margin-top:8px">+ Acompte reçu</button>`}
+      </div>
+      <details id="qMore" ${st.more ? 'open' : ''} style="margin-bottom:12px"><summary style="cursor:pointer;font-weight:600;font-size:14px;min-height:32px">Plus d’options : prix, remise, origine, notes</summary>
+        <div class="row" style="gap:10px;margin-top:10px"><div class="field" style="flex:1 1 110px"><label for="qRt">Prix / nuit (F)</label><input id="qRt" type="number" min="0" value="${st.rate ?? ''}"></div>
+          <div class="field" style="flex:1 1 110px"><label for="qDs">Remise (F)</label><input id="qDs" type="number" min="0" value="${st.disc || 0}"></div>
+          <div class="field" style="flex:1 1 130px"><label for="qSr">Origine</label><select id="qSr">${opt(SOURCE, st.src)}</select></div></div>
+        <div class="field"><label for="qNo">Notes</label><input id="qNo" value="${esc(st.notes)}" placeholder="Heure d’arrivée, demande particulière…"></div>
+      </details>
+      <button class="primary" id="qGo" style="width:100%;min-height:50px;font-size:16px" ${n < 1 || !f.length ? 'disabled' : ''}>${pre.walkin ? 'Créer et faire le check-in' : 'Créer la réservation'} · ${money(total())}</button>
+      <p style="text-align:center;margin:10px 0 0;font-size:13px"><a href="#" id="qFull">Choisir la chambre sur photos</a></p>
+      </form>`;
+    bind();
+  };
+  const bind = () => {
+    const v = (id) => $(id) && $(id).value;
+    $('qIn').onchange = () => { save(); st.ci = v('qIn'); if (st.co <= st.ci) st.co = addDays(st.ci, 1); refreshAvail(); };
+    $('qOut').onchange = () => { save(); st.co = v('qOut'); refreshAvail(); };
+    $('qAd').onchange = () => { save(); st.adults = Math.max(1, +v('qAd') || 1); pickRoom(); draw(); };
+    document.querySelectorAll('[data-nn]').forEach(b => b.onclick = () => { save(); st.co = addDays(st.ci, +b.dataset.nn); refreshAvail(); });
+    const rm = $('qRm'); if (rm) rm.onchange = async () => { save(); st.room = rm.value; await price(); draw(); };
+    const ph = $('qPh'); ph.oninput = () => { const d = ph.value.replace(/\D/g, ''); st.phone = ph.value;
+      const g = d.length >= 8 ? G.find(x => (x.phone || '').replace(/\D/g, '').endsWith(d.slice(-8))) : null;
+      if (g && st.gid !== g.id) { save(); st.gid = g.id; st.name = g.full_name; draw(); const p = $('qPh'); p.focus(); p.setSelectionRange(p.value.length, p.value.length); } };
+    const nm = $('qNm'); nm.onchange = () => { if (st.gid) return; const g = G.find(x => x.full_name.toLowerCase() === nm.value.trim().toLowerCase()); st.name = nm.value; if (g) { save(); st.gid = g.id; st.phone = g.phone || st.phone; draw(); } };
+    const nw = $('qNew'); if (nw) nw.onclick = (e) => { e.preventDefault(); save(); st.gid = ''; st.name = ''; draw(); $('qNm').focus(); };
+    const db = $('qDepB'); if (db) db.onclick = () => { save(); st.depOpen = true; draw(); $('qDp').focus(); };
+    ['qDp', 'qDm', 'qRt', 'qDs'].forEach(id => { const x = $(id); if (x) x.onchange = () => { save(); draw(); }; });
+    $('qMore').ontoggle = () => { st.more = $('qMore').open; };
+    $('qFull').onclick = (e) => { e.preventDefault(); save(); openResaForm({ ...pre, check_in: st.ci, check_out: st.co, adults: st.adults, room_id: st.room, guest_name: st.name, guest_phone: st.phone, full: true }, refresh); };
+    $('qForm').onsubmit = (e) => { e.preventDefault(); create(); };
+  };
+  const create = async () => {
+    save();
+    const btn = $('qGo'); btn.disabled = true;
+    try {
+      if (nights() < 1) throw new Error('La date de départ doit suivre la date d’arrivée.');
+      if (!st.room) throw new Error('Aucune chambre libre sur ces dates.');
+      let gid = st.gid || null;
+      if (!gid) { const nm = (st.name || '').trim(); if (nm.length < 2) { $('qNm').focus(); throw new Error('Indiquez le nom du client.'); }
+        const g = await sb.from('guests').insert({ organization_id: S.org, full_name: nm, phone: (st.phone || '').trim() || null }).select('id').single(); if (g.error) throw g.error; gid = g.data.id; }
+      if (st.dep > 0 && MOMO.includes(st.depM) && (st.depR || '').trim().length < 4) throw new Error('Saisissez le numéro de transaction Mobile Money de l’acompte.');
+      if (st.dep > total()) throw new Error('L’acompte dépasse le total du séjour.');
+      const row = { establishment_id: S.est, room_id: st.room, guest_id: gid, guest_name: '-', check_in: st.ci, check_out: st.co, nightly_rate: +st.rate || 0, discount: +st.disc || 0, adults: +st.adults || 1, source: st.src, notes: (st.notes || '').trim() || null, status: 'confirmed', created_by: S.session.user.id };
+      const res = await sb.from('reservations').insert(row).select('id').single();
+      if (res.error) { if ((res.error.message || '').includes('no_double_booking')) { st.rateKey = ''; await refreshAvail(); throw new Error('Cette chambre vient d’être réservée : une autre chambre libre vous est proposée.'); } throw res.error; }
+      const id = res.data.id; let depErr = null;
+      if (pre.walkin) { const c = await sb.rpc('check_in_reservation', { p_reservation: id }); if (c.error) throw c.error; }
+      if (st.dep > 0) { const p = await sb.from('cash_movements').insert({ establishment_id: S.est, reservation_id: id, kind: 'payment', method: st.depM, amount: st.dep, label: 'Acompte', reference: (st.depR || '').trim() || null, payment_group: crypto.randomUUID() }); depErr = p.error; }
+      refresh && refresh();
+      const { data: r } = await sb.from('reservation_balances').select('*').eq('id', id).maybeSingle();
+      const ph = r && waPhone(r.guest_phone);
+      nextStep(pre.walkin ? 'Client enregistré en chambre' : 'Réservation créée',
+        `${esc(r ? r.guest_name : '')} · chambre ${esc(r ? r.room_number : '')} · ${dfr(st.ci)} → ${dfr(st.co)} · ${money(r ? r.total_amount : total())}.${depErr ? `<br><span style="color:var(--red)">L’acompte n’a pas été enregistré : ${esc(errMsg(depErr))}</span>` : ''} ${r && r.balance > 0 ? `Reste à payer : <strong>${money(r.balance)}</strong>.` : ''}`,
+        [...(ph && !pre.walkin ? [{ label: 'Envoyer la confirmation WhatsApp', href: `https://wa.me/${ph}?text=${encodeURIComponent(waConfirmText(r))}` }] : []), { label: 'Ouvrir la réservation', fn: () => openResa(id, refresh) }, { label: 'Nouvelle réservation', fn: () => openQuickResa({}, refresh) }]);
+    } catch (err) { const b = $('qGo'); if (b) b.disabled = false; toast(errMsg(err), true); }
+  };
+  await loadBusy(); pickRoom(); await price(); draw();
+  setTimeout(() => { const p = $('qPh'); if (p) p.focus(); }, 40);
+}
 async function openResaForm(pre, refresh){
+  if (!pre.id && !pre.full) return openQuickResa(pre, refresh);
   if (!S.rooms.length) await loadEst();
   if (!S.rooms.length) return toast('Ajoutez d’abord des chambres.', true);
   const [{ data: guests }, { data: extra }, { data: orgS }] = await Promise.all([

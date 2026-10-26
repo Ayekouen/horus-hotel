@@ -617,10 +617,34 @@ html[data-theme="foret"] .auth{background:radial-gradient(900px 500px at 15% -10
 .pmove.pdragging{cursor:grabbing;z-index:5;box-shadow:0 8px 20px rgba(0,0,0,.18);opacity:.95;transition:none}
 .pgrip{position:absolute;right:0;top:0;bottom:0;width:12px;cursor:ew-resize;border-left:2px solid rgba(0,0,0,.12);border-radius:0 8px 8px 0}
 body.adminonly #estSwitch{display:none!important}
+html nav.side [data-view="passes"]{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='13' r='8'/%3E%3Cpath d='M12 9v4l2 2M9 2h6'/%3E%3C/svg%3E")}
 html nav.side [data-view="naya"]{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20'/%3E%3C/svg%3E")}
+
+/* Écran de démarrage, squelettes de chargement, barre de progression réseau */
+#boot{position:fixed;inset:0;z-index:90;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;background:var(--bg,#F6F8F7);transition:opacity .25s}
+#boot.out{opacity:0;pointer-events:none}
+#boot .bl{width:72px;height:72px;border-radius:20px;background:#1F5C4A;display:grid;place-items:center;box-shadow:0 10px 30px rgba(31,92,74,.25);animation:bootp 1.4s ease-in-out infinite}
+#boot .bt{font-weight:800;font-size:20px;letter-spacing:-.01em;color:var(--ink,#1C2B26)}
+#boot .bb{width:140px;height:4px;border-radius:99px;background:rgba(31,92,74,.15);overflow:hidden}
+#boot .bb i{display:block;width:40%;height:100%;border-radius:99px;background:#1F5C4A;animation:bootb 1.1s ease-in-out infinite}
+#boot .bm{font-size:13px;color:var(--muted,#5E6E68);min-height:18px}
+@keyframes bootp{50%{transform:scale(.94)}}
+@keyframes bootb{0%{transform:translateX(-100%)}100%{transform:translateX(260%)}}
+.sk{position:relative;overflow:hidden;background:var(--line,#E4EAE7);border-radius:12px}
+.sk::after{content:"";position:absolute;inset:0;transform:translateX(-100%);background:linear-gradient(90deg,transparent,rgba(255,255,255,.55),transparent);animation:skw 1.3s infinite}
+@keyframes skw{100%{transform:translateX(100%)}}
+.skv{display:flex;flex-direction:column;gap:14px}
+#netBar{position:fixed;top:0;left:0;right:0;height:3px;z-index:95;pointer-events:none;opacity:0;transition:opacity .2s}
+#netBar.on{opacity:1}
+#netBar::before{content:"";position:absolute;top:0;bottom:0;width:30%;background:var(--green,#1F5C4A);border-radius:0 3px 3px 0;animation:netb 1s ease-in-out infinite}
+@keyframes netb{0%{left:-30%}100%{left:100%}}
+.cachedtag{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:#9A5B00;background:#FFF4E0;border-radius:99px;padding:3px 10px;margin-bottom:10px}
+@media (prefers-reduced-motion:reduce){#boot .bl,#boot .bb i,.sk::after,#netBar::before{animation:none}}
 </style>
 </head>
 <body>
+<div id="boot" role="status" aria-live="polite"><div class="bl"><svg width="44" height="44" viewBox="7 7 26 26" aria-hidden="true"><path d="M9 20c4-5 18-5 22 0-4 5-18 5-22 0z" fill="none" stroke="#fff" stroke-width="2.4" stroke-linejoin="round"/><circle cx="20" cy="20" r="3.2" fill="#C9894B"/></svg></div><div class="bt">Horus Hotel</div><div class="bb"><i></i></div><div class="bm" id="bootMsg">Chargement de votre établissement…</div></div>
+<div id="netBar" aria-hidden="true"></div>
 
 <main id="auth" class="auth hidden">
   <div class="card">
@@ -681,6 +705,7 @@ html nav.side [data-view="naya"]{--ic:url("data:image/svg+xml,%3Csvg xmlns='http
     <div class="ngroup" data-group="heberg"><button type="button" class="ghead" aria-expanded="true"> Hébergement</button>
       <button data-view="reservations" class="ess">Réservations</button>
       <button data-view="planning" class="ess">Planning</button>
+      <button data-view="passes" class="ess">Passes</button>
       <button data-view="chambres" class="ess">Chambres</button>
       <button data-view="naya" class="ess">NAYA · en ligne</button>
       <button data-view="clients">Clients</button>
@@ -765,6 +790,7 @@ html nav.side [data-view="naya"]{--ic:url("data:image/svg+xml,%3Csvg xmlns='http
     <section id="v-chambres" class="hidden"></section>
     <section id="v-admin" class="hidden"></section>
     <section id="v-naya" class="hidden"></section>
+    <section id="v-passes" class="hidden"></section>
   </main>
   </div>
 </div>
@@ -784,10 +810,31 @@ const authStore = {
   setItem(k, v){ try { const a = this.area(); (a === localStorage ? sessionStorage : localStorage).removeItem(k); a && a.setItem(k, v); } catch (_) {} },
   removeItem(k){ try { localStorage.removeItem(k); sessionStorage.removeItem(k); } catch (_) {} }
 };
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, storage: authStore } });
+/* ---------- Réseau : barre de progression + mode hors connexion (lecture des dernières données) ---------- */
+const NET = { n: 0, cachedAt: null };
+const READ_RPC = /\/rpc\/(is_platform_admin|get_subscription_overview|admin_platform_stats|admin_orgs_overview|admin_naya_overview|financial_report|daily_report|org_team|org_team_v2|business_analytics|pos_summary|my_invitations|stay_price|public_directory|public_reviews|public_get_establishment|public_quote)\b/;
+const DATA_CACHE = 'horus-data-v1';
+function netBarSet(){ const b = document.getElementById('netBar'); if (b) b.classList.toggle('on', NET.n > 0); }
+function cacheUser(){ try { const raw = localStorage.getItem(Object.keys(localStorage).find(k => /^sb-.*-auth-token$/.test(k)) || '') || sessionStorage.getItem(Object.keys(sessionStorage).find(k => /^sb-.*-auth-token$/.test(k)) || ''); const j = raw && JSON.parse(raw); return (j && j.user && j.user.id) || 'anon'; } catch (_) { return 'anon'; } }
+async function dataKey(url, body){ const raw = url + '|' + (body || ''); let h = raw; try { const d = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(raw)); h = [...new Uint8Array(d)].map(x => x.toString(16).padStart(2, '0')).join(''); } catch (_) {} return `https://cache.horus.local/${cacheUser()}/${h}`; }
+async function hhFetch(input, init = {}){
+  const url = typeof input === 'string' ? input : input.url, method = String(init.method || (input && input.method) || 'GET').toUpperCase();
+  const rest = url.includes('/rest/v1/'), cacheable = rest && 'caches' in window && (method === 'GET' || (method === 'POST' && READ_RPC.test(url)));
+  NET.n++; netBarSet();
+  try {
+    const r = await fetch(input, init);
+    if (cacheable && r.ok) { const k = await dataKey(url, method === 'POST' ? init.body : ''); const c = r.clone(); const h = new Headers(c.headers); h.set('x-horus-cached-at', new Date().toISOString()); c.blob().then(b => caches.open(DATA_CACHE).then(cc => cc.put(k, new Response(b, { status: c.status, headers: h })))).catch(() => {}); NET.cachedAt = null; }
+    return r;
+  } catch (e) {
+    if (cacheable) { try { const m = await (await caches.open(DATA_CACHE)).match(await dataKey(url, method === 'POST' ? init.body : '')); if (m) { NET.cachedAt = m.headers.get('x-horus-cached-at'); if (typeof offBar === 'function') setTimeout(offBar, 0); return m; } } catch (_) {} }
+    throw e;
+  } finally { NET.n--; netBarSet(); }
+}
+async function clearDataCache(){ try { await caches.delete(DATA_CACHE); } catch (_) {} }
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { global: { fetch: hhFetch }, auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, storage: authStore } });
 
 const S = { session:null, member:null, org:null, overview:null, plans:[], providers:[], isAdmin:false, cycle:'monthly', view:'dashboard', signup:false, est:null, ests:[], rooms:[] };
-const VIEWS = ['naya','inventaire','pointage','resto','rapports','controle','equipe','mapage','dashboard','reservations','planning','clients','caisse','depenses','factures','tarifs','abonnement','chambres','admin'];
+const VIEWS = ['naya','passes','inventaire','pointage','resto','rapports','controle','equipe','mapage','dashboard','reservations','planning','clients','caisse','depenses','factures','tarifs','abonnement','chambres','admin'];
 const $ = (id) => document.getElementById(id);
 const esc = (v) => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fcfa = (n) => n == null ? '—' : new Intl.NumberFormat('fr-FR').format(n).replace(/ | /g,' ') + ' FCFA';
@@ -799,11 +846,20 @@ const METHOD = { orange_money:'Orange Money', mtn_money:'MTN MoMo', moov_money:'
 const FEAT = { notifications:'Notifications', daily_summary:'Résumé quotidien au propriétaire (bientôt)', whatsapp_auto:'Messages WhatsApp automatiques (bientôt)', seasonal_rates:'Tarifs par saison (bientôt)', extra_services:'Services en plus : petit-déjeuner, linge… (bientôt)', online_booking:'Page de présentation & réservation en ligne', owner_control:'Contrôle propriétaire & alertes', multi_property:'Plusieurs établissements', priority_support:'Support prioritaire', training:'Installation & formation', reception:'Réception & planning', reservations:'Réservations', clients:'Fiches clients', billing:'Facturation', payments:'Encaissements', cash:'Caisse', housekeeping:'Housekeeping', expenses:'Dépenses', basic_reports:'Rapports de base', users:'Utilisateurs', pdf_export:'Export PDF', advanced_reservations:'Réservations avancées', rates:'Tarifs', promotions:'Promotions', services:'Services', advanced_housekeeping:'Housekeeping avancé', maintenance:'Maintenance', financial_reports:'Rapports financiers', occupancy_stats:"Statistiques d'occupation", full_history:'Historique complet', excel_export:'Export Excel', user_permissions:'Permissions utilisateurs', notifications:'Notifications', restaurant:'Restaurant', bar:'Bar', orders:'Commandes', room_charge_transfer:'Transfert sur chambre', inventory:'Stocks', suppliers:'Fournisseurs', staff:'Personnel', groups:'Groupes', accounting:'Comptabilité simplifiée', advanced_dashboard:'Dashboard avancé', adr_revpar:'ADR & RevPAR', revenue_by_service:'CA par service', online_booking:'Réservation en ligne', online_payment:'Paiement en ligne', whatsapp_sms:'WhatsApp / SMS', api:'API', channel_manager:'Channel Manager', ota:'Connexion OTA', dynamic_pricing:'Tarification dynamique', revenue_management:'Revenue Management', advanced_crm:'CRM avancé', loyalty:'Fidélité', advanced_promotions:'Promotions avancées', whatsapp_automation:'Automatisation WhatsApp', custom_reports:'Rapports personnalisables', ai_assistant:'Assistant IA', smart_alerts:'Alertes intelligentes', advanced_api:'API avancée', full_audit:'Audit complet', multi_property:'Multi-établissements', multi_city:'Multi-villes', central_admin:'Administration centralisée', hotel_groups:'Groupes hôteliers', financial_consolidation:'Consolidation financière', national_dashboard:'Dashboard national', advanced_permissions:'Permissions avancées', custom_api:'API personnalisée', custom_integrations:'Intégrations spécifiques', data_migration:'Migration des données', training:'Formation', priority_support:'Support prioritaire' };
 
 function toast(msg, err=false){ const t=$('toast'); t.textContent=msg; t.className='toast'+(err?' err':''); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.add('hidden'), 5000); }
-function errMsg(e){ const m = (e && (e.message || e.error_description)) || 'Une erreur est survenue.'; return /momo_ref/.test(m) ? 'Saisissez le numéro de transaction Mobile Money (4 caractères minimum).' : m; }
+function errMsg(e){ const m = (e && (e.message || e.error_description)) || 'Une erreur est survenue.'; if (typeof isNetErr === 'function' && isNetErr(e)) return 'Hors connexion : cette action sera possible dès le retour du réseau. Vous pouvez continuer à consulter vos données.'; return /momo_ref/.test(m) ? 'Saisissez le numéro de transaction Mobile Money (4 caractères minimum).' : m; }
 function modal(html){ $('modalBody').style.maxWidth = ''; $('modalBody').innerHTML = html; $('modal').classList.remove('hidden'); $('modalBody').scrollTop = 0; document.body.classList.add('modal-open'); }
 function closeModal(){ if ($('modal').dataset.locked) return; $('modal').classList.add('hidden'); document.body.classList.remove('modal-open'); }
 $('modal').addEventListener('click', e => { if (e.target.id === 'modal' || e.target.closest('[data-close]')) closeModal(); });
-function show(id){ ['auth','onboard','app','public'].forEach(x => $(x).classList.toggle('hidden', x !== id)); }
+function skeletonView(kind){
+  const bar = (w, h = 14) => `<div class="sk" style="width:${w};height:${h}px"></div>`;
+  const cards = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px">${'<div class="sk" style="height:92px;border-radius:16px"></div>'.repeat(4)}</div>`;
+  const rows = `<div class="card" style="display:flex;flex-direction:column;gap:12px">${[1, 2, 3, 4, 5].map(i => `<div style="display:flex;gap:12px;align-items:center"><div class="sk" style="width:38px;height:38px;border-radius:10px;flex-shrink:0"></div><div style="flex:1;display:flex;flex-direction:column;gap:7px">${bar((70 - i * 6) + '%')}${bar((40 + i * 5) + '%', 10)}</div></div>`).join('')}</div>`;
+  return `<div class="skv" aria-busy="true" aria-label="Chargement">${bar('220px', 30)}${kind === 'rows' ? '' : cards}${rows}</div>`;
+}
+function show(id){ ['auth','onboard','app','public'].forEach(x => $(x).classList.toggle('hidden', x !== id)); bootDone(); }
+function bootDone(){ const b = $('boot'); if (b && !b.classList.contains('out')) { b.classList.add('out'); setTimeout(() => b.remove(), 300); } }
+setTimeout(() => { const m = $('bootMsg'); if (m && $('boot')) m.textContent = navigator.onLine ? 'Connexion lente, merci de patienter…' : 'Hors connexion : ouverture avec les données de cet appareil…'; }, 4000);
+setTimeout(bootDone, 15000);
 
 
 /* ---------- Installation de l'application ---------- */
@@ -827,7 +883,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.10.26-18';
+const APP_VERSION = '2026.10.26-19';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -1149,7 +1205,7 @@ $('authForm').addEventListener('submit', async e => {
   } catch (err) { toast(err.message === 'Invalid login credentials' ? 'Identifiants incorrects.' : errMsg(err), true); }
   finally { btn.disabled = false; }
 });
-document.addEventListener('click', async e => { if (e.target.closest('[data-logout]')) { e.preventDefault(); delete $('modal').dataset.locked; closeModal(); await sb.auth.signOut(); } });
+document.addEventListener('click', async e => { if (e.target.closest('[data-logout]')) { e.preventDefault(); delete $('modal').dataset.locked; closeModal(); await clearDataCache(); await sb.auth.signOut(); } });
 
 $('onboardAdmin').addEventListener('click', e => { e.preventDefault(); S.view = 'admin'; boot(); });
 $('onboardForm').addEventListener('submit', async e => {
@@ -1379,8 +1435,8 @@ $('navPrn').onclick = () => openPrinterSetup('caisse');
 
 const ROLE_VIEWS = {
   owner: null, admin: null,
-  manager: ['dashboard','reservations','planning','naya','clients','chambres','inventaire','pointage','caisse','resto','depenses','factures','rapports','mapage'],
-  receptionist: ['dashboard','reservations','planning','naya','clients','chambres','inventaire','caisse','resto','factures'],
+  manager: ['dashboard','reservations','planning','naya','passes','clients','chambres','inventaire','pointage','caisse','resto','depenses','factures','rapports','mapage'],
+  receptionist: ['dashboard','reservations','planning','naya','passes','clients','chambres','inventaire','caisse','resto','factures'],
   accountant: ['dashboard','reservations','pointage','caisse','resto','depenses','factures','rapports'],
   housekeeping: ['chambres','inventaire'],
   staff: ['resto','dashboard','planning']
@@ -1462,7 +1518,7 @@ function go(view){
   if (typeof syncTabbar === 'function') syncTabbar();
   window.scrollTo(0, 0);
   if (lockedView(view)) return renderLocked(view);
-  ({ naya: renderNaya, inventaire: renderInventaire, pointage: renderPointage, resto: renderResto, rapports: renderRapports, controle: renderControle, equipe: renderEquipe, mapage: renderMaPage, dashboard: renderDashboard, reservations: renderReservations, planning: renderPlanning, clients: renderClients, caisse: renderCaisse, depenses: renderDepenses, factures: renderFactures, tarifs: renderTarifs, abonnement: renderAbonnement, chambres: renderChambres, admin: renderAdmin })[view]();
+  ({ naya: renderNaya, passes: renderPasses, inventaire: renderInventaire, pointage: renderPointage, resto: renderResto, rapports: renderRapports, controle: renderControle, equipe: renderEquipe, mapage: renderMaPage, dashboard: renderDashboard, reservations: renderReservations, planning: renderPlanning, clients: renderClients, caisse: renderCaisse, depenses: renderDepenses, factures: renderFactures, tarifs: renderTarifs, abonnement: renderAbonnement, chambres: renderChambres, admin: renderAdmin })[view]();
 }
 
 /* ---------- Tarifs ---------- */
@@ -1540,7 +1596,7 @@ function openCheckout(slug, cycle){
 
 /* ---------- Mon abonnement ---------- */
 async function renderAbonnement(){
-  const el = $('v-abonnement'); el.innerHTML = '<p class="muted">Chargement…</p>';
+  const el = $('v-abonnement'); el.innerHTML = skeletonView();
   await loadCommon();
   const o = S.overview; if (!o) { el.innerHTML = '<p class="muted">Abonnement introuvable.</p>'; return; }
   const canPay = ['owner','admin','accountant'].includes(S.member.role);
@@ -1624,7 +1680,7 @@ async function uploadRoomPhoto(file, roomKey){
   return sb.storage.from('public-media').getPublicUrl(path).data.publicUrl;
 }
 async function renderChambres(){
-  const el = $('v-chambres'); el.innerHTML = '<p class="muted">Chargement…</p>';
+  const el = $('v-chambres'); el.innerHTML = skeletonView();
   await loadEst();
   const { data: all } = await sb.from('rooms').select('*').eq('establishment_id', S.est).order('number');
   const rooms = (all || []).sort(natSort);
@@ -1743,7 +1799,7 @@ function admFlag(c){
   return ['OK', 'st-active'];
 }
 async function renderAdmin(){
-  const el = $('v-admin'); el.innerHTML = '<p class="muted">Chargement…</p>';
+  const el = $('v-admin'); el.innerHTML = skeletonView();
   const tab = S._admTab || 'apercu';
   const [st, orgs, pend, plans, naya] = await Promise.all([
     sb.rpc('admin_platform_stats'), sb.rpc('admin_orgs_overview'),
@@ -1986,7 +2042,7 @@ function upgradeBtn(){
   return `<button data-go="tarifs" style="background:linear-gradient(135deg,#E9A27A,var(--green));border:0;color:#fff;display:inline-flex;align-items:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"></path></svg>${trial ? 'Choisir ma formule' : 'Passer à ' + esc(next.name)}</button>`;
 }
 async function renderDashboard(){
-  const el = $('v-dashboard'); el.innerHTML = '<p class="muted">Chargement…</p>';
+  const el = $('v-dashboard'); el.innerHTML = skeletonView();
   await loadEst();
   const t = today(), t7 = addDays(t, 7);
   const [resas, pay, pend] = await Promise.all([
@@ -2176,7 +2232,7 @@ function waConfirmText(r){
 }
 
 async function renderReservations(){
-  const el = $('v-reservations'); el.innerHTML = '<p class="muted">Chargement…</p>';
+  const el = $('v-reservations'); el.innerHTML = skeletonView();
   await loadEst();
   const t = today();
   const f = S._rf || { tab: 'today', q: '', unpaid: false }; S._rf = f;
@@ -2270,7 +2326,7 @@ async function recordDeposit(resaId, amount, method, ref, refresh){
 const NAYA_URL = 'https://naya-ci.netlify.app';
 const openNaya = () => go('naya');
 async function renderNaya(){
-  const el = $('v-naya'); el.innerHTML = '<p class="muted">Chargement…</p>';
+  const el = $('v-naya'); el.innerHTML = skeletonView();
   const owner = can(['owner','admin']);
   const est = S.ests.find(x => x.id === S.est) || {};
   const m0 = new Date(); const mStart = `${m0.getFullYear()}-${String(m0.getMonth() + 1).padStart(2, '0')}-01`;
@@ -2638,7 +2694,7 @@ function printGuestInvoice(i){
 
 /* ---------- Planning ---------- */
 async function renderPlanning(){
-  const el = $('v-planning'); el.innerHTML = '<p class="muted">Chargement…</p>';
+  const el = $('v-planning'); el.innerHTML = skeletonView();
   await loadEst();
   const start = S._ps || addDays(today(), -1), days = 14, end = addDays(start, days);
   const { data } = await sb.from('reservations').select('id,room_id,guest_name,check_in,check_out,status').eq('establishment_id', S.est).not('status', 'in', '(cancelled,no_show)').lt('check_in', end).gt('check_out', start);
@@ -2729,7 +2785,7 @@ function planningDrag(el, RES, start, cell){
 
 /* ---------- Clients ---------- */
 async function renderClients(){
-  const el = $('v-clients'); el.innerHTML = '<p class="muted">Chargement…</p>';
+  const el = $('v-clients'); el.innerHTML = skeletonView();
   const { data } = await sb.from('guests').select('*').eq('organization_id', S.org).order('full_name').limit(1000);
   const q = (S._cq || '').toLowerCase();
   const rows = (data || []).filter(g => !q || (g.full_name + ' ' + (g.phone || '') + ' ' + (g.email || '')).toLowerCase().includes(q));
@@ -2813,7 +2869,7 @@ async function expenseThreshold(){
 }
 
 async function renderCaisse(){
-  const el = $('v-caisse'); el.innerHTML = '<p class="muted">Chargement…</p>';
+  const el = $('v-caisse'); el.innerHTML = skeletonView();
   if (!can(['owner','admin','manager','receptionist','accountant'])) { el.innerHTML = head('Caisse') + '<p class="muted">Accès réservé.</p>'; return; }
   await loadEst(); await teamNames();
   const { data: sess } = await sb.from('cash_sessions').select('*').eq('establishment_id', S.est).eq('status', 'open').maybeSingle();
@@ -3161,7 +3217,7 @@ async function openExpenseForm({ fromCaisse = false, due = null, onDone }){
 }
 
 async function renderDepenses(){
-  const el = $('v-depenses'); el.innerHTML = '<p class="muted">Chargement…</p>';
+  const el = $('v-depenses'); el.innerHTML = skeletonView();
   if (!can(['owner','admin','manager','accountant'])) { el.innerHTML = head('Dépenses') + '<p class="muted">Accès réservé.</p>'; return; }
   await loadEst(); await teamNames();
   const month = S.depMonth || today().slice(0, 7); S.depMonth = month;
@@ -3273,7 +3329,7 @@ async function renderDepenses(){
 
 /* ---------- Factures clients ---------- */
 async function renderFactures(){
-  const el = $('v-factures'); el.innerHTML = '<p class="muted">Chargement…</p>';
+  const el = $('v-factures'); el.innerHTML = skeletonView();
   await loadEst();
   const { data } = await sb.from('guest_invoices').select('*').eq('organization_id', S.org).order('issued_at', { ascending: false }).limit(300);
   S._ginv = data || [];
@@ -3388,7 +3444,7 @@ async function refreshAlertBadge(){
   b.textContent = count > 99 ? '99+' : (count || ''); b.classList.toggle('hidden', !count);
 }
 async function renderControle(){
-  const el = $('v-controle'); el.innerHTML = '<p class="muted">Chargement…</p>';
+  const el = $('v-controle'); el.innerHTML = skeletonView();
   const day = S._cday || today(), ent = S._cent || '', onlyUnread = S._cunread !== false;
   let aq = sb.from('owner_alerts').select('*').eq('organization_id', S.org).order('created_at', { ascending: false }).limit(100);
   if (onlyUnread) aq = aq.is('read_at', null);
@@ -3489,7 +3545,7 @@ function openStaffForm(isOwner, done){
   };
 }
 async function renderEquipe(){
-  const el = $('v-equipe'); el.innerHTML = '<p class="muted">Chargement…</p>';
+  const el = $('v-equipe'); el.innerHTML = skeletonView();
   const isOwner = can(['owner']);
   const [team, inv, org] = await Promise.all([
     sb.rpc('org_team_v2', { p_org: S.org }),
@@ -3561,7 +3617,7 @@ async function renderEquipe(){
 
 /* ================= Modules à cocher, devise, résultat & analyse ================= */
 const CURRENCIES = { XOF: ['Franc CFA (UEMOA)', 'F', 0], XAF: ['Franc CFA (CEMAC)', 'F', 0], GNF: ['Franc guinéen', 'FG', 0], CDF: ['Franc congolais', 'FC', 0], MGA: ['Ariary', 'Ar', 0], MAD: ['Dirham marocain', 'DH', 2], NGN: ['Naira', '₦', 0], GHS: ['Cedi', 'GH₵', 2], EUR: ['Euro', '€', 2], USD: ['Dollar US', '$', 2] };
-const MODULES = { planning: 'Planning', clients: 'Clients', inventaire: 'Inventaire (linge, produits)', menage: 'Ménage (état des chambres)', pointage: 'Pointage du personnel', resto: 'Restaurant & Bar', depenses: 'Dépenses', factures: 'Factures', rapports: 'Rapports', mapage: 'Ma page de présentation', controle: 'Contrôle propriétaire', notifs: 'Notifications', multi: 'Plusieurs établissements', equipe: 'Équipe' };
+const MODULES = { passes: 'Passes (séjours de quelques heures)', planning: 'Planning', clients: 'Clients', inventaire: 'Inventaire (linge, produits)', menage: 'Ménage (état des chambres)', pointage: 'Pointage du personnel', resto: 'Restaurant & Bar', depenses: 'Dépenses', factures: 'Factures', rapports: 'Rapports', mapage: 'Ma page de présentation', controle: 'Contrôle propriétaire', notifs: 'Notifications', multi: 'Plusieurs établissements', equipe: 'Équipe' };
 const MODULE_GROUPS = [['Hébergement', ['planning','clients','inventaire','menage']], ['Argent', ['depenses','factures']], ['Restaurant & Bar', ['resto']], ['Pilotage', ['rapports','controle','mapage']], ['Organisation', ['pointage','notifs','multi','equipe']]];
 const MODULE_HELP = { planning: 'Vue calendrier des chambres', clients: 'Fichier clients et historique', resto: 'Caisse restaurant/bar, produits et stock', depenses: 'Charges fixes, opérationnelles, budget', factures: 'Factures numérotées', rapports: 'Rapports financiers et exports', mapage: 'Page publique et réservation en ligne', controle: 'Alertes et journal des actions', inventaire: 'Draps, serviettes, savons, entretien, minibar', pointage: 'Arrivées et départs du personnel, heures du mois', menage: 'Statuts « à nettoyer » et rappels de ménage', notifs: 'La cloche et les alertes en direct', multi: 'Sélecteur d’établissement (si vous en avez plusieurs)', equipe: 'Comptes du personnel et invitations' };
 /* Mode « réservations » : par défaut, seul le cœur de la gestion des réservations est affiché. Le propriétaire peut réactiver les autres volets dans Réglages → Fonctionnalités. */
@@ -3789,6 +3845,133 @@ function setLang(l){ try { localStorage.setItem('hh_lang', l); } catch (_) {} lo
 function openLang(){ modal(`<h2 style="font-size:22px;margin-bottom:10px">Langue / Language</h2><div style="display:grid;gap:8px"><button type="button" class="${LANG === 'fr' ? '' : 'ghost'}" data-lang="fr">Français</button><button type="button" class="${LANG === 'en' ? '' : 'ghost'}" data-lang="en">English</button></div><p class="muted" style="font-size:12px;margin:10px 0 0">English: menus, buttons and main screens are translated; some detailed texts stay in French for now.</p>`);
   document.querySelectorAll('[data-lang]').forEach(b => b.onclick = () => setLang(b.dataset.lang)); }
 
+/* ================= Passes (séjours de quelques heures, réception uniquement) ================= */
+let PASS_TIMER = null;
+const hhmm = (d) => new Date(d).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+const minsLeft = (d) => Math.round((new Date(d) - Date.now()) / 60000);
+async function renderPasses(){
+  const el = $('v-passes'); clearInterval(PASS_TIMER);
+  if (!el.dataset.loaded) el.innerHTML = skeletonView();
+  await loadEst();
+  const t = today(), mgr = can(['owner','admin','manager']);
+  const [fo, ps, rs] = await Promise.all([
+    sb.from('pass_formulas').select('*').eq('establishment_id', S.est).eq('is_active', true).order('sort_order').order('hours'),
+    sb.from('room_passes').select('*').eq('establishment_id', S.est).neq('status', 'cancelled').gte('start_at', t + 'T00:00:00').lt('start_at', addDays(t, 1) + 'T00:00:00').order('start_at', { ascending: false }),
+    sb.from('reservations').select('room_id,guest_name,status,check_in,check_out').eq('establishment_id', S.est).in('status', ['pending','confirmed','checked_in']).lte('check_in', t).gte('check_out', t)
+  ]);
+  if (S.view !== 'passes') return;
+  el.dataset.loaded = '1';
+  const F = fo.data || [], P = ps.data || [], R = rs.data || [];
+  const night = (rid) => R.find(r => r.room_id === rid && ((r.check_in <= t && r.check_out > t) || (r.status === 'checked_in' && r.check_out === t)));
+  const live = (rid) => P.find(p => p.room_id === rid && p.status === 'active');
+  const done = P.filter(p => p.status === 'done' || p.status === 'active');
+  const total = done.reduce((a, p) => a + Number(p.price), 0);
+  const card = (rm) => {
+    const p = live(rm.id), n = night(rm.id), oos = rm.housekeeping_status === 'out_of_service';
+    if (p) { const m = minsLeft(p.end_at), late = m < 0;
+      return `<div class="card" style="border-color:${late ? 'var(--red)' : 'var(--amber,#C48E26)'};display:flex;flex-direction:column;gap:6px">
+        <div class="row between"><strong style="font-size:18px">${esc(rm.number)}</strong><span class="pill ${late ? 'st-expired' : 'st-pending'}">${late ? 'Dépassée' : 'En passe'}</span></div>
+        <div style="font-size:14px">${esc(p.label)} · ${hhmm(p.start_at)} → ${hhmm(p.end_at)}${p.guest_name ? '<br>' + esc(p.guest_name) : ''}</div>
+        <div style="font-weight:800;font-size:20px;color:${late ? 'var(--red)' : 'var(--ink)'}">${late ? '+' + Math.abs(m) + ' min' : m >= 60 ? Math.floor(m / 60) + ' h ' + String(m % 60).padStart(2, '0') : m + ' min'}</div>
+        <button class="small primary" data-pend="${esc(p.id)}">Terminer · libérer</button></div>`; }
+    if (n) return `<div class="card" style="opacity:.75;display:flex;flex-direction:column;gap:6px"><div class="row between"><strong style="font-size:18px">${esc(rm.number)}</strong><span class="pill st-trial">Nuit</span></div><div class="muted" style="font-size:13px">Réservée pour la nuit${n.guest_name ? ' · ' + esc(n.guest_name) : ''}</div></div>`;
+    if (oos) return `<div class="card" style="opacity:.6"><div class="row between"><strong style="font-size:18px">${esc(rm.number)}</strong><span class="pill st-expired">Hors service</span></div></div>`;
+    const dirty = ['dirty', 'cleaning'].includes(rm.housekeeping_status);
+    return `<div class="card" style="display:flex;flex-direction:column;gap:6px"><div class="row between"><strong style="font-size:18px">${esc(rm.number)}</strong><span class="pill ${dirty ? 'st-pending' : 'st-active'}">${dirty ? 'À nettoyer' : 'Libre'}</span></div>
+      <div class="muted" style="font-size:13px">${esc(rm.room_type || 'Chambre')}</div>
+      <button class="small ${dirty ? 'ghost' : 'primary'}" data-pnew="${esc(rm.id)}" ${F.length ? '' : 'disabled'}>Nouvelle passe</button></div>`;
+  };
+  el.innerHTML = head('Passes', `${mgr ? '<button class="small ghost" id="pTar">Tarifs des passes</button>' : ''}<button class="small primary" id="pNew" ${F.length ? '' : 'disabled'}>Nouvelle passe</button>`) +
+    (F.length ? '' : `<div class="card" style="margin-bottom:16px;background:var(--gold-l,#fbf2dc)"><strong>Aucun tarif de passe.</strong> ${mgr ? 'Définissez vos formules (ex. « Passe 2 h — 5 000 F ») pour commencer.' : 'Demandez au responsable de définir les tarifs des passes.'}${mgr ? ' <button class="small primary" id="pTar2" style="margin-left:8px">Définir les tarifs</button>' : ''}</div>`) +
+    `<div class="grid g5" style="margin-bottom:14px"><div class="card kpi"><div class="l">Passes aujourd’hui</div><div class="v">${done.length}</div></div><div class="card kpi"><div class="l">En cours</div><div class="v">${P.filter(p => p.status === 'active').length}</div></div><div class="card kpi"><div class="l">Montant du jour</div><div class="v">${money(total)}</div></div></div>
+    <div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:20px">${S.rooms.filter(r => r.establishment_id === S.est).map(card).join('') || '<p class="muted">Ajoutez d’abord des chambres.</p>'}</div>
+    ${P.length ? `<div class="card"><h3 style="font-size:18px;margin-bottom:8px">Passes du jour</h3><div class="tablewrap"><table class="table"><thead><tr><th>Chambre</th><th>Formule</th><th>Horaire</th><th>Client</th><th>Statut</th><th class="r">Prix</th></tr></thead><tbody>
+      ${P.map(p => { const rm = S.rooms.find(r => r.id === p.room_id) || {}; return `<tr><td><strong>${esc(rm.number || '')}</strong></td><td>${esc(p.label)}</td><td>${hhmm(p.start_at)} → ${hhmm(p.ended_at || p.end_at)}</td><td>${esc(p.guest_name || '—')}</td><td>${p.status === 'active' ? 'En cours' : 'Terminée'}</td><td class="r">${money(p.price)}</td></tr>`; }).join('')}</tbody></table></div></div>` : ''}`;
+  const tar = () => openPassTarifs(); if ($('pTar')) $('pTar').onclick = tar; if ($('pTar2')) $('pTar2').onclick = tar;
+  if ($('pNew')) $('pNew').onclick = () => openPassForm(null, F, P, R);
+  el.querySelectorAll('[data-pnew]').forEach(b => b.onclick = () => openPassForm(b.dataset.pnew, F, P, R));
+  el.querySelectorAll('[data-pend]').forEach(b => b.onclick = async () => {
+    const p = P.find(x => x.id === b.dataset.pend); b.disabled = true;
+    const now = new Date().toISOString();
+    const { error } = await sb.from('room_passes').update({ status: 'done', ended_at: now, end_at: new Date(p.end_at) > new Date() ? now : p.end_at }).eq('id', p.id);
+    if (error) { b.disabled = false; return toast(errMsg(error), true); }
+    await sb.from('rooms').update({ housekeeping_status: 'dirty' }).eq('id', p.room_id);
+    const rm = S.rooms.find(r => r.id === p.room_id); if (rm) rm.housekeeping_status = 'dirty';
+    toast('Passe terminée : la chambre passe « à nettoyer ».'); renderPasses();
+  });
+  PASS_TIMER = setInterval(() => { if (S.view === 'passes' && $('modal').classList.contains('hidden')) renderPasses(); else if (S.view !== 'passes') clearInterval(PASS_TIMER); }, 60000);
+}
+function openPassForm(roomId, F, P, R){
+  const t = today();
+  const busy = new Set([...P.filter(p => p.status === 'active').map(p => p.room_id), ...R.filter(r => (r.check_in <= t && r.check_out > t) || (r.status === 'checked_in' && r.check_out === t)).map(r => r.room_id)]);
+  const free = S.rooms.filter(r => r.establishment_id === S.est && r.housekeeping_status !== 'out_of_service' && !busy.has(r.id));
+  if (!free.length) return toast('Aucune chambre libre pour une passe.', true);
+  const st = { room: roomId && free.some(r => r.id === roomId) ? roomId : free[0].id, f: null, start: new Date().toTimeString().slice(0, 5), name: '', phone: '', pay: true, method: 'cash' };
+  const fits = () => { const rm = S.rooms.find(r => r.id === st.room) || {}; return F.filter(f => !f.room_type || f.room_type === rm.room_type); };
+  const draw = () => {
+    const L = fits(); if (!L.some(f => f.id === st.f)) st.f = L[0] ? L[0].id : null;
+    const f = F.find(x => x.id === st.f);
+    const [h, m] = st.start.split(':').map(Number); const s0 = new Date(); s0.setHours(h, m, 0, 0); const e0 = f ? new Date(s0.getTime() + Number(f.hours) * 3600000) : null;
+    modal(`<h2 style="font-size:24px;margin-bottom:12px">Nouvelle passe</h2>
+      <div class="field"><label for="psRoom">Chambre</label><select id="psRoom">${free.map(r => `<option value="${esc(r.id)}" ${r.id === st.room ? 'selected' : ''}>${esc(r.number)} · ${esc(r.room_type || 'Chambre')}${['dirty','cleaning'].includes(r.housekeeping_status) ? ' (à nettoyer)' : ''}</option>`).join('')}</select></div>
+      <div style="font-size:13px;font-weight:700;margin-bottom:6px">Formule</div>
+      <div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-bottom:12px">${L.map(x => `<button type="button" data-pf="${esc(x.id)}" aria-pressed="${x.id === st.f}" style="min-height:64px;border-radius:14px;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;padding:10px 12px;${x.id === st.f ? 'background:var(--ink);color:var(--card,#fff);border-color:var(--ink)' : ''}"><strong>${esc(x.label)}</strong><span style="font-size:13px;opacity:.85">${String(x.hours).replace('.', ',')} h · ${money(x.price)}</span></button>`).join('') || '<p class="muted">Aucune formule pour ce type de chambre.</p>'}</div>
+      <div class="row" style="gap:10px;flex-wrap:wrap"><div class="field" style="flex:1 1 120px"><label for="psStart">Début</label><input id="psStart" type="time" value="${st.start}"></div>
+        <div class="field" style="flex:1 1 120px"><label>Fin prévue</label><input value="${e0 ? hhmm(e0) : '—'}" disabled></div></div>
+      <div class="row" style="gap:10px;flex-wrap:wrap"><div class="field" style="flex:2 1 180px"><label for="psName">Client (facultatif)</label><input id="psName" value="${esc(st.name)}" maxlength="120"></div>
+        <div class="field" style="flex:1 1 140px"><label for="psPhone">Téléphone (facultatif)</label><input id="psPhone" type="tel" value="${esc(st.phone)}" maxlength="30"></div></div>
+      <label class="row" style="gap:8px;font-weight:600;flex-wrap:nowrap;margin:4px 0 8px"><input type="checkbox" id="psPay" ${st.pay ? 'checked' : ''} style="width:20px;min-height:20px"> Encaisser maintenant ${f ? money(f.price) : ''}</label>
+      ${st.pay ? `<div class="field"><label for="psM">Moyen de paiement</label><select id="psM">${opt(PMETHOD, st.method)}</select></div>` : ''}
+      <div class="row" style="gap:8px;margin-top:6px"><button class="ghost" data-close>Annuler</button><button class="primary" id="psGo" style="flex:1;min-height:52px" ${f ? '' : 'disabled'}>Démarrer la passe</button></div>`);
+    $('psRoom').onchange = (e) => { st.room = e.target.value; draw(); };
+    document.querySelectorAll('[data-pf]').forEach(b => b.onclick = () => { st.f = b.dataset.pf; draw(); });
+    $('psStart').onchange = (e) => { st.start = e.target.value || st.start; draw(); };
+    $('psName').oninput = (e) => { st.name = e.target.value; }; $('psPhone').oninput = (e) => { st.phone = e.target.value; };
+    $('psPay').onchange = (e) => { st.pay = e.target.checked; draw(); };
+    if ($('psM')) $('psM').onchange = (e) => { st.method = e.target.value; };
+    $('psGo').onclick = async () => {
+      if (!f) return; $('psGo').disabled = true;
+      const { data: p, error } = await sb.from('room_passes').insert({ room_id: st.room, establishment_id: S.est, organization_id: S.org, formula_id: f.id, label: f.label, hours: f.hours, price: f.price, start_at: s0.toISOString(), end_at: e0.toISOString(), guest_name: st.name.trim() || null, guest_phone: st.phone.trim() || null }).select().single();
+      if (error) { $('psGo').disabled = false; return toast(errMsg(error), true); }
+      const rm = S.rooms.find(r => r.id === st.room) || {};
+      const pay = async () => sb.from('cash_movements').insert({ establishment_id: S.est, kind: 'income', method: st.method, amount: Number(f.price), label: `${f.label} · ch. ${rm.number || ''}`, category: 'Passe', payment_group: crypto.randomUUID() });
+      if (st.pay && Number(f.price) > 0) {
+        const { error: e2 } = await pay();
+        if (e2) { closeModal(); renderPasses(); if (/caisse ouverte/i.test(e2.message || '')) return askOpenCash(async () => { const { error: e3 } = await pay(); toast(e3 ? errMsg(e3) : 'Passe encaissée.', !!e3); renderPasses(); }, 'La passe est démarrée. Ouvrez la caisse pour enregistrer le paiement.'); return toast('Passe démarrée, mais le paiement n’a pas été enregistré : ' + errMsg(e2), true); }
+      }
+      closeModal(); toast(`Passe démarrée : chambre ${rm.number || ''} jusqu’à ${hhmm(p.end_at)}.`); renderPasses();
+    };
+  };
+  draw();
+}
+async function openPassTarifs(){
+  const { data } = await sb.from('pass_formulas').select('*').eq('establishment_id', S.est).order('sort_order').order('hours');
+  const L = (data || []).map(x => ({ ...x })); if (!L.length) L.push({ label: 'Passe 2 h', hours: 2, price: '', room_type: '', is_active: true }, { label: 'Passe 3 h', hours: 3, price: '', room_type: '', is_active: true });
+  const types = [...new Set(S.rooms.filter(r => r.establishment_id === S.est).map(r => r.room_type).filter(Boolean))];
+  const draw = () => {
+    modal(`<h2 style="font-size:24px;margin-bottom:4px">Tarifs des passes</h2><p class="muted" style="margin:0 0 12px">Vos formules de passe et leurs prix. Laissez « Type de chambre » sur « Toutes » pour un prix unique.</p>
+      ${L.map((x, i) => `<div class="row" style="gap:8px;flex-wrap:wrap;align-items:flex-end;border-bottom:1px dashed var(--line);padding-bottom:10px;margin-bottom:10px">
+        <div class="field" style="flex:2 1 140px;margin:0"><label for="tl${i}">Libellé</label><input id="tl${i}" data-ti="${i}" data-tf="label" value="${esc(x.label)}" maxlength="60"></div>
+        <div class="field" style="flex:0 1 90px;margin:0"><label for="th${i}">Durée (h)</label><input id="th${i}" data-ti="${i}" data-tf="hours" type="number" min="0.5" max="12" step="0.5" value="${x.hours}"></div>
+        <div class="field" style="flex:1 1 110px;margin:0"><label for="tp${i}">Prix (F)</label><input id="tp${i}" data-ti="${i}" data-tf="price" type="number" min="0" step="500" value="${x.price}"></div>
+        <div class="field" style="flex:1 1 130px;margin:0"><label for="tt${i}">Type de chambre</label><select id="tt${i}" data-ti="${i}" data-tf="room_type"><option value="">Toutes</option>${types.map(t => `<option ${t === x.room_type ? 'selected' : ''}>${esc(t)}</option>`).join('')}</select></div>
+        <label class="row" style="gap:6px;flex-wrap:nowrap;font-size:13px"><input type="checkbox" data-ti="${i}" data-tf="is_active" ${x.is_active ? 'checked' : ''} style="width:20px;min-height:20px"> Active</label></div>`).join('')}
+      <button class="small ghost" id="tAdd">+ Ajouter une formule</button>
+      <div class="row" style="gap:8px;margin-top:14px"><button class="ghost" data-close>Annuler</button><button class="primary" id="tSave" style="flex:1">Enregistrer</button></div>`);
+    document.querySelectorAll('[data-ti]').forEach(inp => inp.onchange = () => { const x = L[+inp.dataset.ti], k = inp.dataset.tf; x[k] = k === 'is_active' ? inp.checked : inp.value; });
+    $('tAdd').onclick = () => { L.push({ label: '', hours: 1, price: '', room_type: '', is_active: true }); draw(); };
+    $('tSave').onclick = async () => {
+      const rows = L.filter(x => String(x.label).trim() && String(x.price) !== '');
+      if (rows.some(x => !(+x.hours > 0 && +x.hours <= 12))) return toast('Durée entre 0,5 et 12 heures.', true);
+      $('tSave').disabled = true;
+      const { error } = await sb.from('pass_formulas').upsert(rows.map((x, i) => ({ ...(x.id ? { id: x.id } : {}), organization_id: S.org, establishment_id: S.est, label: String(x.label).trim(), hours: +x.hours, price: +x.price, room_type: x.room_type || null, is_active: !!x.is_active, sort_order: i })));
+      if (error) { $('tSave').disabled = false; return toast(errMsg(error), true); }
+      closeModal(); toast('Tarifs des passes enregistrés.'); renderPasses();
+    };
+  };
+  draw();
+}
+
 /* ================= Mode hors connexion (caisse restaurant/bar) ================= */
 const OFF = { key: 'hh_offline_sales', syncing: false };
 const offQueue = () => { try { return JSON.parse(localStorage.getItem(OFF.key) || '[]'); } catch (_) { return []; } };
@@ -3798,11 +3981,14 @@ function cacheSet(k, v){ try { localStorage.setItem('hh_c_' + k, JSON.stringify(
 function cacheGet(k){ try { return JSON.parse(localStorage.getItem('hh_c_' + k) || 'null'); } catch (_) { return null; } }
 function offBar(){
   let b = $('offBar'); const q = offQueue().filter(x => x.org === S.org);
-  const show = !navigator.onLine || q.length;
+  const show = !navigator.onLine || q.length || NET.cachedAt;
   if (!show) { if (b) b.remove(); return; }
   if (!b) { b = document.createElement('div'); b.id = 'offBar'; b.setAttribute('role', 'status'); b.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:70;padding:6px 12px;text-align:center;font-size:13px;font-weight:700'; document.body.appendChild(b); }
   b.style.background = navigator.onLine ? '#FFF4E0' : '#2B1E16'; b.style.color = navigator.onLine ? '#9A5B00' : '#FBF6EE';
-  b.innerHTML = navigator.onLine ? `${plur(q.length, 'vente faite', 'ventes faites')} hors connexion en cours d’envoi… <button type="button" class="small ghost" id="offSync" style="min-height:26px;margin-left:6px">Envoyer</button>` : `Hors connexion — la caisse restaurant/bar continue de fonctionner${q.length ? ` · ${plur(q.length, 'vente', 'ventes')} en attente d’envoi` : ''}`;
+  const when = NET.cachedAt ? ' (données du ' + new Date(NET.cachedAt).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' }) + ')' : '';
+  b.innerHTML = navigator.onLine
+    ? (q.length ? `${plur(q.length, 'vente faite', 'ventes faites')} hors connexion en cours d’envoi… <button type="button" class="small ghost" id="offSync" style="min-height:26px;margin-left:6px">Envoyer</button>` : `Connexion instable : affichage des dernières données enregistrées${when}.`)
+    : `Hors connexion — consultation des données enregistrées sur cet appareil${when}. La caisse restaurant/bar continue de fonctionner${q.length ? ` · ${plur(q.length, 'vente', 'ventes')} en attente d’envoi` : ''}.`;
   const s = $('offSync'); if (s) s.onclick = syncOffline;
 }
 async function syncOffline(){
@@ -3820,7 +4006,7 @@ async function syncOffline(){
   if (failed.length && can(['owner', 'admin', 'manager'])) toast(`${plur(failed.length, 'vente hors connexion refusée', 'ventes hors connexion refusées')} (ex. stock insuffisant) : voir Restaurant & Bar → Ventes.`, true);
   if (S.view === 'resto') renderResto();
 }
-window.addEventListener('online', () => { offBar(); syncOffline(); });
+window.addEventListener('online', () => { NET.cachedAt = null; offBar(); syncOffline(); if (S.org && S.view) go(S.view); });
 window.addEventListener('offline', offBar);
 setInterval(() => { if (navigator.onLine && offQueue().length) syncOffline(); }, 60000);
 function offlineSale(payload, display){
@@ -3938,7 +4124,7 @@ function openAssistant(){
 const SUP_CATS = ['Linge', 'Produits d’accueil', 'Entretien', 'Minibar', 'Fournitures'];
 const SUP_PRESETS = [['Draps 2 places', 'Linge', 'pièce'], ['Taies d’oreiller', 'Linge', 'pièce'], ['Serviettes de bain', 'Linge', 'pièce'], ['Tapis de bain', 'Linge', 'pièce'], ['Savons', 'Produits d’accueil', 'pièce'], ['Gel douche', 'Produits d’accueil', 'flacon'], ['Papier toilette', 'Produits d’accueil', 'rouleau'], ['Eau minérale 50 cl', 'Minibar', 'bouteille'], ['Javel', 'Entretien', 'litre'], ['Sacs poubelle', 'Entretien', 'paquet']];
 async function renderInventaire(){
-  const el = $('v-inventaire'); el.innerHTML = '<p class="muted">Chargement…</p>';
+  const el = $('v-inventaire'); el.innerHTML = skeletonView();
   const [it, mv] = await Promise.all([
     sb.from('supplies').select('*').eq('establishment_id', S.est).eq('is_active', true).order('category').order('name'),
     sb.from('supply_movements').select('*').eq('establishment_id', S.est).order('created_at', { ascending: false }).limit(40)
@@ -4020,7 +4206,7 @@ async function toggleClock(){
   if (S.view === 'pointage') renderPointage();
 }
 async function renderPointage(){
-  const el = $('v-pointage'); el.innerHTML = '<p class="muted">Chargement…</p>';
+  const el = $('v-pointage'); el.innerHTML = skeletonView();
   S.ptMonth = S.ptMonth || today().slice(0, 7);
   const from = S.ptMonth + '-01', to = addDays(new Date(new Date(from).getFullYear(), new Date(from).getMonth() + 1, 1).toISOString().slice(0, 10), 0);
   const [att, team] = await Promise.all([
@@ -4213,7 +4399,7 @@ const prodThumb = (p, size = 64) => ((p.images && p.images[0]) || p.image_url)
 const stockTxt = (p) => !p.track_stock ? '' : Number(p.stock_qty) <= 0 ? '<span class="pill st-cancelled">Rupture</span>' : Number(p.stock_qty) <= Number(p.alert_qty) ? `<span class="pill st-past_due">Reste ${+p.stock_qty}</span>` : `<span class="muted" style="font-size:12px">Stock ${+p.stock_qty}</span>`;
 
 async function renderResto(){
-  const el = $('v-resto'); el.innerHTML = '<p class="muted">Chargement…</p>';
+  const el = $('v-resto'); el.innerHTML = skeletonView();
   S.rTab = S.rTab || 'caisse'; S.rOutlet = S.rOutlet || 'restaurant'; S.cart = S.cart || [];
   if (!isMgr() && !['caisse', 'ventes'].includes(S.rTab)) S.rTab = 'caisse';
   if (S.rTab === 'ventes' && !can(['owner', 'admin', 'manager', 'accountant'])) S.rTab = 'caisse';
@@ -4717,7 +4903,7 @@ function openStockEntry(p, kind){
 
 /* ----- Stock ----- */
 async function drawStock(){
-  const body = $('rBody'); body.innerHTML = '<p class="muted">Chargement…</p>';
+  const body = $('rBody'); body.innerHTML = skeletonView();
   const tracked = S.products.filter(p => p.track_stock && p.is_active !== false);
   const low = tracked.filter(p => Number(p.stock_qty) <= Number(p.alert_qty)).sort((a, b) => a.stock_qty - b.stock_qty);
   const value = tracked.reduce((a, p) => a + Math.max(0, Number(p.stock_qty)) * Number(p.purchase_price), 0);
@@ -4742,7 +4928,7 @@ async function drawStock(){
 
 /* ----- Ventes ----- */
 async function drawSales(){
-  const body = $('rBody'); body.innerHTML = '<p class="muted">Chargement…</p>';
+  const body = $('rBody'); body.innerHTML = skeletonView();
   S.rFrom = S.rFrom || today(); S.rTo = S.rTo || today();
   const [sum, sales] = await Promise.all([
     sb.rpc('pos_summary', { p_est: S.est, p_from: S.rFrom, p_to: S.rTo }),
@@ -4790,7 +4976,7 @@ const HIGHLIGHTS = ['Wi-Fi gratuit','Climatisation','Parking gratuit','Piscine',
 const themeVars = (k) => { const t = THEMES[k] || THEMES.terracotta; return `--green:${t[1]};--green-d:${t[2]};--green-l:${t[3]}`; };
 
 async function renderMaPage(){
-  const el = $('v-mapage'); el.innerHTML = '<p class="muted">Chargement…</p>';
+  const el = $('v-mapage'); el.innerHTML = skeletonView();
   await loadEst();
   const { data: e, error } = await sb.from('establishments').select('*').eq('id', S.est).single();
   if (error || !e) { el.innerHTML = head('Ma page de présentation') + `<p class="muted">${esc(errMsg(error))}</p>`; return; }

@@ -818,7 +818,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.10.26-9';
+const APP_VERSION = '2026.10.26-10';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -2049,6 +2049,23 @@ function bindResaActions(el, refresh){
   el.querySelectorAll('[data-checkout]').forEach(b => b.onclick = () => openResa(b.dataset.checkout, refresh, true));
 }
 
+/* Caisse fermée au moment d'un encaissement en espèces : proposer de l'ouvrir sur place, puis reprendre l'action */
+async function cashIsOpen(){ const { data } = await sb.from('cash_sessions').select('id').eq('establishment_id', S.est).eq('status', 'open').maybeSingle(); return !!data; }
+function askOpenCash(onDone, reason){
+  modal(`<h2 style="font-size:22px;margin-bottom:6px">Ouvrir la caisse</h2><p class="muted" style="margin:0 0 14px">${esc(reason || 'La caisse du jour n’est pas encore ouverte. Ouvrez-la pour enregistrer ce paiement en espèces.')}</p>
+    <form id="ocF"><div class="field"><label for="ocFund">Fond de caisse (espèces déjà dans le tiroir)</label><input id="ocFund" type="number" min="0" inputmode="numeric" value="0"></div>
+    <div class="row"><button type="button" class="ghost" data-close>Annuler</button><button class="primary" id="ocGo" style="margin-left:auto">Ouvrir la caisse et continuer</button></div></form>`);
+  $('ocFund').select();
+  $('ocF').onsubmit = async (e) => { e.preventDefault(); const b = $('ocGo'); b.disabled = true;
+    const { error } = await sb.from('cash_sessions').insert({ establishment_id: S.est, opening_balance: +$('ocFund').value || 0 });
+    if (error && !(await cashIsOpen())) { b.disabled = false; return toast(errMsg(error), true); }
+    closeModal(); toast('Caisse ouverte.'); onDone && onDone(); };
+}
+async function recordDeposit(resaId, amount, method, ref, refresh){
+  const { error } = await sb.from('cash_movements').insert({ establishment_id: S.est, reservation_id: resaId, kind: 'payment', method, amount, label: 'Acompte', reference: (ref || '').trim() || null, payment_group: crypto.randomUUID() });
+  if (error) return toast(errMsg(error), true);
+  toast('Acompte de ' + money(amount) + ' enregistré.'); refresh && refresh();
+}
 /* ---------- Réservation rapide : un seul écran, la chambre libre proposée d'office (objectif : moins de 30 secondes) ---------- */
 async function openQuickResa(pre, refresh){
   if (!S.rooms.length) await loadEst();
@@ -2137,6 +2154,10 @@ async function openQuickResa(pre, refresh){
         const g = await sb.from('guests').insert({ organization_id: S.org, full_name: nm, phone: (st.phone || '').trim() || null }).select('id').single(); if (g.error) throw g.error; gid = g.data.id; }
       if (st.dep > 0 && MOMO.includes(st.depM) && (st.depR || '').trim().length < 4) throw new Error('Saisissez le numéro de transaction Mobile Money de l’acompte.');
       if (st.dep > total()) throw new Error('L’acompte dépasse le total du séjour.');
+      if (st.dep > 0 && st.depM === 'cash' && !(await cashIsOpen())) {
+        const keep = { ...st }; const b = $('qGo'); if (b) b.disabled = false;
+        return askOpenCash(() => { modal('<div id="qz"></div>'); $('modalBody').style.maxWidth = '620px'; Object.assign(st, keep); st.gid = gid; draw(); create(); }, 'La caisse du jour n’est pas encore ouverte. Ouvrez-la pour enregistrer l’acompte en espèces ; la réservation sera créée juste après.');
+      }
       const row = { establishment_id: S.est, room_id: st.room, guest_id: gid, guest_name: '-', check_in: st.ci, check_out: st.co, nightly_rate: +st.rate || 0, discount: +st.disc || 0, adults: +st.adults || 1, source: st.src, notes: (st.notes || '').trim() || null, status: 'confirmed', created_by: S.session.user.id };
       const res = await sb.from('reservations').insert(row).select('id').single();
       if (res.error) { if ((res.error.message || '').includes('no_double_booking')) { st.rateKey = ''; await refreshAvail(); throw new Error('Cette chambre vient d’être réservée : une autre chambre libre vous est proposée.'); } throw res.error; }
@@ -2148,7 +2169,7 @@ async function openQuickResa(pre, refresh){
       const ph = r && waPhone(r.guest_phone);
       nextStep(pre.walkin ? 'Client enregistré en chambre' : 'Réservation créée',
         `${esc(r ? r.guest_name : '')} · chambre ${esc(r ? r.room_number : '')} · ${dfr(st.ci)} → ${dfr(st.co)} · ${money(r ? r.total_amount : total())}.${depErr ? `<br><span style="color:var(--red)">L’acompte n’a pas été enregistré : ${esc(errMsg(depErr))}</span>` : ''} ${r && r.balance > 0 ? `Reste à payer : <strong>${money(r.balance)}</strong>.` : ''}`,
-        [...(ph && !pre.walkin ? [{ label: 'Envoyer la confirmation WhatsApp', href: `https://wa.me/${ph}?text=${encodeURIComponent(waConfirmText(r))}` }] : []), { label: 'Ouvrir la réservation', fn: () => openResa(id, refresh) }, { label: 'Nouvelle réservation', fn: () => openQuickResa({}, refresh) }]);
+        [...(depErr ? [{ label: 'Ouvrir la caisse et enregistrer l’acompte', fn: () => askOpenCash(() => recordDeposit(id, st.dep, st.depM, st.depR, refresh)) }] : []), ...(ph && !pre.walkin ? [{ label: 'Envoyer la confirmation WhatsApp', href: `https://wa.me/${ph}?text=${encodeURIComponent(waConfirmText(r))}` }] : []), { label: 'Ouvrir la réservation', fn: () => openResa(id, refresh) }, { label: 'Nouvelle réservation', fn: () => openQuickResa({}, refresh) }]);
     } catch (err) { const b = $('qGo'); if (b) b.disabled = false; toast(errMsg(err), true); }
   };
   await loadBusy(); pickRoom(); await price(); draw();
@@ -2293,7 +2314,7 @@ async function openResaForm(pre, refresh){
       const ph = r && waPhone(r.guest_phone);
       nextStep(pre.walkin ? 'Client enregistré en chambre' : 'Réservation créée',
         `${esc(r ? r.guest_name : '')} · chambre ${esc(r ? r.room_number : '')} · ${dfr(st.ci)} → ${dfr(st.co)} · ${money(r ? r.total_amount : total())}.${depErr ? `<br><span style="color:var(--red)">L’acompte n’a pas été enregistré : ${esc(errMsg(depErr))}</span>` : ''} ${r && r.balance > 0 ? `Reste à payer : <strong>${money(r.balance)}</strong>.` : ''}`,
-        [...(ph && !pre.walkin ? [{ label: 'Envoyer la confirmation WhatsApp', href: `https://wa.me/${ph}?text=${encodeURIComponent(waConfirmText(r))}` }] : []), { label: 'Ouvrir la réservation', fn: () => openResa(id, refresh) }]);
+        [...(depErr ? [{ label: 'Ouvrir la caisse et enregistrer l’acompte', fn: () => askOpenCash(() => recordDeposit(id, st.dep, st.depM, st.depR, refresh)) }] : []), ...(ph && !pre.walkin ? [{ label: 'Envoyer la confirmation WhatsApp', href: `https://wa.me/${ph}?text=${encodeURIComponent(waConfirmText(r))}` }] : []), { label: 'Ouvrir la réservation', fn: () => openResa(id, refresh) }]);
     } catch (err) { btn.disabled = false; toast(errMsg(err), true); }
   };
   if (st.step === 2) await loadBusy();
@@ -2333,7 +2354,7 @@ async function openResa(id, refresh, focusCheckout){
   const done = (m) => { toast(m); closeModal(); refresh(); };
   const pf = $('payForm'); if (pf) pf.onsubmit = async (e) => { e.preventDefault(); e.submitter.disabled = true;
     const { error } = await sb.from('cash_movements').insert({ establishment_id: r.establishment_id, reservation_id: r.id, kind: 'payment', method: $('pMeth').value, amount: +$('pAmt').value, label: r.status === 'checked_in' ? 'Paiement séjour' : 'Acompte', reference: $('pRef').value.trim() || null });
-    if (error) { e.submitter.disabled = false; return toast(errMsg(error), true); } toast('Paiement enregistré.'); openResa(id, refresh); };
+    if (error) { e.submitter.disabled = false; if (/caisse ouverte/i.test(error.message || '')) return askOpenCash(() => openResa(id, refresh), 'La caisse du jour n’est pas encore ouverte. Ouvrez-la, puis enregistrez de nouveau le paiement.'); return toast(errMsg(error), true); } toast('Paiement enregistré.'); openResa(id, refresh); };
   const a = (x, fn) => { const b = $(x); if (b) b.onclick = fn; };
   a('aConfirm', async () => { const { error } = await sb.from('reservations').update({ status: 'confirmed' }).eq('id', r.id); if (error) return toast(errMsg(error), true); done('Réservation confirmée. Prévenez le client par téléphone ou WhatsApp.'); });
   a('aIn', async () => { const { error } = await sb.rpc('check_in_reservation', { p_reservation: r.id }); if (error) return toast(errMsg(error), true); closeModal(); afterCheckIn(r.id, refresh); });
@@ -2563,7 +2584,7 @@ function openSimpleMove(kind, done){
     <div class="row"><button class="primary">Enregistrer</button><button type="button" class="ghost" data-close>Annuler</button></div></form>`);
   $('smF').onsubmit = async (e) => { e.preventDefault(); e.submitter.disabled = true;
     const { error } = await sb.from('cash_movements').insert({ establishment_id: S.est, kind, method: dep ? 'cash' : $('smM').value, amount: +$('smA').value, label: $('smL').value.trim(), reference: $('smR').value.trim() || null });
-    if (error) { e.submitter.disabled = false; return toast(errMsg(error), true); }
+    if (error) { e.submitter.disabled = false; if (/caisse ouverte/i.test(error.message || '')) return askOpenCash(() => done(), 'La caisse du jour n’est pas encore ouverte. Ouvrez-la, puis enregistrez de nouveau le mouvement.'); return toast(errMsg(error), true); }
     closeModal(); toast('Mouvement enregistré.'); done(); };
 }
 
@@ -2629,7 +2650,7 @@ function openEncaisser(b, done){
     const group = crypto.randomUUID();
     const label = b.status === 'checked_in' || b.status === 'checked_out' ? 'Paiement séjour' : 'Acompte';
     const { error } = await sb.from('cash_movements').insert(L.map(l => ({ establishment_id: b.establishment_id || S.est, reservation_id: b.id, kind: 'payment', method: l.method, amount: +l.amount, reference: (l.reference || '').trim() || null, label, payment_group: group })));
-    if (error) { $('ekGo').disabled = false; return toast(errMsg(error), true); }
+    if (error) { $('ekGo').disabled = false; if (/caisse ouverte/i.test(error.message || '')) return askOpenCash(() => openEncaisser(b, done), 'La caisse du jour n’est pas encore ouverte. Ouvrez-la pour encaisser ce paiement en espèces.'); return toast(errMsg(error), true); }
     const rest = bal - t, phone = waPhone(b.guest_phone), change = st.mode === 'cash' && +st.received > t ? +st.received - t : 0;
     const est = S.ests.find(x => x.id === S.est) || {};
     const msg = `${est.name || 'Horus Hotel'} — Reçu ${receiptNo(group)}\nClient : ${b.guest_name} (ch. ${b.room_number})\n` + L.map(l => `${PMETHOD[l.method]} : ${money(l.amount)}`).join('\n') + `\nTotal reçu : ${money(t)}\n${rest > 0 ? 'Reste à payer : ' + money(rest) : 'Séjour soldé'}\nMerci de votre confiance.`;

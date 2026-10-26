@@ -2,23 +2,23 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="manifest" href="manifest.webmanifest">
-<script>(function(){try{var x=localStorage.getItem("hh_theme");x=x||"clair";if(x!=="sable")document.documentElement.dataset.theme=x;}catch(e){}})();</script>
-<meta name="theme-color" content="#4F46E5">
+<script>(function(){try{var x=localStorage.getItem("hh_theme");x=x||"cuir";if(x!=="sable")document.documentElement.dataset.theme=x;}catch(e){}})();</script>
+<meta name="theme-color" content="#161616">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Horus Hotel">
 <title>Horus Hotel – Gestion hôtelière</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Manrope:wght@500;700;800&family=Sora:wght@600;700;800&family=Work+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Manrope:wght@500;700;800&family=Sora:wght@600;700;800&family=Work+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <style>
 :root{--bg:#F3EBDD;--card:#FBF6EE;--ink:#2B1E16;--muted:#6E5A4A;--line:#E5D8C3;--green:#B4532A;--green-d:#8E3D1C;--green-l:#F7D9C4;--ok:#2F5A1E;--ok-l:#E6EEDC;--gold:#8C6A1E;--gold-l:#F2DCA8;--red:#8E2B2B;--red-l:#F2CFCF;--amber:#7A3216;--amber-l:#F7D9C4;--blue:#2E4C6E;--blue-l:#E3EAF1;--nav:#FBF6EE;--display:"Bricolage Grotesque",system-ui,sans-serif}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 var(--body,"DM Sans"),system-ui,sans-serif}
-h1,h2,h3{font-family:var(--display);font-weight:800;letter-spacing:-.5px;margin:0}
+h1,h2,h3{text-wrap:balance;font-family:var(--display);font-weight:800;letter-spacing:-.5px;margin:0}
 button,input,select{font:inherit}
 button{cursor:pointer;min-height:44px;border-radius:999px;padding:0 20px;font-weight:700;border:2px solid var(--ink);background:transparent;color:var(--ink)}
 button.primary{background:var(--green);border-color:var(--green);color:#fff}
@@ -182,7 +182,7 @@ body.modal-open{overflow:hidden}
 @media (max-width:700px){nav.side{max-width:none}}
 
 /* ===== Nouvelle interface : Clair & moderne ===== */
-html[data-theme="clair"]{--bg:#F5F7FB;--card:#FFFFFF;--ink:#111827;--muted:#6B7280;--line:#E7EAF0;--green:#4F46E5;--green-d:#4338CA;--green-l:#EEF0FF;--ok:#047857;--ok-l:#E3F8EF;--gold:#4F46E5;--gold-l:#FFF5D9;--amber:#B45309;--amber-l:#FFF3DC;--red:#DC2626;--red-l:#FDECEC;--blue:#1D4ED8;--blue-l:#E8F0FE;--nav:#FFFFFF;--display:"Plus Jakarta Sans",system-ui,sans-serif;--body:"Plus Jakarta Sans";--shadow:0 1px 2px rgba(16,24,40,.04),0 4px 16px rgba(16,24,40,.06)}
+html[data-theme="clair"]{--bg:#F5F7FB;--card:#FFFFFF;--ink:#111827;--muted:#555E6C;--line:#E7EAF0;--green:#4F46E5;--green-d:#4338CA;--green-l:#EEF0FF;--ok:#047857;--ok-l:#E3F8EF;--gold:#4F46E5;--gold-l:#FFF5D9;--amber:#B45309;--amber-l:#FFF3DC;--red:#DC2626;--red-l:#FDECEC;--blue:#1D4ED8;--blue-l:#E8F0FE;--nav:#FFFFFF;--display:"Plus Jakarta Sans",system-ui,sans-serif;--body:"Plus Jakarta Sans";--shadow:0 1px 2px rgba(16,24,40,.04),0 4px 16px rgba(16,24,40,.06)}
 html[data-theme="clair"] body{font-size:14.5px}
 html[data-theme="clair"] h1,html[data-theme="clair"] h2,html[data-theme="clair"] h3{font-weight:800;letter-spacing:-.02em}
 html[data-theme="clair"] button{border-radius:12px;border:1px solid var(--line);background:#fff;font-weight:600;box-shadow:0 1px 2px rgba(16,24,40,.05);transition:background .15s,border-color .15s,box-shadow .15s}
@@ -240,7 +240,7 @@ html[data-theme="clair"] #authTabs button{border-radius:10px!important;box-shado
   html[data-theme="clair"] nav.side button:hover{background:#F3F4F8;color:var(--ink)}
   html[data-theme="clair"] nav.side button.active{background:var(--green-l);color:var(--green-d)}
   html[data-theme="clair"] nav.side button.active::before{opacity:1}
-  html[data-theme="clair"] nav.side .ghead{font-size:11px!important;color:#9CA3AF!important;padding:0 12px!important;min-height:28px!important;margin-top:6px}
+  html[data-theme="clair"] nav.side .ghead{font-size:11px!important;color:#5F6775!important;padding:0 12px!important;min-height:28px!important;margin-top:6px}
   html[data-theme="clair"] nav.side .ghead:hover{background:transparent!important}
   html[data-theme="clair"] nav.side details.more summary{border-radius:10px;font-size:14px;color:#374151}
   html[data-theme="clair"] nav.side details.more summary:hover,html[data-theme="clair"] nav.side details.more[open] summary{background:#F3F4F8}
@@ -261,7 +261,7 @@ html[data-theme="clair"] #authTabs button{border-radius:10px!important;box-shado
 /* Mobile */
 @media (max-width:899px){
   html[data-theme="clair"] .mtop{background:rgba(255,255,255,.92);backdrop-filter:blur(10px)}
-  html[data-theme="clair"] .mtop .brand::before{background:var(--green);border-radius:9px}
+  html[data-theme="clair"] .mtop .brand::before{background:var(--green) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cpath d='M9 20c4-5 18-5 22 0-4 5-18 5-22 0z' fill='none' stroke='%23fff' stroke-width='2.4'/%3E%3Ccircle cx='20' cy='20' r='3.2' fill='%23fff'/%3E%3C/svg%3E") center/24px no-repeat;border-radius:9px}
   html[data-theme="clair"] .mtop button,html[data-theme="clair"] .tabbar button{box-shadow:none;border:0;background:transparent}
   html[data-theme="clair"] .tabbar{background:rgba(255,255,255,.96);backdrop-filter:blur(10px)}
   html[data-theme="clair"] .tabbar button.on{color:var(--green)}
@@ -287,11 +287,166 @@ html[data-theme="clair"] nav.side [data-view="rapports"]{--ic:url("data:image/sv
 html[data-theme="clair"] nav.side [data-view="controle"]{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6z'/%3E%3C/svg%3E")}
 html[data-theme="clair"] nav.side [data-view="pointage"]{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 7v5l3 2'/%3E%3C/svg%3E")}
 html[data-theme="clair"] nav.side [data-view="mapage"]{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18'/%3E%3C/svg%3E")}
+
+/* Revue UX : mouvement réduit, cibles tactiles, focus */
+@media (prefers-reduced-motion: reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
+@media (pointer:coarse){button.small{min-height:40px}input[type=checkbox],input[type=radio]{width:22px;height:22px}}
+html[data-theme="clair"] .st-cancelled,html[data-theme="clair"] .st-suspended{color:#4B5563}
+.skip{position:absolute;left:12px;top:-60px;z-index:100;background:var(--ink);color:#fff;padding:10px 14px;border-radius:10px}.skip:focus{top:12px}
+
+/* Style inspiré du tableau de bord « Productivity » : blanc, sobre, bouton noir, cartes menthe */
+html[data-theme="clair"]{--bg:#FFFFFF;--card:#FFFFFF;--ink:#111214;--muted:#5C6270;--line:#ECEDF0;--green:#0F766E;--green-d:#0B5E58;--green-l:#E6F6F2;--gold:#0F766E;--mint1:#CDEFE7;--mint2:#E9F7F1;--shadow:none}
+html[data-theme="clair"] body{background:#FFFFFF}
+html[data-theme="clair"] h1,html[data-theme="clair"] h2,html[data-theme="clair"] h3{font-weight:600;letter-spacing:-.02em}
+html[data-theme="clair"] .kpi .v{font-weight:600}
+html[data-theme="clair"] button{border-radius:8px;box-shadow:0 1px 2px rgba(17,18,20,.04);border:1px solid var(--line);font-weight:500}
+html[data-theme="clair"] button:hover{background:#F7F7F8;border-color:#DCDDE2}
+html[data-theme="clair"] button.primary{background:#111214;border-color:#111214;color:#fff;box-shadow:none}
+html[data-theme="clair"] button.primary:hover{background:#2A2C31;border-color:#2A2C31}
+html[data-theme="clair"] input,html[data-theme="clair"] select,html[data-theme="clair"] textarea{border-radius:10px;border-color:#E3E5E9}
+html[data-theme="clair"] input:focus,html[data-theme="clair"] select:focus,html[data-theme="clair"] textarea:focus{border-color:#111214;box-shadow:0 0 0 3px rgba(15,118,110,.15)}
+html[data-theme="clair"] button:focus-visible,html[data-theme="clair"] a:focus-visible{outline:2px solid #111214;outline-offset:2px}
+html[data-theme="clair"] .card{border-radius:14px;box-shadow:none}
+html[data-theme="clair"] a{color:var(--green)}
+html[data-theme="clair"] .eyebrow{color:var(--muted)}
+html[data-theme="clair"] .pill{border-radius:6px}
+/* Grandes cartes : dégradé menthe au lieu du noir */
+html[data-theme="clair"] [style*="background:var(--ink)"],html[data-theme="clair"] .kpi.dark{background:linear-gradient(135deg,var(--mint1),var(--mint2))!important;color:#0B3B36!important;border:1px solid #CFE9E1!important;--prog:#0F766E}
+html[data-theme="clair"] [style*="background:var(--ink)"] *,html[data-theme="clair"] .kpi.dark .l,html[data-theme="clair"] .kpi.dark .muted{color:#0B3B36!important}
+html[data-theme="clair"] [style*="background:var(--ink)"] [style*="rgba(255,255,255,.15)"]{background:rgba(11,59,54,.12)!important}
+html[data-theme="clair"] [style*="background:var(--ink)"] button:not(.primary){background:#fff!important;border-color:#fff!important}
+html[data-theme="clair"] [style*="background:var(--ink)"] button.primary{background:#111214!important;color:#fff!important;border-color:#111214!important}
+html[data-theme="clair"] [style*="background:var(--ink)"] button.primary *{color:#fff!important}
+html[data-theme="clair"] .bar>div{background:var(--green)}
+html[data-theme="clair"] .toggle button.on{background:#fff;color:#111214}
+html[data-theme="clair"] .toast{background:#111214}
+html[data-theme="clair"] .auth{background:#F6F7F8}
+html[data-theme="clair"] .auth .card{box-shadow:0 1px 3px rgba(17,18,20,.06);border-radius:18px}
+@media (min-width:900px){
+  html[data-theme="clair"] .shell{background:#F3F4F6}
+  html[data-theme="clair"] nav.side{background:#F3F4F6;border-right:0}
+  html[data-theme="clair"] nav.side .brand::before{background-color:#111214;border-radius:9px;box-shadow:none}
+  html[data-theme="clair"] nav.side .org{background:#fff;border:1px solid var(--line)}
+  html[data-theme="clair"] nav.side button{color:#3A3D44;font-weight:500}
+  html[data-theme="clair"] nav.side button:hover{background:#E9EAED}
+  html[data-theme="clair"] nav.side button.active{background:#fff;color:#111214;box-shadow:0 1px 2px rgba(17,18,20,.06)}
+  html[data-theme="clair"] nav.side details.more.active summary{background:#fff;color:#111214}
+  html[data-theme="clair"] .mainwrap{background:#fff;margin:10px 10px 10px 0;border-radius:18px;border:1px solid var(--line);min-height:calc(100vh - 20px)}
+  html[data-theme="clair"] .dtop{background:rgba(255,255,255,.92);border-bottom:1px solid var(--line);border-radius:18px 18px 0 0}
+  html[data-theme="clair"] .dtop button.navsearch{box-shadow:none;border-radius:10px}
+  html[data-theme="clair"] .dtop #navInstall{background:#111214;color:#fff!important;border-color:#111214}
+}
+@media (max-width:899px){
+  html[data-theme="clair"] .mtop .brand::before{background-color:#111214}
+  html[data-theme="clair"] .tabbar button.on{color:#111214}
+  html[data-theme="clair"] .tabbar button.on svg{background:var(--mint1)}
+}
+
+/* ===== Thème « Cuir & Nuit » (par défaut) : anthracite, carte taupe, accent pêche, titres condensés ===== */
+html[data-theme="cuir"]{color-scheme:dark;--bg:#1E1E1E;--card:#2A2A2A;--ink:#F3EEE9;--muted:#BDB4AC;--line:#3A3A3A;--green:#F4A27A;--green-d:#E88B5E;--green-l:#3B2E27;--ok:#9FD8B4;--ok-l:#22352A;--gold:#F4A27A;--gold-l:#3B2E27;--amber:#F6C38A;--amber-l:#3A2E22;--red:#F49A8E;--red-l:#3A2422;--blue:#A9C6F0;--blue-l:#232C3A;--nav:#161616;--taupe:#5E534D;--display:"Bebas Neue","Oswald",system-ui,sans-serif;--body:"DM Sans"}
+html[data-theme="cuir"] button.primary{color:#1E1E1E}
+html[data-theme="cuir"] input,html[data-theme="cuir"] select,html[data-theme="cuir"] textarea{background:#232323!important;color:#F3EEE9;border-color:#444}
+html[data-theme="cuir"] [style*="background:#fff"],html[data-theme="cuir"] [style*="background: #fff"],html[data-theme="cuir"] [style*="background:#FBF6EE"],html[data-theme="cuir"] [style*="background:#F3EBDD"],html[data-theme="cuir"] [style*="background:var(--bg)"]{background:#232323!important;color:#F3EEE9}
+html[data-theme="cuir"] .modal .card{background:#262626}
+html[data-theme="cuir"] [style*="background:var(--ink)"],html[data-theme="cuir"] .kpi.dark{background:#5E534D!important;color:#F3EEE9!important;border-color:#2A3240!important}
+html[data-theme="cuir"] [style*="background:var(--ink)"] button.primary{color:#1E1E1E!important}
+html[data-theme="cuir"] body{background:var(--bg)}
+html[data-theme="cuir"] h1,html[data-theme="cuir"] h2{font-family:var(--display);font-weight:400;letter-spacing:.01em;text-transform:uppercase;line-height:1}
+html[data-theme="cuir"] h1{font-size:clamp(34px,4vw,48px)!important}
+html[data-theme="cuir"] h3{font-family:var(--body),system-ui,sans-serif;font-weight:700;letter-spacing:-.01em}
+html[data-theme="cuir"] .kpi .v{font-family:var(--display);font-weight:400;font-size:36px;letter-spacing:.01em}
+html[data-theme="cuir"] .card{background:var(--card);border:0;border-radius:18px}
+html[data-theme="cuir"] button{border-radius:999px;border:1px solid #4A4A4A;background:transparent;color:var(--ink)}
+html[data-theme="cuir"] button:hover{background:#333}
+html[data-theme="cuir"] button.primary{background:var(--green);border-color:var(--green);color:#1E1E1E}
+html[data-theme="cuir"] button.primary:hover{background:var(--green-d);border-color:var(--green-d);color:#1E1E1E}
+html[data-theme="cuir"] input,html[data-theme="cuir"] select,html[data-theme="cuir"] textarea{background:#232323!important;color:var(--ink);border-color:#444;border-radius:12px}
+html[data-theme="cuir"] input:focus,html[data-theme="cuir"] select:focus,html[data-theme="cuir"] textarea:focus{border-color:var(--green);outline:0;box-shadow:0 0 0 3px rgba(244,162,122,.25)}
+html[data-theme="cuir"] a{color:var(--green)}
+html[data-theme="cuir"] .eyebrow{color:var(--green)}
+html[data-theme="cuir"] [style*="background:var(--ink)"],html[data-theme="cuir"] .kpi.dark{background:var(--taupe)!important;color:#F7F1EC!important}
+html[data-theme="cuir"] [style*="background:var(--ink)"] *:not(button):not(button *){color:#F7F1EC}
+html[data-theme="cuir"] [style*="background:var(--ink)"] a{color:#FFD2BC!important}
+html[data-theme="cuir"] [style*="background:var(--ink)"] button:not(.primary){border-color:rgba(255,255,255,.35);color:#fff}
+html[data-theme="cuir"] .kpi.dark .l,html[data-theme="cuir"] .kpi.dark .muted{color:#E9DED6!important}
+html[data-theme="cuir"] .table th{color:var(--muted);border-color:#3A3A3A}
+html[data-theme="cuir"] .table td{border-color:#333}
+html[data-theme="cuir"] .toggle{background:#2F2F2F}
+html[data-theme="cuir"] .toggle button{border:0}
+html[data-theme="cuir"] .toggle button.on{background:var(--green);color:#1E1E1E}
+html[data-theme="cuir"] .bar{background:#3A3A3A}
+html[data-theme="cuir"] .toast{background:#F3EEE9;color:#1E1E1E}
+html[data-theme="cuir"] .modal{background:rgba(0,0,0,.6)}
+html[data-theme="cuir"] .modal .card{background:#262626}
+html[data-theme="cuir"] .pill{background:#333;color:var(--ink)}
+html[data-theme="cuir"] .st-active,html[data-theme="cuir"] .st-succeeded{background:var(--ok-l);color:var(--ok)}
+html[data-theme="cuir"] .st-pending,html[data-theme="cuir"] .st-past_due{background:var(--amber-l);color:var(--amber)}
+html[data-theme="cuir"] .st-expired,html[data-theme="cuir"] .st-failed{background:var(--red-l);color:var(--red)}
+html[data-theme="cuir"] .auth{background:radial-gradient(800px 500px at 20% 0%,#3B2E27,transparent 60%),var(--bg)}
+html[data-theme="cuir"] .auth .card{background:#262626}
+html[data-theme="cuir"] #authTabs{background:#1E1E1E!important}
+html[data-theme="cuir"] [style*="background:#E9DCC8"]{background:#2F2F2F!important}
+html[data-theme="cuir"] [style*="background:#E9DCC8"] > button:not(.primary){background:transparent;border:0}
+html[data-theme="cuir"] [style*="background:var(--bg)"]{background:#232323!important}
+html[data-theme="cuir"] .dtop{background:rgba(30,30,30,.9);border-bottom:1px solid #2E2E2E}
+html[data-theme="cuir"] .dtop .dtitle{font-family:var(--display);font-weight:400;font-size:24px;letter-spacing:.02em;text-transform:uppercase}
+html[data-theme="cuir"] .dtop .dtitle span{font-family:var(--body),system-ui,sans-serif;letter-spacing:.08em}
+html[data-theme="cuir"] .dtop button.navsearch{background:#2A2A2A;border:1px solid #3A3A3A;color:var(--ink);border-radius:999px}
+html[data-theme="cuir"] .dtop #navSearch{color:var(--muted)}
+html[data-theme="cuir"] .dtop #navInstall{background:var(--green);color:#1E1E1E!important;border-color:var(--green)}
+html[data-theme="cuir"] nav.side,html[data-theme="cuir"] .mtop,html[data-theme="cuir"] .tabbar{background:#161616;border-color:#2A2A2A}
+html[data-theme="cuir"] nav.side .brand,html[data-theme="cuir"] .mtop .brand{white-space:nowrap;font-family:var(--display);font-weight:400;font-size:26px;letter-spacing:.06em;text-transform:uppercase;color:#F3EEE9}
+html[data-theme="cuir"] nav.side .brand::before,html[data-theme="cuir"] .mtop .brand::before{background-color:var(--green);border-radius:50%;flex:0 0 30px}
+html[data-theme="cuir"] nav.side .brand{font-size:24px}
+html[data-theme="cuir"] nav.side .org{color:var(--muted);background:#1F1F1F;border-radius:10px;padding:8px 10px}
+html[data-theme="cuir"] nav.side button,html[data-theme="cuir"] nav.side details.more summary{color:#D9D2CB;border:0;background:transparent;border-radius:999px}
+html[data-theme="cuir"] nav.side button:hover,html[data-theme="cuir"] nav.side details.more summary:hover{background:#262626}
+html[data-theme="cuir"] nav.side button.active,html[data-theme="cuir"] nav.side details.more.active summary{background:var(--green);color:#1E1E1E}
+html[data-theme="cuir"] nav.side .ghead{color:#9C948D!important}
+html[data-theme="cuir"] nav.side details.more .menu{background:transparent}
+html[data-theme="cuir"] .mtop button,html[data-theme="cuir"] .tabbar button{color:#BDB4AC;border:0;background:transparent}
+html[data-theme="cuir"] .tabbar button.on{color:var(--green)}
+html[data-theme="cuir"] .tabbar button.on svg{background:var(--green-l)}
+@media (min-width:900px){
+  html[data-theme="cuir"] nav.side > button[data-view]::before,html[data-theme="cuir"] nav.side .ngroup > button:not(.ghead)::before{content:"";flex:0 0 18px;height:18px;background:currentColor;opacity:.8;-webkit-mask:var(--ic,none) center/contain no-repeat;mask:var(--ic,none) center/contain no-repeat}
+  html[data-theme="cuir"] nav.side button{display:flex;align-items:center;gap:10px;font-weight:500}
+}
+html[data-theme="cuir"] [style*="background:var(--green)"]{color:#1E1E1E!important}
+html[data-theme="cuir"] [style*="background:#F6E1D3"],html[data-theme="cuir"] [style*="background:#FFF4E5"],html[data-theme="cuir"] [style*="background:#FFF4E0"],html[data-theme="cuir"] [style*="background:#FFF9EE"],html[data-theme="cuir"] [style*="background:#F2DCA8"],html[data-theme="cuir"] [style*="background:#ECE8DF"]{background:#3B2E27!important;color:#F3EEE9!important}
+/* Navigation essentielle : seules les actions du quotidien sont visibles, le reste dans « Plus » */
+.navmore-btn{display:none}
+@media (min-width:900px){
+  body.navess nav.side .ngroup .ghead{display:none!important}
+  body.navess nav.side .ngroup{margin-top:0}
+  body.navess nav.side .ngroup > button:not(.ess){display:none!important}
+  body.navess nav.side .ngroup > button.ess,body.navess nav.side .ngroup > button.active{display:flex!important}
+  body.navess nav.side #navEssToggle{display:flex}
+  nav.side .navmore-btn{display:flex;margin-top:6px}
+}
+html[data-theme="cuir"] nav.side [data-view="dashboard"]{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 11l9-8 9 8v10h-6v-6H9v6H3z'/%3E%3C/svg%3E")}
+html[data-theme="cuir"] nav.side [data-view="reservations"]{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='5' width='18' height='16' rx='2'/%3E%3Cpath d='M3 10h18M8 3v4M16 3v4'/%3E%3C/svg%3E")}
+html[data-theme="cuir"] nav.side [data-view="planning"]{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 6h18M3 12h18M3 18h18M8 3v18'/%3E%3C/svg%3E")}
+html[data-theme="cuir"] nav.side [data-view="chambres"]{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 18V7M21 18v-6H3M7 12V9h5v3'/%3E%3C/svg%3E")}
+html[data-theme="cuir"] nav.side [data-view="clients"]{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='9' cy='8' r='4'/%3E%3Cpath d='M2 21a7 7 0 0 1 14 0M17 4a4 4 0 0 1 0 8M22 21a6 6 0 0 0-4-5.6'/%3E%3C/svg%3E")}
+html[data-theme="cuir"] nav.side [data-view="inventaire"]{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 8l-9-5-9 5 9 5 9-5zM3 8v8l9 5 9-5V8M12 13v8'/%3E%3C/svg%3E")}
+html[data-theme="cuir"] nav.side [data-view="caisse"]{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='2' y='6' width='20' height='12' rx='2'/%3E%3Ccircle cx='12' cy='12' r='2.5'/%3E%3C/svg%3E")}
+html[data-theme="cuir"] nav.side [data-view="depenses"]{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3v18M17 7H9.5a3 3 0 0 0 0 6h5a3 3 0 0 1 0 6H6'/%3E%3C/svg%3E")}
+html[data-theme="cuir"] nav.side [data-view="factures"]{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 2h9l5 5v15H6zM14 2v6h6M9 13h7M9 17h5'/%3E%3C/svg%3E")}
+html[data-theme="cuir"] nav.side [data-rtab="caisse"]{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10M17 21V3c-2 1-3 4-3 7h3'/%3E%3C/svg%3E")}
+html[data-theme="cuir"] nav.side [data-rtab="produits"]{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 12l-8 8-9-9V3h8zM7.5 7.5h.01'/%3E%3C/svg%3E")}
+html[data-theme="cuir"] nav.side [data-rtab="stock"]{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='3' width='7' height='7'/%3E%3Crect x='14' y='3' width='7' height='7'/%3E%3Crect x='3' y='14' width='7' height='7'/%3E%3Crect x='14' y='14' width='7' height='7'/%3E%3C/svg%3E")}
+html[data-theme="cuir"] nav.side [data-rtab="ventes"]{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 3v18h18M7 15l4-4 3 3 5-6'/%3E%3C/svg%3E")}
+html[data-theme="cuir"] nav.side #navAna{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 20V10M10 20V4M16 20v-7M22 20H2'/%3E%3C/svg%3E")}
+html[data-theme="cuir"] nav.side #navReviews{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3l2.8 5.7 6.2.9-4.5 4.4 1 6.2-5.5-2.9-5.5 2.9 1-6.2L3 9.6l6.2-.9z'/%3E%3C/svg%3E")}
+html[data-theme="cuir"] nav.side [data-view="rapports"]{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 2h12v20H6zM9 7h6M9 11h6M9 15h4'/%3E%3C/svg%3E")}
+html[data-theme="cuir"] nav.side [data-view="controle"]{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6z'/%3E%3C/svg%3E")}
+html[data-theme="cuir"] nav.side [data-view="pointage"]{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 7v5l3 2'/%3E%3C/svg%3E")}
+html[data-theme="cuir"] nav.side [data-view="mapage"]{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18'/%3E%3C/svg%3E")}
 </style>
 </head>
 <body>
 
-<div id="auth" class="auth hidden">
+<main id="auth" class="auth hidden">
   <div class="card">
     <div class="eyebrow">Horus Hotel · Gestion hôtelière &amp; résidences</div>
     <h1 id="authTitle" style="font-size:30px;margin:6px 0 14px">Connexion</h1>
@@ -323,7 +478,7 @@ html[data-theme="clair"] nav.side [data-view="mapage"]{--ic:url("data:image/svg+
     <p class="muted" style="margin:16px 0 0;font-size:14px"><span id="authSwitchTxt">Pas encore de compte ?</span> <a href="#" id="authSwitch">Créer un compte – 30 jours gratuits</a></p>
     </div>
   </div>
-</div>
+</main>
 
 <div id="onboard" class="auth hidden">
   <div class="card">
@@ -341,23 +496,24 @@ html[data-theme="clair"] nav.side [data-view="mapage"]{--ic:url("data:image/svg+
   </div>
 </div>
 
+<a href="#mainContent" class="skip">Aller au contenu</a>
 <div id="app" class="shell hidden">
   <nav class="side" aria-label="Navigation principale">
     <div class="brand">Horus Hotel</div>
     <div class="org" id="orgLabel"></div>
     <button data-view="dashboard">Accueil</button>
     <div class="ngroup" data-group="heberg"><button type="button" class="ghead" aria-expanded="true"> Hébergement</button>
-      <button data-view="reservations">Réservations</button>
-      <button data-view="planning">Planning</button>
-      <button data-view="chambres">Chambres</button>
+      <button data-view="reservations" class="ess">Réservations</button>
+      <button data-view="planning" class="ess">Planning</button>
+      <button data-view="chambres" class="ess">Chambres</button>
       <button data-view="clients">Clients</button>
       <button data-view="inventaire">Inventaire</button></div>
     <div class="ngroup" data-group="argent"><button type="button" class="ghead" aria-expanded="true"> Argent</button>
-      <button data-view="caisse">Caisse</button>
+      <button data-view="caisse" class="ess">Caisse</button>
       <button data-view="depenses">Dépenses</button>
       <button data-view="factures">Factures</button></div>
     <div class="ngroup" data-group="resto"><button type="button" class="ghead" aria-expanded="true"> Restaurant &amp; Bar</button>
-      <button data-view="resto" data-rtab="caisse">Caisse resto</button>
+      <button data-view="resto" data-rtab="caisse" class="ess">Caisse resto</button>
       <button data-view="resto" data-rtab="produits" data-mgr="1">Produits</button>
       <button data-view="resto" data-rtab="stock" data-mgr="1">Stock</button>
       <button data-view="resto" data-rtab="ventes" data-acc="1">Ventes</button></div>
@@ -368,6 +524,7 @@ html[data-theme="clair"] nav.side [data-view="mapage"]{--ic:url("data:image/svg+
       <button data-view="controle">Contrôle <span id="alertBadge" class="hidden" style="display:inline-block;min-width:20px;padding:0 6px;border-radius:999px;background:var(--green);color:#fff;font-size:12px;line-height:20px"></span></button>
       <button data-view="pointage">Pointage</button>
       <button data-view="mapage">Ma page de présentation</button></div>
+    <button type="button" id="navEssToggle" class="navmore-btn" aria-expanded="false">Plus de fonctionnalités</button>
     <details class="more" id="navMore">
       <summary>Réglages</summary>
       <div class="menu">
@@ -408,7 +565,7 @@ html[data-theme="clair"] nav.side [data-view="mapage"]{--ic:url("data:image/svg+
     <button data-tab="resto"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10M17 21V3c-2 1-3 4-3 7h3"></path></svg>Resto</button>
     <button data-tab="more"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.5"></circle><circle cx="12" cy="12" r="1.5"></circle><circle cx="19" cy="12" r="1.5"></circle></svg>Plus</button>
   </nav>
-  <main>
+  <main id="mainContent" tabindex="-1">
     <div id="subnav" class="subnav hidden" aria-label="Sous-menu"></div>
     <div id="banner"></div>
     <section id="v-dashboard" class="hidden"></section>
@@ -490,7 +647,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
   window.__nativeOpen = nativeOpen;
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
-const APP_VERSION = '2026.10.26-2';
+const APP_VERSION = '2026.10.26-5';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -944,6 +1101,11 @@ function openMore(){
 }
 document.querySelectorAll('#tabbar [data-tab]').forEach(b => b.onclick = () => openTab(b.dataset.tab));
 
+
+/* Navigation essentielle (choix mémorisé sur l'appareil) */
+(function(){ let full = false; try { full = localStorage.getItem('hh_nav_full') === '1'; } catch (_) {}
+  const b = document.getElementById('navEssToggle'); const apply = () => { document.body.classList.toggle('navess', !full); if (b) { b.textContent = full ? 'Moins de fonctionnalités' : 'Plus de fonctionnalités'; b.setAttribute('aria-expanded', full); } };
+  if (b) b.addEventListener('click', () => { full = !full; try { localStorage.setItem('hh_nav_full', full ? '1' : '0'); } catch (_) {} apply(); }); apply(); })();
 $('navInstall').onclick = () => installApp();
 if (isStandalone() || IN_APP) $('navInstall').classList.add('hidden');
 $('navEsts').onclick = () => openEstablishments();
@@ -1003,11 +1165,11 @@ function renderLocked(v){
 }
 
 
-const APP_THEMES = { clair:['Clair & moderne (par défaut)','#F5F7FB','#4F46E5','#111827'], sable:['Sable & Terracotta','#F3EBDD','#B4532A','#2B1E16'], lagune:['Lagune','#F4F7FB','#1E5BD8','#0F1B2D'], indigo:['Indigo & Ocre','#FAF5EC','#C9741A','#1B1F3B'], nuit:['Nuit & Or (sombre)','#0E1116','#D4A84F','#ECE7DC'] };
+const APP_THEMES = { cuir:['Cuir & Nuit (par défaut)','#1E1E1E','#F4A27A','#F3EEE9'], clair:['Clair & moderne','#FFFFFF','#0F766E','#111214'], sable:['Sable & Terracotta','#F3EBDD','#B4532A','#2B1E16'], lagune:['Lagune','#F4F7FB','#1E5BD8','#0F1B2D'], indigo:['Indigo & Ocre','#FAF5EC','#C9741A','#1B1F3B'], nuit:['Nuit & Or (sombre)','#0E1116','#D4A84F','#ECE7DC'] };
 function setTheme(k){ if (k === 'sable') delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = k; try { localStorage.setItem('hh_theme', k); } catch (_) {} const m = document.querySelector('meta[name=theme-color]'); if (m) m.content = APP_THEMES[k][2]; }
 function openThemes(){
   const nb = $('navMore'); if (nb) nb.open = false;
-  let cur = 'clair'; try { cur = localStorage.getItem('hh_theme') || 'clair'; } catch (_) {}
+  let cur = 'cuir'; try { cur = localStorage.getItem('hh_theme') || 'cuir'; } catch (_) {}
   modal(`<h2 style="font-size:24px;margin-bottom:4px">Thème de l’application</h2><p class="muted" style="margin:0 0 14px">Choisissez l’apparence. Le changement s’applique tout de suite sur cet appareil.</p>
     <div class="grid" style="grid-template-columns:repeat(2,minmax(0,1fr));gap:10px">${Object.entries(APP_THEMES).map(([k, t]) => `<button type="button" data-th="${k}" style="min-height:0;padding:0;border-radius:16px;border:${k === cur ? '3px solid var(--green)' : '1px solid var(--line)'};overflow:hidden;text-align:left;background:${t[1]};color:${t[3]}">
       <div style="display:flex;height:70px"><span style="width:30%;background:${k === 'indigo' ? '#1B1F3B' : k === 'nuit' ? '#151A22' : t[1]};border-right:1px solid rgba(0,0,0,.08)"></span><span style="flex:1;padding:10px;display:flex;flex-direction:column;gap:6px"><span style="height:10px;width:60%;border-radius:5px;background:${t[2]}"></span><span style="height:8px;width:80%;border-radius:4px;background:${t[3]};opacity:.25"></span><span style="height:8px;width:50%;border-radius:4px;background:${t[3]};opacity:.25"></span></span></div>
@@ -1228,13 +1390,13 @@ async function renderChambres(){
   const hkCls = { clean:'st-active', ready:'st-active', dirty:'st-pending', cleaning:'st-trial', out_of_service:'st-expired' };
   el.innerHTML = head('Chambres', `<span class="pill st-trial" style="align-self:center">${u.rooms ?? rooms.filter(r => r.is_active).length} / ${u.max_rooms ?? '∞'} utilisées</span><button class="ghost" type="button" id="rateRulesBtn">Tarifs automatiques</button>${canEdit ? '<button class="primary" id="addRooms">+ Ajouter des chambres</button>' : ''}`) + readOnlyNote() + `
     <div class="row" style="margin-bottom:16px">
-      <select id="fType" style="width:auto"><option value="">Tous les types</option>${types.map(t => `<option ${t === f.type ? 'selected' : ''}>${esc(t)}</option>`).join('')}</select>
-      <select id="fSt" style="width:auto"><option value="">Tous les états</option>${opt(HKS, f.st)}<option value="inactive" ${f.st === 'inactive' ? 'selected' : ''}>Désactivées</option></select>
+      <select id="fType" aria-label="Type de chambre" style="width:auto"><option value="">Tous les types</option>${types.map(t => `<option ${t === f.type ? 'selected' : ''}>${esc(t)}</option>`).join('')}</select>
+      <select id="fSt" aria-label="État de la chambre" style="width:auto"><option value="">Tous les états</option>${opt(HKS, f.st)}<option value="inactive" ${f.st === 'inactive' ? 'selected' : ''}>Désactivées</option></select>
     </div>
     ${shown.length === 0 ? `<div class="card" style="text-align:center;padding:40px 20px"><h3 style="font-size:22px">Aucune chambre</h3><p class="muted">Ajoutez vos chambres une par une ou plusieurs d’un coup (ex. 101 à 120).</p>${canEdit ? '<button class="primary" id="addRooms2">Ajouter des chambres</button>' : ''}</div>` : `
     <div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px">
       ${shown.map(r => { const ph = (r.photos || [])[0];
-        return `<article class="card" style="padding:0;overflow:hidden;display:flex;flex-direction:column;${r.is_active ? '' : 'opacity:.55'}">
+        return `<article class="card" style="padding:0;overflow:hidden;display:flex;flex-direction:column;${r.is_active ? '' : 'background:var(--bg);border-style:dashed'}">
           <div style="position:relative;height:160px;background:${ph ? `#2B1E16 url('${esc(ph)}') center/cover` : 'repeating-linear-gradient(135deg,var(--line) 0 12px,#F1E6D4 12px 24px)'}">
             ${ph ? '' : '<span style="position:absolute;inset:0;display:grid;place-items:center;color:var(--muted);font-size:13px;font-weight:600">Aucune photo</span>'}
             <span style="position:absolute;top:10px;left:10px;background:var(--card);color:var(--ink);font-family:var(--display);font-weight:800;font-size:20px;padding:4px 12px;border-radius:999px">${esc(r.number)}</span>
@@ -1343,7 +1505,7 @@ async function renderAdmin(){
     <p class="muted" style="margin:-6px 0 18px">Formule la plus utilisée : <strong>${top ? esc(top.plan) + ' (' + top.count + ')' : '—'}</strong> · Suspendus : ${s.suspended}</p>
 
     <div class="card" style="margin-bottom:16px"><h3 style="font-size:20px;margin-bottom:10px">Paiements en attente de validation</h3>
-      ${(pend.data || []).length === 0 ? '<p class="muted">Aucun paiement en attente.</p>' : `<div class="tablewrap"><table class="table"><thead><tr><th>Date</th><th>Organisation</th><th>Formule</th><th>Moyen</th><th>Montant</th><th>Référence de transaction</th><th></th></tr></thead><tbody>
+      ${(pend.data || []).length === 0 ? '<p class="muted">Aucun paiement en attente.</p>' : `<div class="tablewrap"><table class="table"><thead><tr><th>Date</th><th>Organisation</th><th>Formule</th><th>Moyen</th><th>Montant</th><th>Référence de transaction</th><th><span class="sr-only">Actions</span></th></tr></thead><tbody>
       ${pend.data.map(p => `<tr><td>${date(p.created_at)}</td><td>${esc(p.organizations ? p.organizations.name : '')}</td><td>${esc(p.plans ? p.plans.name : '')} · ${CYCLE[p.billing_cycle]}</td><td>${METHOD[p.payment_method] || ''}</td><td><strong>${fcfa(p.amount)}</strong><div class="muted" style="font-size:12px">Réf. ${esc(String(p.id).slice(0,8).toUpperCase())}</div></td>
         <td><input aria-label="Référence de transaction" id="ref-${esc(p.id)}" placeholder="N° de reçu / virement"></td>
         <td class="row"><button class="small primary" data-confirm="${esc(p.id)}">Valider</button><button class="small ghost" data-fail="${esc(p.id)}">Rejeter</button></td></tr>`).join('')}</tbody></table></div>`}
@@ -1357,7 +1519,7 @@ async function renderAdmin(){
       </tbody></table></div></div>
 
     <div class="card"><h3 style="font-size:20px;margin-bottom:10px">Formules et prix</h3>
-      <div class="tablewrap"><table class="table"><thead><tr><th>Formule</th><th>Mensuel (FCFA)</th><th>Annuel (FCFA)</th><th>Chambres max</th><th>Utilisateurs max</th><th>Active</th><th></th></tr></thead><tbody>
+      <div class="tablewrap"><table class="table"><thead><tr><th>Formule</th><th>Mensuel (FCFA)</th><th>Annuel (FCFA)</th><th>Chambres max</th><th>Utilisateurs max</th><th>Active</th><th><span class="sr-only">Actions</span></th></tr></thead><tbody>
       ${(plans.data || []).map(p => `<tr><td><strong>${esc(p.name)}</strong>${p.is_trial ? ' <span class="muted">(essai)</span>' : ''}</td>
         <td><input type="number" min="0" id="pm-${esc(p.id)}" value="${p.monthly_price}" aria-label="Prix mensuel ${esc(p.name)}" style="max-width:130px"></td>
         <td><input type="number" min="0" id="py-${esc(p.id)}" value="${p.yearly_price ?? ''}" placeholder="Sur devis" aria-label="Prix annuel ${esc(p.name)}" style="max-width:130px"></td>
@@ -1423,9 +1585,12 @@ const head = (title, right='') => `<div class="row between" style="margin-bottom
 function readOnlyNote(){ return S.overview && !S.overview.can_write ? `<p class="muted" style="margin:-8px 0 16px">Consultation seule : réactivez votre abonnement pour enregistrer de nouvelles opérations.</p>` : ''; }
 
 /* ---------- Tableau de bord ---------- */
-const LIVE = document.documentElement.dataset.theme === 'clair' ? {
-  occupied:['Occupée','#4F46E5','#FFFFFF'], arriving:['Arrivée prévue','#FEF3C7','#92400E'], departing:['Départ du jour','#111827','#FFFFFF'],
-  free:['Libre','#DCFCE7','#166534'], dirty:['À nettoyer','#FFE4E6','#9F1239'], oos:['Hors service','#F1F3F7','#6B7280']
+const LIVE = document.documentElement.dataset.theme === 'cuir' ? {
+  occupied:['Occupée','#F4A27A','#1E1E1E'], arriving:['Arrivée prévue','#3A2E22','#F6C38A'], departing:['Départ du jour','#5E534D','#FFFFFF'],
+  free:['Libre','#22352A','#9FD8B4'], dirty:['À nettoyer','#3A2422','#F49A8E'], oos:['Hors service','#2F2F2F','#BDB4AC']
+} : document.documentElement.dataset.theme === 'clair' ? {
+  occupied:['Occupée','#111214','#FFFFFF'], arriving:['Arrivée prévue','#FEF3C7','#713F12'], departing:['Départ du jour','#CDEFE7','#0B3B36'],
+  free:['Libre','#DCFCE7','#14532D'], dirty:['À nettoyer','#FFE4E6','#881337'], oos:['Hors service','#E9ECF2','#374151']
 } : {
   occupied:  ['Occupée',        '#B4532A', '#FFFFFF'],
   arriving:  ['Arrivée prévue', '#F2DCA8', '#5E4510'],
@@ -1544,7 +1709,7 @@ async function dashGuide(R){
   let hide = false; try { hide = localStorage.getItem('hh_guide_hidden_' + S.org) === '1'; } catch (e) {}
   const nextS = steps.find(s => !s[1]);
   const checklist = (!hide && done < steps.length) ? `<section class="card" style="background:var(--ink);color:#FBF6EE;border-color:var(--ink);margin-bottom:16px">
-    <div class="row between" style="align-items:flex-start"><div><div style="font-size:13px;color:#E9DCC8;font-weight:600">Démarrage</div><h3 style="font-size:24px;margin:4px 0 0">Votre hôtel est prêt à ${pct} %</h3></div><button class="small" id="gHide" style="color:#E9DCC8;border-color:#6E5A4A">Masquer</button></div>
+    <div class="row between" style="align-items:flex-start"><div><div style="font-size:13px;color:#E9DCC8;font-weight:600">Démarrage</div><h3 style="font-size:24px;margin:4px 0 0">Votre hôtel est prêt à ${pct}&nbsp;%</h3></div><button class="small" id="gHide" style="color:#E9DCC8;border-color:#6E5A4A">Masquer</button></div>
     <div style="height:10px;border-radius:5px;background:rgba(255,255,255,.15);margin:12px 0"><div style="width:${pct}%;height:10px;border-radius:5px;background:var(--prog,#E9A27A)"></div></div>
     <div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:6px 18px;font-size:14px">${steps.map(s => s[1] ? `<span style="color:#CFE0C0">✓ ${s[0]}</span>` : `<a href="#" data-go="${s[2]}" style="color:#F2C7A8">○ ${s[0]}</a>`).join('')}</div>
     ${nextS ? `<button class="primary" data-go="${nextS[2]}" style="margin-top:14px">Étape suivante : ${nextS[0]} →</button>` : ''}</section>` : '';
@@ -1662,7 +1827,7 @@ async function renderReservations(){
       <div class="row" style="gap:6px;flex-wrap:wrap">${btns}${tl && kind !== 'dep' ? `<a class="btn" style="min-height:36px;padding:0 12px;font-size:13px" href="${tl}">Appeler</a>` : ''}<button class="small ghost" data-open="${r.id}" aria-label="Ouvrir la réservation">⋯</button></div></div>`;
   };
   const col = (title, badge, badgeStyle, items, kind, empty) => `<section class="card"><div class="row between" style="margin-bottom:12px"><h3 style="font-size:20px">${title}</h3>${items.length ? `<span class="pill" style="${badgeStyle}">${badge}</span>` : ''}</div>${items.length ? items.map(r => card(r, kind)).join('') : `<p class="muted">${empty}</p>`}</section>`;
-  const table = (rows, empty) => rows.length ? `<div class="tablewrap"><table class="table"><thead><tr><th>Client</th><th>Séjour</th><th>Ch.</th><th>Paiement</th><th>Statut</th><th></th></tr></thead><tbody>
+  const table = (rows, empty) => rows.length ? `<div class="tablewrap"><table class="table"><thead><tr><th>Client</th><th>Séjour</th><th>Ch.</th><th>Paiement</th><th>Statut</th><th><span class="sr-only">Actions</span></th></tr></thead><tbody>
     ${rows.map(r => { const pct = r.total_amount > 0 ? Math.min(100, Math.round(r.paid * 100 / r.total_amount)) : 100;
       return `<tr><td><strong>${esc(r.guest_name)}</strong><div class="muted" style="font-size:12px">${esc(r.guest_phone || '')}${r.guest_phone ? ' · ' : ''}${SOURCE[r.source] || ''}</div></td><td style="white-space:nowrap">${dfr(r.check_in)} → ${dfr(r.check_out)}<div class="muted" style="font-size:12px">${r.nights} nuit(s)</div></td><td>${esc(r.room_number)}</td>
       <td style="min-width:170px"><div style="font-size:13px;white-space:nowrap">${money(r.paid)} / ${money(r.total_amount)}</div><div style="height:6px;border-radius:3px;background:#E9DCC8;margin-top:4px"><div style="width:${pct}%;height:6px;border-radius:3px;background:${pct >= 100 ? 'var(--ok)' : 'var(--green)'}"></div></div></td>
@@ -1678,10 +1843,10 @@ async function renderReservations(){
         ${soon.map(r => `<div style="margin-top:10px;border-radius:14px;background:#FFF4E5;color:#6B4A00;padding:12px 14px;font-size:14px">${esc(r.guest_name)} (${esc(r.room_number)}) part le ${dfr(r.check_out)} avec <strong>${money(r.balance)}</strong> de solde. <a href="#" data-pay="${r.id}">Encaisser maintenant</a></div>`).join('')}</div>
       ${col('Demandes en ligne', requests.length + ' à confirmer', 'background:var(--green);color:#fff', requests, 'req', 'Aucune demande en attente.')}
     </div>
-    <div class="card"><div class="row between" style="margin-bottom:10px"><h3 style="font-size:20px">En séjour</h3><label class="row" style="gap:6px;margin:0;font-weight:500"><input type="checkbox" id="rfUnp" style="width:auto;min-height:0" ${f.unpaid ? 'checked' : ''}> Solde impayé</label></div>${table(unp(inhouse), 'Aucun client en séjour.')}</div>`;
+    <div class="card"><div class="row between" style="margin-bottom:10px"><h3 style="font-size:20px">En séjour</h3><label class="row" style="gap:6px;margin:0;font-weight:500"><input type="checkbox" id="rfUnp" style="width:22px;height:22px;min-height:0" ${f.unpaid ? 'checked' : ''}> Solde impayé</label></div>${table(unp(inhouse), 'Aucun client en séjour.')}</div>`;
   else if (f.tab === 'requests') body = `<div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:16px">${requests.length ? requests.map(r => `<div>${card(r, 'req')}</div>`).join('') : `<div class="card">${emptyState('cal', 'Aucune demande en ligne', 'Les demandes faites depuis votre page publique apparaîtront ici pour être confirmées.', '<button class="ghost" data-go="mapage">Voir ma page publique</button>')}</div>`}</div>`;
   else { const rows = unp(f.tab === 'inhouse' ? inhouse : f.tab === 'upcoming' ? upcoming : history);
-    body = `<div class="card"><div class="row between" style="margin-bottom:10px"><h3 style="font-size:20px">${TABS.find(x => x[0] === f.tab)[1]}</h3><label class="row" style="gap:6px;margin:0;font-weight:500"><input type="checkbox" id="rfUnp" style="width:auto;min-height:0" ${f.unpaid ? 'checked' : ''}> Solde impayé</label></div>${table(rows, f.q ? 'Aucun résultat pour cette recherche.' : 'Rien à afficher ici.')}</div>`; }
+    body = `<div class="card"><div class="row between" style="margin-bottom:10px"><h3 style="font-size:20px">${TABS.find(x => x[0] === f.tab)[1]}</h3><label class="row" style="gap:6px;margin:0;font-weight:500"><input type="checkbox" id="rfUnp" style="width:22px;height:22px;min-height:0" ${f.unpaid ? 'checked' : ''}> Solde impayé</label></div>${table(rows, f.q ? 'Aucun résultat pour cette recherche.' : 'Rien à afficher ici.')}</div>`; }
 
   el.innerHTML = head('Réservations', `<input id="rfQ" value="${esc(f.q)}" placeholder="Nom, chambre, téléphone, n° de réservation" style="width:min(300px,100%)" aria-label="Rechercher"><button data-walkin>Walk-in</button><button class="primary" data-newresa>+ Nouvelle réservation</button>`) + readOnlyNote() +
     `<div class="row" role="tablist" style="gap:6px;background:#E9DCC8;padding:5px;border-radius:26px;width:fit-content;max-width:100%;overflow-x:auto;margin-bottom:16px;flex-wrap:nowrap">${TABS.map(([k, l, n]) => `<button role="tab" aria-selected="${k === f.tab}" class="small ${k === f.tab ? 'primary' : 'ghost'}" style="white-space:nowrap;border:0" data-rtab="${k}">${l}${n ? ' · ' + n : ''}</button>`).join('')}</div>` + body;
@@ -1951,7 +2116,7 @@ async function renderClients(){
   const rows = (data || []).filter(g => !q || (g.full_name + ' ' + (g.phone || '') + ' ' + (g.email || '')).toLowerCase().includes(q));
   el.innerHTML = head('Clients', `<button class="primary" id="cNew">Nouveau client</button>`) + `
     <div class="card" style="margin-bottom:14px"><label for="cQ">Recherche</label><input id="cQ" value="${esc(S._cq || '')}" placeholder="Nom, téléphone, e-mail"></div>
-    <div class="card">${rows.length === 0 ? '<p class="muted">Aucun client.</p>' : `<div class="tablewrap"><table class="table"><thead><tr><th>Nom</th><th>Téléphone</th><th>Pièce d'identité</th><th>Nationalité</th><th></th></tr></thead><tbody>
+    <div class="card">${rows.length === 0 ? '<p class="muted">Aucun client.</p>' : `<div class="tablewrap"><table class="table"><thead><tr><th>Nom</th><th>Téléphone</th><th>Pièce d'identité</th><th>Nationalité</th><th><span class="sr-only">Actions</span></th></tr></thead><tbody>
       ${rows.map(g => `<tr><td><strong>${esc(g.full_name)}</strong><div class="muted" style="font-size:12px">${esc(g.email || '')}</div></td><td>${esc(g.phone || '—')}</td><td>${g.id_type ? esc(g.id_type.toUpperCase()) + ' ' + esc(g.id_number || '') : '—'}</td><td>${esc(g.nationality || '—')}</td><td><button class="small ghost" data-guest="${g.id}">Fiche</button></td></tr>`).join('')}
     </tbody></table></div>`}</div>`;
   $('cQ').onchange = (e) => { S._cq = e.target.value; renderClients(); };
@@ -2072,13 +2237,13 @@ async function renderCaisse(){
       </div>
       <div class="card" style="grid-column:span 2;min-width:0"><div class="row between" style="margin-bottom:10px;gap:10px"><h3 style="font-size:20px">Journal</h3>
         <div class="row" style="gap:6px">${[['all','Tout'],['in','Paiements'],['out','Dépenses'],['dep','Versements']].map(([k, l]) => `<button class="small ${st.kind === k ? 'primary' : 'ghost'}" data-kf="${k}">${l}</button>`).join('')}
-        ${people.length > 1 ? `<select id="kBy" style="width:auto;height:36px"><option value="all">Tous les caissiers</option>${people.map(p => `<option value="${p}" ${st.by === p ? 'selected' : ''}>${esc(who(p))}</option>`).join('')}</select>` : ''}</div></div>
-        ${rows.length === 0 ? '<p class="muted">Aucun mouvement.</p>' : `<div class="tablewrap"><table class="table"><thead><tr><th>Heure</th><th>Libellé</th><th>Moyen</th><th>Par</th><th style="text-align:right">Montant</th><th></th></tr></thead><tbody>
+        ${people.length > 1 ? `<select id="kBy" aria-label="Caissier" style="width:auto;height:36px"><option value="all">Tous les caissiers</option>${people.map(p => `<option value="${p}" ${st.by === p ? 'selected' : ''}>${esc(who(p))}</option>`).join('')}</select>` : ''}</div></div>
+        ${rows.length === 0 ? '<p class="muted">Aucun mouvement.</p>' : `<div class="tablewrap"><table class="table"><thead><tr><th>Heure</th><th>Libellé</th><th>Moyen</th><th>Par</th><th style="text-align:right">Montant</th><th><span class="sr-only">Actions</span></th></tr></thead><tbody>
         ${rows.map(m => { const out = OUT_KINDS.includes(m.kind); return `<tr><td>${hm(m.created_at)}</td><td><strong>${KIND[m.kind]}</strong> · ${esc(m.label)}${m.category ? ` <span class="muted">(${esc(m.category)})</span>` : ''}</td><td>${PMETHOD[m.method] || ''}${m.reference ? `<br><span class="muted" style="font-size:12px">réf. ${esc(m.reference)}</span>` : ''}</td><td>${esc(who(m.created_by))}</td><td style="text-align:right;font-weight:700;white-space:nowrap;color:${out ? 'var(--red)' : 'var(--ok)'}">${out ? '−' : '+'}${money(m.amount)}</td><td>${m.kind === 'payment' ? `<button class="small ghost" data-rcpt="${m.payment_group || m.id}">Reçu</button>` : ''}${m.receipt_path ? `<button class="small ghost" data-just="${esc(m.receipt_path)}">Justificatif</button>` : ''}</td></tr>`; }).join('')}
         </tbody></table></div>`}
       </div>
     </div>` +
-    (hist.length ? `<div class="card"><h3 style="font-size:20px;margin-bottom:10px">Dernières clôtures</h3><div class="tablewrap"><table class="table"><thead><tr><th>Ouverte</th><th>Clôturée</th><th>Par</th><th style="text-align:right">Compté</th><th>Écart</th><th></th></tr></thead><tbody>
+    (hist.length ? `<div class="card"><h3 style="font-size:20px;margin-bottom:10px">Dernières clôtures</h3><div class="tablewrap"><table class="table"><thead><tr><th>Ouverte</th><th>Clôturée</th><th>Par</th><th style="text-align:right">Compté</th><th>Écart</th><th><span class="sr-only">Actions</span></th></tr></thead><tbody>
       ${hist.map((h, i) => { const g = h.gap; return `<tr><td>${new Date(h.opened_at).toLocaleString('fr-FR', { dateStyle:'short', timeStyle:'short' })}</td><td>${h.closed_at ? new Date(h.closed_at).toLocaleString('fr-FR', { dateStyle:'short', timeStyle:'short' }) : ''}</td><td>${esc(who(h.closed_by))}</td><td style="text-align:right">${money(h.counted_balance)}</td><td>${h.gap_reason ? `<span class="pill st-pending">${esc(h.gap_reason)}</span>` : '<span class="pill st-active">Aucun</span>'}</td><td><button class="small ghost" data-hist="${i}">Rapport</button> <button class="small ghost" type="button" data-histz="${i}">Ticket Z</button></td></tr>`; }).join('')}
       </tbody></table></div></div>` : '');
 
@@ -2389,7 +2554,7 @@ async function renderDepenses(){
   const stPill = (x) => `<span class="pill ${EXPST[x.status][1]}">${EXPST[x.status][0]}</span>`;
   const expRow = (x, cols) => `<tr><td>${dmy(x.paid_on || x.due_date)}</td>${cols.includes('cat') ? `<td>${esc(x.category)}</td>` : ''}<td><strong>${esc(x.label)}</strong>${x.decision_note ? `<br><span class="muted" style="font-size:12px">${esc(x.decision_note)}</span>` : ''}</td><td>${x.status === 'due' ? '—' : PMETHOD[x.method] || ''}</td><td>${esc(who(x.created_by))}</td><td style="text-align:right;font-weight:700;white-space:nowrap">${money(x.amount)}</td><td>${stPill(x)}</td>
     <td style="white-space:nowrap">${x.receipt_path ? `<button class="small ghost" data-just="${esc(x.receipt_path)}">Pièce</button>` : ''}${x.status === 'due' ? `<button class="small primary" data-pay="${x.id}">Payer</button>${canDel ? `<button class="small ghost" data-del="${x.id}" aria-label="Retirer ce mois">✕</button>` : ''}` : ''}${x.status === 'pending' && isOwner ? `<button class="small primary" data-ok="${x.id}">Valider</button><button class="small ghost" data-no="${x.id}">Refuser</button>` : ''}</td></tr>`;
-  const table = (arr, cols, empty) => arr.length ? `<div class="tablewrap"><table class="table"><thead><tr><th>Date</th>${cols.includes('cat') ? '<th>Poste</th>' : ''}<th>Libellé</th><th>Payé via</th><th>Par</th><th style="text-align:right">Montant</th><th>Statut</th><th></th></tr></thead><tbody>${arr.map(x => expRow(x, cols)).join('')}</tbody></table></div>` : `<p class="muted">${empty}</p>`;
+  const table = (arr, cols, empty) => arr.length ? `<div class="tablewrap"><table class="table"><thead><tr><th>Date</th>${cols.includes('cat') ? '<th>Poste</th>' : ''}<th>Libellé</th><th>Payé via</th><th>Par</th><th style="text-align:right">Montant</th><th>Statut</th><th><span class="sr-only">Actions</span></th></tr></thead><tbody>${arr.map(x => expRow(x, cols)).join('')}</tbody></table></div>` : `<p class="muted">${empty}</p>`;
   const budgetBlock = () => { const cats = [...new Set([...EXP_CATS.operational, ...Object.keys(byCat)])].filter(c => budgets[c] || byCat[c]);
     return `<div class="card"><div class="row between" style="margin-bottom:12px"><h3 style="font-size:20px">Budget par poste</h3>${canBudget ? '<button class="small ghost" id="dBud">Modifier le budget</button>' : ''}</div>
     ${cats.length ? cats.map(c => { const v = byCat[c] || 0, bu = budgets[c] || 0, over = bu > 0 && v > bu; return `<div style="margin-bottom:12px"><div class="row between" style="font-size:14px"><strong>${esc(c)}</strong><span style="${over ? 'color:var(--red);font-weight:700' : ''}">${money(v)}${bu ? ' / ' + money(bu) : ''}</span></div><div style="height:8px;border-radius:4px;background:#E9DCC8;margin-top:6px"><div style="width:${bu ? Math.min(100, Math.round(v * 100 / bu)) : 100}%;height:8px;border-radius:4px;background:${over ? 'var(--green)' : bu ? 'var(--ink)' : '#C9B596'}"></div></div>${over ? `<div style="font-size:12px;color:var(--red);margin-top:3px">Dépassement de ${money(v - bu)}</div>` : ''}</div>`; }).join('') : `<p class="muted">Aucun budget défini.${canBudget ? ' Cliquez sur « Modifier le budget ».' : ''}</p>`}
@@ -2399,7 +2564,7 @@ async function renderDepenses(){
       <div class="row between" style="font-size:17px;color:${(rep.room_revenue || 0) - total >= 0 ? 'var(--ok)' : 'var(--red)'}"><strong>Résultat estimé</strong><strong>${money((rep.room_revenue || 0) - total)}</strong></div></div></div>`; };
   const recBlock = () => `<div class="card"><div class="row between" style="margin-bottom:10px"><h3 style="font-size:20px">Charges fixes récurrentes</h3>${canRec ? '<button class="small primary" id="dRecAdd">+ Ajouter une charge fixe</button>' : ''}</div>
     <p class="muted" style="font-size:13px;margin:-4px 0 10px">Elles sont créées automatiquement chaque mois, à payer à leur échéance.</p>
-    ${rec.length ? `<div class="tablewrap"><table class="table"><thead><tr><th>Charge</th><th>Poste</th><th>Jour</th><th style="text-align:right">Montant</th><th></th></tr></thead><tbody>${rec.map((r, i) => `<tr style="${r.is_active ? '' : 'opacity:.5'}"><td><strong>${esc(r.label)}</strong></td><td>${esc(r.category)}</td><td>le ${r.day_of_month}</td><td style="text-align:right">${money(r.amount)}</td><td>${canRec ? `<button class="small ghost" data-rec="${i}">Modifier</button>` : ''}</td></tr>`).join('')}</tbody></table></div>` : '<p class="muted">Aucune charge fixe. Ajoutez le loyer, les salaires, l’électricité…</p>'}</div>`;
+    ${rec.length ? `<div class="tablewrap"><table class="table"><thead><tr><th>Charge</th><th>Poste</th><th>Jour</th><th style="text-align:right">Montant</th><th><span class="sr-only">Actions</span></th></tr></thead><tbody>${rec.map((r, i) => `<tr style="${r.is_active ? '' : 'opacity:.5'}"><td><strong>${esc(r.label)}</strong></td><td>${esc(r.category)}</td><td>le ${r.day_of_month}</td><td style="text-align:right">${money(r.amount)}</td><td>${canRec ? `<button class="small ghost" data-rec="${i}">Modifier</button>` : ''}</td></tr>`).join('')}</tbody></table></div>` : '<p class="muted">Aucune charge fixe. Ajoutez le loyer, les salaires, l’électricité…</p>'}</div>`;
   const TABS = [['overview','Vue d’ensemble'],['fixed','Charges fixes'],['operational','Charges opérationnelles'],['petty','Petite caisse'],['pending','À valider' + (pending.length ? ' · ' + pending.length : '')]];
   const fixedPaid = fixed.filter(x => x.status !== 'due');
   let body = '';
@@ -2417,7 +2582,7 @@ async function renderDepenses(){
     body = `<div class="card" style="margin-bottom:16px"><h3 style="font-size:20px;margin-bottom:4px">En attente de validation</h3><p class="muted" style="font-size:13px;margin:0 0 10px">Dépenses au-dessus du seuil, saisies par l'équipe.${isOwner ? '' : ' Seul le propriétaire peut les valider.'}</p>${table(pending, ['cat'], 'Rien à valider.')}</div>
       <div class="card"><h3 style="font-size:20px;margin-bottom:10px">Contestées ce mois</h3>${table(rej, ['cat'], 'Aucune dépense contestée.')}</div>`; }
 
-  el.innerHTML = head('Dépenses', `<input id="dMonth" type="month" value="${month}" style="width:auto">${canBudget ? '<button class="ghost" id="dBud2">Modifier le budget</button>' : ''}<button class="primary" id="dNew">+ Nouvelle dépense</button>`) + readOnlyNote() +
+  el.innerHTML = head('Dépenses', `<input id="dMonth" aria-label="Mois" type="month" value="${month}" style="width:auto">${canBudget ? '<button class="ghost" id="dBud2">Modifier le budget</button>' : ''}<button class="primary" id="dNew">+ Nouvelle dépense</button>`) + readOnlyNote() +
     `<div class="row" role="tablist" style="gap:6px;background:#E9DCC8;padding:5px;border-radius:26px;width:fit-content;max-width:100%;overflow-x:auto;margin-bottom:16px;flex-wrap:nowrap">${TABS.map(([k, l]) => `<button role="tab" aria-selected="${k === tab}" class="small ${k === tab ? 'primary' : 'ghost'}" style="white-space:nowrap;border:0" data-tab="${k}">${l}</button>`).join('')}</div>
     <div class="grid g4" style="margin-bottom:16px">
       ${kpi('Dépensé ce mois', money(total), `<div style="height:8px;border-radius:4px;background:rgba(255,255,255,.2);margin-top:10px"><div style="width:${Math.min(100, pct)}%;height:8px;border-radius:4px;background:var(--prog,#E9A27A)"></div></div><div style="font-size:13px;opacity:.8;margin-top:6px">${budgetTotal ? pct + ' % du budget de ' + money(budgetTotal) : 'Aucun budget défini'}</div>`, 'dark')}
@@ -2474,7 +2639,7 @@ async function renderFactures(){
   await loadEst();
   const { data } = await sb.from('guest_invoices').select('*').eq('organization_id', S.org).order('issued_at', { ascending: false }).limit(300);
   S._ginv = data || [];
-  el.innerHTML = head('Factures') + `<div class="card">${S._ginv.length === 0 ? '<p class="muted">Aucune facture. Émettez-en une depuis une réservation (bouton « Facture »).</p>' : `<div class="tablewrap"><table class="table"><thead><tr><th>N°</th><th>Date</th><th>Client</th><th>Total</th><th>Réglé</th><th>Reste</th><th></th></tr></thead><tbody>
+  el.innerHTML = head('Factures') + `<div class="card">${S._ginv.length === 0 ? '<p class="muted">Aucune facture. Émettez-en une depuis une réservation (bouton « Facture »).</p>' : `<div class="tablewrap"><table class="table"><thead><tr><th>N°</th><th>Date</th><th>Client</th><th>Total</th><th>Réglé</th><th>Reste</th><th><span class="sr-only">Actions</span></th></tr></thead><tbody>
     ${S._ginv.map(i => `<tr><td><strong>${esc(i.number)}</strong></td><td>${new Date(i.issued_at).toLocaleDateString('fr-FR')}</td><td>${esc(i.guest_name)}</td><td>${money(i.total)}</td><td>${money(i.paid)}</td><td>${i.balance > 0 ? `<strong style="color:var(--amber)">${money(i.balance)}</strong>` : '0 F'}</td><td><button class="small ghost" data-pinv="${i.id}">Imprimer / PDF</button></td></tr>`).join('')}
   </tbody></table></div>`}</div>`;
   el.querySelectorAll('[data-pinv]').forEach(b => b.onclick = () => printGuestInvoice(S._ginv.find(i => i.id === b.dataset.pinv)));
@@ -2532,7 +2697,7 @@ async function renderRapports(){
     </div>
     <div class="grid g2" style="margin-bottom:16px">
       <div class="card"><h3 style="font-size:20px;margin-bottom:8px">Par chambre</h3><div class="tablewrap" style="max-height:340px;overflow-y:auto"><table class="table"><thead><tr><th>Chambre</th><th>Nuits</th><th>Occupation</th><th style="text-align:right">CA</th></tr></thead><tbody>${r.by_room.map(x => `<tr><td><strong>${esc(x.room)}</strong></td><td>${x.nights}</td><td>${Math.round(x.nights / r.days * 100)} %</td><td style="text-align:right">${money(x.revenue)}</td></tr>`).join('')}</tbody></table></div></div>
-      <div class="card"><h3 style="font-size:20px;margin-bottom:8px">Impayés</h3>${r.unpaid.length ? `<div class="tablewrap" style="max-height:340px;overflow-y:auto"><table class="table"><thead><tr><th>Client</th><th>Séjour</th><th style="text-align:right">Reste</th><th></th></tr></thead><tbody>${r.unpaid.map(u => `<tr><td><strong>${esc(u.guest_name)}</strong><div class="muted" style="font-size:12px">${esc(u.guest_phone || '')}</div></td><td style="font-size:13px">Ch. ${esc(u.room_number)} · ${dfr(u.check_in)} → ${dfr(u.check_out)}<br><span class="pill ${RSTCLS[u.status]}">${RSTATUS[u.status]}</span></td><td style="text-align:right;font-weight:700;color:var(--amber)">${money(u.balance)}</td><td><button class="small ghost" type="button" data-open="${u.id}">Ouvrir</button></td></tr>`).join('')}</tbody></table></div>` : '<p class="muted">Aucun impayé.</p>'}</div>
+      <div class="card"><h3 style="font-size:20px;margin-bottom:8px">Impayés</h3>${r.unpaid.length ? `<div class="tablewrap" style="max-height:340px;overflow-y:auto"><table class="table"><thead><tr><th>Client</th><th>Séjour</th><th style="text-align:right">Reste</th><th><span class="sr-only">Actions</span></th></tr></thead><tbody>${r.unpaid.map(u => `<tr><td><strong>${esc(u.guest_name)}</strong><div class="muted" style="font-size:12px">${esc(u.guest_phone || '')}</div></td><td style="font-size:13px">Ch. ${esc(u.room_number)} · ${dfr(u.check_in)} → ${dfr(u.check_out)}<br><span class="pill ${RSTCLS[u.status]}">${RSTATUS[u.status]}</span></td><td style="text-align:right;font-weight:700;color:var(--amber)">${money(u.balance)}</td><td><button class="small ghost" type="button" data-open="${u.id}">Ouvrir</button></td></tr>`).join('')}</tbody></table></div>` : '<p class="muted">Aucun impayé.</p>'}</div>
     </div>
     <p class="muted" style="font-size:12px">Le chiffre d\u2019affaires compte chaque nuit dans la période où elle est consommée (réservations confirmées, en séjour ou terminées), remise répartie sur les nuits. ${r.cancellations} annulation(s) et ${r.no_shows} non-présentation(s) sur la période.</p>`;
   $('rPer').onchange = (e) => { S._rk = e.target.value; if (S._rk === 'perso') { S._rfrom = from; S._rto = to; } renderRapports(); };
@@ -2700,7 +2865,7 @@ async function renderEquipe(){
   const invMsg = (i) => `Bonjour, vous êtes invité(e) à rejoindre « ${$('orgLabel').textContent.split(' · ')[0]} » sur Horus Hotel en tant que ${ROLE_LABEL[i.role]}. Créez votre compte avec l’adresse ${i.email} sur ${location.origin + location.pathname}, puis cliquez sur « Rejoindre ».`;
   const initials = (m) => (m.display_name || m.username || m.email || '?').split(/[\s.@]+/).filter(Boolean).slice(0, 2).map(x => x[0].toUpperCase()).join('');
   const seen = (d) => d ? 'Vu le ' + new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : 'Jamais connecté';
-  const card = (m) => `<div class="card" style="display:flex;flex-direction:column;gap:10px;${m.is_active ? '' : 'opacity:.6'}">
+  const card = (m) => `<div class="card" style="display:flex;flex-direction:column;gap:10px;${m.is_active ? '' : 'background:var(--bg);border-style:dashed'}">
       <div class="row" style="flex-wrap:nowrap"><div style="width:46px;height:46px;border-radius:50%;background:var(--green);color:#fff;display:grid;place-items:center;font-weight:800;flex:none">${esc(initials(m))}</div>
       <div style="min-width:0"><strong style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(m.display_name || m.email || m.username)}${m.user_id === me ? ' <span class="muted">(vous)</span>' : ''}</strong>
       <span class="muted" style="font-size:13px">${m.username ? ' ' + esc(m.username) : ' ' + esc(m.email || '')}</span></div></div>
@@ -3187,7 +3352,7 @@ async function renderPointage(){
   const hm = (m) => `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, '0')}`;
   const mgr = can(['owner', 'admin', 'manager']);
   el.innerHTML = head('Pointage', `<input type="month" id="ptM" value="${S.ptMonth}" style="max-width:180px"><button class="primary" type="button" id="ptMe">${CLOCK.state === 'in' ? 'Pointer mon départ' : 'Pointer mon arrivée'}</button>`) + `
-    <div class="card" style="margin-bottom:14px"><h3 style="font-size:17px;margin-bottom:8px">Heures du mois</h3><div class="tablewrap"><table class="table"><thead><tr><th>Employé</th><th>Jours</th><th>Heures</th><th>Moyenne / jour</th><th></th></tr></thead><tbody>
+    <div class="card" style="margin-bottom:14px"><h3 style="font-size:17px;margin-bottom:8px">Heures du mois</h3><div class="tablewrap"><table class="table"><thead><tr><th>Employé</th><th>Jours</th><th>Heures</th><th>Moyenne / jour</th><th><span class="sr-only">Actions</span></th></tr></thead><tbody>
       ${Object.entries(per).map(([u, p]) => `<tr><td>${esc(label(u))}</td><td>${p.days.size}</td><td><strong>${hm(p.min)}</strong></td><td>${hm(Math.round(p.min / Math.max(1, p.days.size)))}</td><td>${p.open ? '<span class="pill st-active">présent</span>' : ''}</td></tr>`).join('') || '<tr><td colspan="5" class="muted">Aucun pointage ce mois-ci.</td></tr>'}</tbody></table></div></div>
     <div class="card"><h3 style="font-size:17px;margin-bottom:8px">Détail</h3>${rows.map(a => `<div class="row between" style="padding:8px 0;border-bottom:1px solid var(--line);gap:8px;flex-wrap:nowrap"><span><strong>${esc(label(a.user_id))}</strong> <span class="muted">· ${new Date(a.clock_in).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}</span><br><span style="font-size:13px">${new Date(a.clock_in).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })} → ${a.clock_out ? new Date(a.clock_out).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '<em>en cours</em>'}${a.edited_by ? ' <span class="muted">(corrigé)</span>' : ''}${a.note ? ' <span class="muted">· ' + esc(a.note) + '</span>' : ''}</span></span>
       <span class="row" style="gap:6px;flex-wrap:nowrap"><strong>${hm(mins(a))}</strong>${mgr ? `<button class="small ghost" type="button" data-ptfix="${esc(a.id)}">Corriger</button>` : ''}</span></div>`).join('') || '<p class="muted">Aucun pointage.</p>'}</div>`;
@@ -3309,7 +3474,7 @@ async function openRateRules(){
   const mgr = can(['owner', 'admin', 'manager']);
   modal(`<div class="row between" style="margin-bottom:6px"><h2 style="font-size:22px">Tarifs automatiques</h2><button class="small ghost" data-close style="border:0;font-size:18px" aria-label="Fermer">✕</button></div>
     <p class="muted" style="font-size:13px;margin:0 0 12px">Appliqués automatiquement aux nouvelles réservations et à la réservation en ligne. Si plusieurs règles tombent le même jour, la plus prioritaire l’emporte.</p>
-    ${(rules || []).map(r => `<div class="card" style="padding:12px;margin-bottom:8px;${r.is_active ? '' : 'opacity:.55'}"><div class="row between" style="flex-wrap:nowrap;gap:8px"><div style="min-width:0"><strong>${esc(r.name)}</strong>${r.priority ? ` <span class="pill st-trial">priorité ${r.priority}</span>` : ''}${r.is_active ? '' : ' <span class="pill st-cancelled">désactivée</span>'}<div class="muted" style="font-size:12px">${ruleTxt(r)}</div></div>
+    ${(rules || []).map(r => `<div class="card" style="padding:12px;margin-bottom:8px;${r.is_active ? '' : 'background:var(--bg);border-style:dashed'}"><div class="row between" style="flex-wrap:nowrap;gap:8px"><div style="min-width:0"><strong>${esc(r.name)}</strong>${r.priority ? ` <span class="pill st-trial">priorité ${r.priority}</span>` : ''}${r.is_active ? '' : ' <span class="pill st-cancelled">désactivée</span>'}<div class="muted" style="font-size:12px">${ruleTxt(r)}</div></div>
       ${mgr ? `<div class="row" style="gap:6px;flex-wrap:nowrap"><button class="small ghost" type="button" data-rredit="${esc(r.id)}">Modifier</button><button class="small ghost" type="button" data-rrdel="${esc(r.id)}" style="color:var(--red)" aria-label="Supprimer">✕</button></div>` : ''}</div></div>`).join('') || '<p class="muted">Aucune règle pour le moment.</p>'}
     ${mgr ? `<div class="muted" style="font-size:12px;font-weight:800;letter-spacing:.08em;margin:14px 0 6px">AJOUT RAPIDE</div><div class="row" style="gap:6px">
       <button class="small ghost" type="button" data-rrpre="we">Week-end +20 %</button><button class="small ghost" type="button" data-rrpre="hs">Haute saison +15 %</button><button class="small ghost" type="button" data-rrpre="fete">Jour de fête</button><button class="small ghost" type="button" data-rrpre="bs">Basse saison −10 %</button><button class="small" type="button" data-rrpre="">+ Règle personnalisée</button></div>` : ''}`);
@@ -3844,7 +4009,7 @@ function drawProducts(){
   body.innerHTML = Object.entries(OUTLETS).map(([o, [l, ic]]) => `<h3 style="font-size:18px;margin:6px 0 10px">${l} <span class="muted" style="font-size:14px">· ${by(o).length} produit(s)</span></h3>
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-bottom:20px">${by(o).map(p => `<div class="card" style="padding:10px;display:flex;gap:10px;flex-direction:column">
       ${prodThumb(p, 110)}
-      <div style="${p.is_active === false ? 'opacity:.55' : ''}"><strong>${esc(p.name)}</strong>${p.is_active === false ? ' <span class="pill st-cancelled">inactif</span>' : ''}${effPrice(p) < Number(p.sale_price) ? ' <span class="pill st-past_due">promo</span>' : ''}${(p.variants || []).length ? ` <span class="pill st-trial">${p.variants.length} variante(s)</span>` : ''}<div class="muted" style="font-size:12px">${esc(p.category || 'Sans catégorie')} · ${esc(p.unit)}${p.barcode ? ' · ▦ ' + esc(p.barcode) : ''}</div></div>
+      <div style="${p.is_active === false ? 'color:var(--muted)' : ''}"><strong>${esc(p.name)}</strong>${p.is_active === false ? ' <span class="pill st-cancelled">inactif</span>' : ''}${effPrice(p) < Number(p.sale_price) ? ' <span class="pill st-past_due">promo</span>' : ''}${(p.variants || []).length ? ` <span class="pill st-trial">${p.variants.length} variante(s)</span>` : ''}<div class="muted" style="font-size:12px">${esc(p.category || 'Sans catégorie')} · ${esc(p.unit)}${p.barcode ? ' · ▦ ' + esc(p.barcode) : ''}</div></div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;font-size:12px"><div><div class="muted">Achat</div><strong>${money(p.purchase_price)}</strong></div><div><div class="muted">Vente</div><strong style="color:var(--green)">${money(p.sale_price)}</strong></div><div><div class="muted">Marge</div><strong>${margin(p)} %</strong></div></div>
       <div class="row between">${p.track_stock ? `<span><span class="muted" style="font-size:12px">Stock </span><strong>${+p.stock_qty}</strong></span>${stockTxt(p).includes('pill') ? stockTxt(p) : ''}` : '<span class="muted" style="font-size:12px">Stock non suivi</span>'}</div>
       <div class="row" style="gap:6px"><button class="small" type="button" data-edit="${esc(p.id)}" style="flex:1">Modifier</button>${p.track_stock ? `<button class="small ghost" type="button" data-sin="${esc(p.id)}" style="flex:1">+ Stock</button>` : ''}</div>
@@ -3883,7 +4048,7 @@ async function drawStock(){
       <div class="card kpi"><div class="l muted">Produits suivis</div><div style="font-family:var(--display);font-size:26px;font-weight:800">${tracked.length}</div></div>
       <div class="card kpi"><div class="l muted">À réapprovisionner</div><div style="font-family:var(--display);font-size:26px;font-weight:800;color:${low.length ? 'var(--red)' : 'inherit'}">${low.length}</div></div></div>
     ${low.length ? `<div class="card" style="margin-bottom:16px;border-color:var(--gold-l)"><h3 style="font-size:18px;margin-bottom:8px"> À commander</h3>${low.map(p => `<div class="row between" style="padding:8px 0;border-bottom:1px solid var(--line)"><span><strong>${esc(p.name)}</strong> <span class="muted">· reste ${+p.stock_qty} ${esc(p.unit)} (alerte ${+p.alert_qty})</span></span><button class="small" type="button" data-sin="${esc(p.id)}">+ Stock</button></div>`).join('')}</div>` : ''}
-    <div class="card" style="margin-bottom:16px"><h3 style="font-size:18px;margin-bottom:8px">État du stock</h3><div class="tablewrap"><table class="table"><thead><tr><th>Produit</th><th>Stock</th><th>Prix d’achat</th><th>Valeur</th><th></th></tr></thead><tbody>
+    <div class="card" style="margin-bottom:16px"><h3 style="font-size:18px;margin-bottom:8px">État du stock</h3><div class="tablewrap"><table class="table"><thead><tr><th>Produit</th><th>Stock</th><th>Prix d’achat</th><th>Valeur</th><th><span class="sr-only">Actions</span></th></tr></thead><tbody>
       ${tracked.map(p => `<tr><td>${esc(p.name)} <span class="muted">· ${esc(OUTLETS[p.outlet][0])}</span></td><td><strong>${+p.stock_qty}</strong> ${esc(p.unit)}</td><td>${money(p.purchase_price)}</td><td>${money(Math.max(0, p.stock_qty) * p.purchase_price)}</td>
         <td style="text-align:right;white-space:nowrap"><button class="small ghost" type="button" data-sin="${esc(p.id)}">+ Entrée</button> <button class="small ghost" type="button" data-inv="${esc(p.id)}">Inventaire</button></td></tr>`).join('') || '<tr><td colspan="5" class="muted">Aucun produit suivi.</td></tr>'}
     </tbody></table></div></div>

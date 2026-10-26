@@ -617,6 +617,7 @@ html[data-theme="foret"] .auth{background:radial-gradient(900px 500px at 15% -10
 .pmove.pdragging{cursor:grabbing;z-index:5;box-shadow:0 8px 20px rgba(0,0,0,.18);opacity:.95;transition:none}
 .pgrip{position:absolute;right:0;top:0;bottom:0;width:12px;cursor:ew-resize;border-left:2px solid rgba(0,0,0,.12);border-radius:0 8px 8px 0}
 body.adminonly #estSwitch{display:none!important}
+html nav.side [data-view="naya"]{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20'/%3E%3C/svg%3E")}
 </style>
 </head>
 <body>
@@ -681,6 +682,7 @@ body.adminonly #estSwitch{display:none!important}
       <button data-view="reservations" class="ess">Réservations</button>
       <button data-view="planning" class="ess">Planning</button>
       <button data-view="chambres" class="ess">Chambres</button>
+      <button data-view="naya" class="ess">NAYA · en ligne</button>
       <button data-view="clients">Clients</button>
       <button data-view="inventaire">Inventaire</button></div>
     <div class="ngroup" data-group="argent"><button type="button" class="ghead" aria-expanded="true"> Argent</button>
@@ -711,7 +713,6 @@ body.adminonly #estSwitch{display:none!important}
         <button type="button" id="navGuide">Réafficher le guide de démarrage</button>
         <button type="button" id="navRates">Tarifs automatiques</button>
         <button type="button" id="navDir">Annuaire public</button>
-        <button type="button" id="navNaya">NAYA : réservations en ligne</button>
         <button type="button" id="navLegal">Documents légaux</button>
         <button type="button" id="navRefresh"> Actualiser l’application</button>
         <button type="button" id="navPrint">Impression &amp; reçus</button>
@@ -763,6 +764,7 @@ body.adminonly #estSwitch{display:none!important}
     <section id="v-abonnement" class="hidden"></section>
     <section id="v-chambres" class="hidden"></section>
     <section id="v-admin" class="hidden"></section>
+    <section id="v-naya" class="hidden"></section>
   </main>
   </div>
 </div>
@@ -785,7 +787,7 @@ const authStore = {
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, storage: authStore } });
 
 const S = { session:null, member:null, org:null, overview:null, plans:[], providers:[], isAdmin:false, cycle:'monthly', view:'dashboard', signup:false, est:null, ests:[], rooms:[] };
-const VIEWS = ['inventaire','pointage','resto','rapports','controle','equipe','mapage','dashboard','reservations','planning','clients','caisse','depenses','factures','tarifs','abonnement','chambres','admin'];
+const VIEWS = ['naya','inventaire','pointage','resto','rapports','controle','equipe','mapage','dashboard','reservations','planning','clients','caisse','depenses','factures','tarifs','abonnement','chambres','admin'];
 const $ = (id) => document.getElementById(id);
 const esc = (v) => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fcfa = (n) => n == null ? '—' : new Intl.NumberFormat('fr-FR').format(n).replace(/ | /g,' ') + ' FCFA';
@@ -825,7 +827,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.10.26-16';
+const APP_VERSION = '2026.10.26-17';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -1304,7 +1306,7 @@ $('navAsk').onclick = () => openAssistant();
 $('navLang').onclick = () => openLang();
 $('navLegal').onclick = () => openLegal('cgu');
 $('navRates').onclick = () => openRateRules();
-$('navNaya').onclick = () => openNaya();
+
 $('navDir').onclick = async () => {
   const { data: e } = await sb.from('establishments').select('id,name,slug,public_enabled,directory_listed').eq('id', S.est).single();
   const url = location.origin + location.pathname + '?annuaire=1';
@@ -1322,8 +1324,8 @@ $('navPrn').onclick = () => openPrinterSetup('caisse');
 
 const ROLE_VIEWS = {
   owner: null, admin: null,
-  manager: ['dashboard','reservations','planning','clients','chambres','inventaire','pointage','caisse','resto','depenses','factures','rapports','mapage'],
-  receptionist: ['dashboard','reservations','planning','clients','chambres','inventaire','caisse','resto','factures'],
+  manager: ['dashboard','reservations','planning','naya','clients','chambres','inventaire','pointage','caisse','resto','depenses','factures','rapports','mapage'],
+  receptionist: ['dashboard','reservations','planning','naya','clients','chambres','inventaire','caisse','resto','factures'],
   accountant: ['dashboard','reservations','pointage','caisse','resto','depenses','factures','rapports'],
   housekeeping: ['chambres','inventaire'],
   staff: ['resto','dashboard','planning']
@@ -1405,7 +1407,7 @@ function go(view){
   if (typeof syncTabbar === 'function') syncTabbar();
   window.scrollTo(0, 0);
   if (lockedView(view)) return renderLocked(view);
-  ({ inventaire: renderInventaire, pointage: renderPointage, resto: renderResto, rapports: renderRapports, controle: renderControle, equipe: renderEquipe, mapage: renderMaPage, dashboard: renderDashboard, reservations: renderReservations, planning: renderPlanning, clients: renderClients, caisse: renderCaisse, depenses: renderDepenses, factures: renderFactures, tarifs: renderTarifs, abonnement: renderAbonnement, chambres: renderChambres, admin: renderAdmin })[view]();
+  ({ naya: renderNaya, inventaire: renderInventaire, pointage: renderPointage, resto: renderResto, rapports: renderRapports, controle: renderControle, equipe: renderEquipe, mapage: renderMaPage, dashboard: renderDashboard, reservations: renderReservations, planning: renderPlanning, clients: renderClients, caisse: renderCaisse, depenses: renderDepenses, factures: renderFactures, tarifs: renderTarifs, abonnement: renderAbonnement, chambres: renderChambres, admin: renderAdmin })[view]();
 }
 
 /* ---------- Tarifs ---------- */
@@ -2211,8 +2213,9 @@ async function recordDeposit(resaId, amount, method, ref, refresh){
 
 /* ---------- Branchement NAYA : publication sur la place de marché et suivi des commissions ---------- */
 const NAYA_URL = 'https://naya-ci.netlify.app';
-async function openNaya(){
-  const nb = $('navMore'); if (nb) nb.open = false;
+const openNaya = () => go('naya');
+async function renderNaya(){
+  const el = $('v-naya'); el.innerHTML = '<p class="muted">Chargement…</p>';
   const owner = can(['owner','admin']);
   const est = S.ests.find(x => x.id === S.est) || {};
   const m0 = new Date(); const mStart = `${m0.getFullYear()}-${String(m0.getMonth() + 1).padStart(2, '0')}-01`;
@@ -2230,7 +2233,8 @@ async function openNaya(){
     const R = rs || [], due = R.filter(r => !['cancelled','no_show','pending'].includes(r.status));
     const ca = due.reduce((a, r) => a + Number(r.total_amount), 0), com = due.reduce((a, r) => a + Math.round(Number(r.total_amount) * (P[r.id] || 0) / 100), 0);
     const mLabel = new Date(st.month + 'T00:00:00').toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
-    modal(`<div class="row between" style="margin-bottom:6px"><h2 style="font-size:24px">NAYA</h2><button class="small ghost" data-close aria-label="Fermer">✕</button></div>
+    if (S.view !== 'naya') return;
+    el.innerHTML = (`${head('NAYA', `<a class="small ghost btn" style="text-decoration:none" href="${NAYA_URL}" target="_blank" rel="noopener">Ouvrir le site NAYA</a>`)}
       <p class="muted" style="margin:0 0 14px">Les voyageurs trouvent et réservent votre établissement sur <a href="${NAYA_URL}" target="_blank" rel="noopener">NAYA</a>. Les réservations arrivent directement dans votre planning avec l’origine « NAYA ».</p>
       <div class="card" style="margin-bottom:14px;${L.listed ? 'border-color:var(--green)' : ''}">
         <div class="row between" style="gap:10px"><div><strong>${L.listed ? 'Publié sur NAYA' : 'Non publié'}</strong><div class="muted" style="font-size:13px">Commission NAYA : <strong>${Number(L.commission_pct)} %</strong> du séjour, uniquement sur les réservations venues de NAYA et honorées. Vos réservations directes restent sans commission.</div></div>
@@ -2247,7 +2251,6 @@ async function openNaya(){
       ${R.length ? `<div class="tablewrap"><table class="table"><thead><tr><th>Client</th><th>Séjour</th><th>Statut</th><th style="text-align:right">Total</th><th style="text-align:right">Commission</th></tr></thead><tbody>
         ${R.map(r => { const c = ['cancelled','no_show','pending'].includes(r.status) ? 0 : Math.round(Number(r.total_amount) * (P[r.id] || 0) / 100); return `<tr><td><strong>${esc(r.guest_name)}</strong></td><td>Ch. ${esc(r.room_number)} · ${dfr(r.check_in)} → ${dfr(r.check_out)}</td><td>${esc(RSTATUS[r.status] || r.status)}</td><td style="text-align:right;white-space:nowrap">${money(r.total_amount)}</td><td style="text-align:right;white-space:nowrap">${c ? money(c) : '<span class="muted">—</span>'}</td></tr>`; }).join('')}
       </tbody></table></div><p class="muted" style="font-size:12px;margin:8px 0 0">La commission ne compte pas les demandes en attente, les annulations ni les absences.</p>` : '<p class="muted">Aucune réservation NAYA ce mois-ci.</p>'}`);
-    $('modalBody').style.maxWidth = '720px';
     const tg = $('nyToggle'); if (tg) tg.onclick = async () => { tg.disabled = true;
       const { data, error } = await sb.rpc('marketplace_set_listing', { p_establishment: S.est, p_listed: !L.listed, p_auto_confirm: null });
       if (error) { tg.disabled = false; return toast(errMsg(error), true); }
@@ -2304,7 +2307,7 @@ async function openQuickResa(pre, refresh){
         ${st.rateNote ? `<div class="muted" style="font-size:12px;margin-top:2px">${esc(st.rateNote)}</div>` : ''}
         ${st.depOpen ? `<div class="row" style="gap:10px;margin-top:10px"><div class="field" style="flex:1 1 110px;margin:0"><label for="qDp">Acompte (F)</label><input id="qDp" type="number" min="0" inputmode="numeric" value="${st.dep || ''}"></div>
           <div class="field" style="flex:1 1 130px;margin:0"><label for="qDm">Moyen</label><select id="qDm">${opt(PMETHOD, st.depM)}</select></div>
-          ${momo ? `<div class="field" style="flex:1 1 140px;margin:0"><label for="qDr">N° de transaction</label><input id="qDr" value="${esc(st.depR)}"></div>` : ''}</div>
+</div>
           ${st.dep > 0 ? `<div class="row between" style="font-size:14px;margin-top:8px"><span>Reste à payer</span><strong>${money(Math.max(0, total() - st.dep))}</strong></div>` : ''}`
         : `<button type="button" class="small ghost" id="qDepB" style="margin-top:8px">+ Acompte reçu</button>`}
       </div>
@@ -2346,7 +2349,6 @@ async function openQuickResa(pre, refresh){
       let gid = st.gid || null;
       if (!gid) { const nm = (st.name || '').trim(); if (nm.length < 2) { $('qNm').focus(); throw new Error('Indiquez le nom du client.'); }
         const g = await sb.from('guests').insert({ organization_id: S.org, full_name: nm, phone: (st.phone || '').trim() || null }).select('id').single(); if (g.error) throw g.error; gid = g.data.id; }
-      if (st.dep > 0 && MOMO.includes(st.depM) && (st.depR || '').trim().length < 4) throw new Error('Saisissez le numéro de transaction Mobile Money de l’acompte.');
       if (st.dep > total()) throw new Error('L’acompte dépasse le total du séjour.');
       if (st.dep > 0 && st.depM === 'cash' && !(await cashIsOpen())) {
         const keep = { ...st }; const b = $('qGo'); if (b) b.disabled = false;
@@ -2423,7 +2425,7 @@ async function openResaForm(pre, refresh){
         <div id="wDW" class="hidden" style="margin:-6px 0 12px;font-size:13px;color:#6B4A00;background:#FFF4E5;border-radius:10px;padding:8px 10px">Remise supérieure à ${discPct} % : le propriétaire sera prévenu.</div>
         <div class="field"><label for="wNo">Notes</label><input id="wNo" value="${esc(st.notes)}" placeholder="Heure d’arrivée, demande particulière…"></div>
         ${pre.id ? '' : `<div style="border-top:1px solid var(--line);padding-top:12px"><div style="font-weight:700;margin-bottom:8px">Acompte reçu maintenant (facultatif)</div>
-        <div class="row"><div class="field" style="flex:1 1 110px"><label for="wDp">Montant (F)</label><input id="wDp" type="number" min="0" value="${st.dep || ''}" placeholder="0"></div><div class="field" style="flex:1 1 130px"><label for="wDm">Moyen</label><select id="wDm">${opt(PMETHOD, st.depM)}</select></div><div class="field" style="flex:1 1 140px"><label for="wDr">N° de transaction</label><input id="wDr" value="${esc(st.depR)}"></div></div></div>`}`; }
+        <div class="row"><div class="field" style="flex:1 1 110px"><label for="wDp">Montant (F)</label><input id="wDp" type="number" min="0" value="${st.dep || ''}" placeholder="0"></div><div class="field" style="flex:1 1 130px"><label for="wDm">Moyen</label><select id="wDm">${opt(PMETHOD, st.depM)}</select></div></div></div>`}`; }
     $('wz').innerHTML = `<div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,300px)" class="wzgrid">
       <div style="padding:24px 26px;display:flex;flex-direction:column;gap:14px;min-width:0">
         <div class="row between"><h2 style="font-size:26px">${pre.walkin ? 'Walk-in' : pre.id ? 'Modifier la réservation' : 'Nouvelle réservation'}</h2><button class="small ghost" data-close aria-label="Fermer">✕</button></div>
@@ -2474,7 +2476,7 @@ async function openResaForm(pre, refresh){
   };
   const save = () => { if (st.step !== 3) return; const v = (id) => $(id) ? $(id).value : undefined;
     st.phone = v('wPh') ?? st.phone; if ($('wNm')) st.name = v('wNm'); st.rate = +v('wRt') || 0; st.disc = +v('wDs') || 0; st.src = v('wSr'); st.notes = v('wNo');
-    if ($('wDp')) { st.dep = +v('wDp') || 0; st.depM = v('wDm'); st.depR = v('wDr'); } };
+    if ($('wDp')) { st.dep = +v('wDp') || 0; st.depM = v('wDm'); } };
   const next = async () => {
     if (st.step === 1) { if (nights() < 1) return toast('La date de départ doit suivre la date d’arrivée.', true); await loadBusy(); if (st.room && st.busy.has(st.room)) st.room = null; st.step = 2; return draw(); }
     if (st.step === 2) { if (!st.room) return toast('Choisissez une chambre.', true);
@@ -2493,7 +2495,6 @@ async function openResaForm(pre, refresh){
       let gid = st.gid || null;
       if (!gid) { const nm = (st.name || '').trim(); if (nm.length < 2) throw new Error('Indiquez le nom du client.');
         const g = await sb.from('guests').insert({ organization_id: S.org, full_name: nm, phone: (st.phone || '').trim() || null }).select('id').single(); if (g.error) throw g.error; gid = g.data.id; }
-      if (st.dep > 0 && MOMO.includes(st.depM) && (st.depR || '').trim().length < 4) throw new Error('Saisissez le numéro de transaction Mobile Money de l’acompte.');
       if (st.dep > total()) throw new Error('L’acompte dépasse le total du séjour.');
       const row = { establishment_id: S.est, room_id: st.room, guest_id: gid, guest_name: '-', check_in: st.ci, check_out: st.co, nightly_rate: +st.rate || 0, discount: +st.disc || 0, adults: +st.adults || 1, source: st.src, notes: (st.notes || '').trim() || null };
       const res = pre.id ? await sb.from('reservations').update(row).eq('id', pre.id).select('id').single() : await sb.from('reservations').insert({ ...row, status: 'confirmed', created_by: S.session.user.id }).select('id').single();
@@ -2534,7 +2535,7 @@ async function openResa(id, refresh, focusCheckout){
     ${active && r.balance > 0 && can(['owner','admin','manager','receptionist','accountant']) ? `<form id="payForm" class="row" style="align-items:flex-end;margin-bottom:14px">
       <div style="flex:1 1 110px"><label for="pAmt">Encaisser (F)</label><input id="pAmt" type="number" min="1" max="${r.balance}" value="${r.balance}" required></div>
       <div style="flex:1 1 130px"><label for="pMeth">Moyen</label><select id="pMeth">${opt(PMETHOD, 'cash')}</select></div>
-      <div style="flex:1 1 110px"><label for="pRef">Référence</label><input id="pRef" placeholder="N° transaction"></div>
+
       <button class="primary">Encaisser</button></form>` : ''}
     <div class="row">
       ${r.status === 'pending' ? `<button class="primary" id="aConfirm">Confirmer la demande</button>` : ''}
@@ -2547,7 +2548,7 @@ async function openResa(id, refresh, focusCheckout){
     </div>`);
   const done = (m) => { toast(m); closeModal(); refresh(); };
   const pf = $('payForm'); if (pf) pf.onsubmit = async (e) => { e.preventDefault(); e.submitter.disabled = true;
-    const { error } = await sb.from('cash_movements').insert({ establishment_id: r.establishment_id, reservation_id: r.id, kind: 'payment', method: $('pMeth').value, amount: +$('pAmt').value, label: r.status === 'checked_in' ? 'Paiement séjour' : 'Acompte', reference: $('pRef').value.trim() || null });
+    const { error } = await sb.from('cash_movements').insert({ establishment_id: r.establishment_id, reservation_id: r.id, kind: 'payment', method: $('pMeth').value, amount: +$('pAmt').value, label: r.status === 'checked_in' ? 'Paiement séjour' : 'Acompte', reference: null });
     if (error) { e.submitter.disabled = false; if (/caisse ouverte/i.test(error.message || '')) return askOpenCash(() => openResa(id, refresh), 'La caisse du jour n’est pas encore ouverte. Ouvrez-la, puis enregistrez de nouveau le paiement.'); return toast(errMsg(error), true); } toast('Paiement enregistré.'); openResa(id, refresh); };
   const a = (x, fn) => { const b = $(x); if (b) b.onclick = fn; };
   a('aConfirm', async () => { const { error } = await sb.from('reservations').update({ status: 'confirmed' }).eq('id', r.id); if (error) return toast(errMsg(error), true); done('Réservation confirmée. Prévenez le client par téléphone ou WhatsApp.'); });
@@ -2900,7 +2901,7 @@ function openEncaisser(b, done){
           <div style="position:relative"><input id="ekRec" type="number" min="0" value="${st.received}" placeholder="0" style="font-size:18px;min-height:50px;padding-right:60px"><span class="muted" style="position:absolute;right:14px;top:13px">FCFA</span></div>
           <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:8px">${chips().map((v, i) => `<button type="button" class="small ghost" data-rec="${v}" style="background:var(--card)">${i === 0 ? 'Juste' : new Intl.NumberFormat('fr-FR').format(v).replace(/\u202f|\u00a0/g, ' ')}</button>`).join('')}</div>
           ${change !== null ? `<div class="row between" style="margin-top:10px;font-weight:800;font-size:17px;color:${change >= 0 ? 'var(--ok)' : 'var(--red)'}"><span>${change >= 0 ? 'Monnaie à rendre' : 'Il manque'}</span><span>${money(Math.abs(change))}</span></div>` : ''}`
-        : `<label for="ekRef" style="font-size:15px;color:var(--ink);margin-top:12px">N° de transaction ${st.mode === 'mobile' ? '(obligatoire)' : '(facultatif)'}</label><input id="ekRef" value="${esc(st.ref)}" placeholder="${st.mode === 'mobile' ? 'Ex. : T_24AB93KX' : 'Ex. : n° du ticket'}">`}`}
+        : ''}`}
       </div>
       <div class="row" style="border-top:1px solid var(--line);padding-top:14px;flex-wrap:nowrap"><button type="button" class="ghost" data-close style="border:0">Annuler</button>
         <button type="button" class="primary" id="ekGo" style="flex:1;min-height:56px;font-size:17px">Encaisser · ${money(t)}</button></div>`;
@@ -2923,7 +2924,6 @@ function openEncaisser(b, done){
     const L = lines().filter(l => +l.amount > 0), t = L.reduce((s, l) => s + +l.amount, 0);
     if (!L.length) return toast('Indiquez un montant.', true);
     if (t > bal) return toast('Le total dépasse le solde du client.', true);
-    if (L.some(l => MOMO.includes(l.method) && (l.reference || '').trim().length < 4)) return toast('Saisissez le numéro de transaction Mobile Money.', true);
     if (st.mode === 'cash' && st.received !== '' && +st.received < t) return toast('Le montant reçu est inférieur au montant encaissé.', true);
     $('ekGo').disabled = true;
     const group = crypto.randomUUID();
@@ -4510,8 +4510,7 @@ function openPosPay(total){
       ${st.mode === 'cash' ? `<label for="ppGiven">Montant reçu</label><input id="ppGiven" inputmode="numeric" value="${esc(st.received)}" placeholder="${total}">
         <div class="row" style="gap:6px;margin:8px 0">${chips.map(v => `<button type="button" class="small ghost" data-given="${v}">${money(v)}</button>`).join('')}</div>
         ${change !== null ? `<div class="row between card" style="background:var(--gold-l);margin:8px 0"><strong>Monnaie à rendre</strong><strong style="font-size:22px">${money(change)}</strong></div>` : ''}` : ''}
-      ${st.mode === 'mobile' ? `<div class="row" style="gap:6px;margin-bottom:8px">${POS_OPS.map(([k, l]) => `<button type="button" class="small ${st.op === k ? '' : 'ghost'}" data-op="${k}">${l}</button>`).join('')}</div>
-        <label for="ppRef">Référence de la transaction</label><input id="ppRef" value="${esc(st.ref)}" placeholder="ex. T-24AB91" autocapitalize="characters">` : ''}
+      ${st.mode === 'mobile' ? `<div class="row" style="gap:6px;margin-bottom:8px">${POS_OPS.map(([k, l]) => `<button type="button" class="small ${st.op === k ? '' : 'ghost'}" data-op="${k}">${l}</button>`).join('')}</div>` : ''}
       <button class="primary" type="button" id="ppGo" style="width:100%;min-height:54px;font-size:17px;margin-top:14px">Valider · ${money(total)}</button>`;
     $('pp').querySelectorAll('[data-pm]').forEach(b => b.onclick = () => { st.mode = b.dataset.pm; draw(); });
     $('pp').querySelectorAll('[data-op]').forEach(b => b.onclick = () => { st.op = b.dataset.op; draw(); });
@@ -4520,7 +4519,6 @@ function openPosPay(total){
     if ($('ppRef')) $('ppRef').oninput = () => { st.ref = $('ppRef').value; };
     $('ppGo').onclick = async () => {
       if (st.mode === 'cash' && st.received && +st.received < total) return toast('Le montant reçu est inférieur au total.', true);
-      if (st.mode === 'mobile' && st.ref.trim().length < 4) return toast('Saisissez la référence Mobile Money.', true);
       const b = $('ppGo'); b.disabled = true;
       const method = st.mode === 'cash' ? 'cash' : st.mode === 'card' ? 'card' : st.op;
       const items = S.cart.map(c => ({ product_id: c.id, qty: c.qty, variant: c.variant }));

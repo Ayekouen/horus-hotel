@@ -824,7 +824,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.10.26-13';
+const APP_VERSION = '2026.10.26-14';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -1535,12 +1535,13 @@ function printInvoice(i){
   if (!i) return;
   const w = window.open('', '_blank');
   if (!w) return toast("Autorisez l'ouverture de fenêtres pour imprimer la facture.", true);
-  w.document.write(`<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Facture ${esc(i.number)}</title><style>body{font:15px/1.5 system-ui,sans-serif;color:#2B1E16;max-width:720px;margin:40px auto;padding:0 20px}h1{font-size:26px;margin:0;color:#B4532A}table{width:100%;border-collapse:collapse;margin-top:24px}td,th{padding:10px;border-bottom:1px solid #ddd;text-align:left}.r{text-align:right}${printCss('doc')}</style></head><body>
-  <h1>Facture ${esc(i.number)}</h1><p>Émise le ${date(i.issued_at)}<br>Client : ${esc($('orgLabel').textContent)}</p>
+  w.document.write(`<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Facture ${esc(i.number)}</title><style>body{max-width:720px;margin:40px auto;padding:0 20px}${printCss('doc')}</style></head><body>
+  <div class="dh"><div class="brand"><div><h1>Horus Hotel</h1><div class="m">Logiciel de gestion hôtelière</div></div></div><div class="meta"><span class="kind">Facture</span><div class="num">${esc(i.number)}</div><div class="m">Émise le ${date(i.issued_at)}</div></div></div>
+  <div class="cols"><div class="box"><div class="lbl">Client</div><strong>${esc($('orgLabel').textContent)}</strong></div><div class="box"><div class="lbl">Statut</div><span class="pill ok">Payée</span></div></div>
   <table><tr><th>Désignation</th><th>Période</th><th class="r">Montant</th></tr>
   <tr><td>Abonnement ${esc(i.plan_name)} (${CYCLE[i.billing_cycle] || esc(i.billing_cycle)})</td><td>${date(i.period_start)} – ${date(i.period_end)}</td><td class="r">${fcfa(i.amount)}</td></tr>
-  <tr><th colspan="2" class="r">Total payé</th><th class="r">${fcfa(i.amount)}</th></tr></table>
-  <script>window.print()<\/script></body></html>`);
+  <tr class="tot"><td colspan="2" class="r">Total payé</td><td class="r">${fcfa(i.amount)}</td></tr></table>
+  ${docFoot('Montants en francs CFA (XOF).')}<script>window.print()<\/script></body></html>`);
   w.document.close();
 }
 
@@ -2431,13 +2432,18 @@ function printGuestInvoice(i){
   if (!i) return;
   const est = S.ests.find(e => e.id === i.establishment_id) || {};
   const w = window.open('', '_blank'); if (!w) return toast("Autorisez l'ouverture de fenêtres pour imprimer.", true);
-  w.document.write(`<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Facture ${esc(i.number)}</title><style>body{font:14px/1.5 system-ui,sans-serif;color:#2B1E16;max-width:760px;margin:36px auto;padding:0 20px}h1{font-size:24px;margin:0;color:#B4532A}.top{border-bottom:3px solid #B4532A;padding-bottom:14px}table{width:100%;border-collapse:collapse;margin-top:20px}td,th{padding:9px;border-bottom:1px solid #ddd;text-align:left}.r{text-align:right}.top{display:flex;justify-content:space-between;gap:20px}${printCss('doc')}</style></head><body>
-  <div class="top"><div><h1>${esc(est.name || '')}</h1><div>${esc(est.city || '')}</div></div><div class="r"><strong>FACTURE ${esc(i.number)}</strong><br>Émise le ${new Date(i.issued_at).toLocaleDateString('fr-FR')}</div></div>
-  <p style="margin-top:24px">Client : <strong>${esc(i.guest_name)}</strong></p>
-  <table><tr><th>Désignation</th><th class="r">Qté</th><th class="r">P.U.</th><th class="r">Montant</th></tr>
-  ${(i.lines || []).map(l => `<tr><td>${esc(l.label)}</td><td class="r">${l.qty}</td><td class="r">${money(l.unit)}</td><td class="r">${money(l.amount)}</td></tr>`).join('')}
-  <tr><th colspan="3" class="r">Total</th><th class="r">${money(i.total)}</th></tr><tr><td colspan="3" class="r">Déjà réglé</td><td class="r">${money(i.paid)}</td></tr><tr><th colspan="3" class="r">Reste à payer</th><th class="r">${money(i.balance)}</th></tr></table>
-  <p style="margin-top:30px;font-size:12px;color:#666">Montants en francs CFA (XOF).</p><script>window.print()<\/script></body></html>`);
+  const due = Number(i.balance) > 0;
+  w.document.write(`<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Facture ${esc(i.number)}</title><style>body{max-width:760px;margin:36px auto;padding:0 20px}${printCss('doc')}</style></head><body>
+  ${docHead(est, 'Facture', i.number, 'Émise le ' + new Date(i.issued_at).toLocaleDateString('fr-FR', { dateStyle: 'long' }))}
+  <div class="cols"><div class="box"><div class="lbl">Facturé à</div><strong>${esc(i.guest_name)}</strong></div>
+    <div class="box"><div class="lbl">Statut</div>${due ? `<span class="pill due">Reste ${money(i.balance)}</span>` : '<span class="pill ok">Réglée</span>'}</div></div>
+  <table><thead><tr><th>Désignation</th><th class="r">Qté</th><th class="r">Prix unitaire</th><th class="r">Montant</th></tr></thead><tbody>
+  ${(i.lines || []).map(l => `<tr><td>${esc(l.label)}</td><td class="r">${l.qty}</td><td class="r">${money(l.unit)}</td><td class="r">${money(l.amount)}</td></tr>`).join('')}</tbody>
+  <tr class="tot"><td colspan="3" class="r">Total</td><td class="r">${money(i.total)}</td></tr>
+  <tr class="sub"><td colspan="3" class="r">Déjà réglé</td><td class="r">${money(i.paid)}</td></tr>
+  <tr class="sub"><td colspan="3" class="r"><strong>Reste à payer</strong></td><td class="r"><strong>${money(i.balance)}</strong></td></tr></table>
+  ${rcpt(est).footer ? `<p class="m" style="margin-top:22px;white-space:pre-line">${esc(rcpt(est).footer)}</p>` : ''}
+  ${docFoot('Montants en francs CFA (XOF).')}<script>window.onload=()=>window.print()<\/script></body></html>`);
   w.document.close();
 }
 
@@ -2814,13 +2820,13 @@ async function printReceipt(key){
   const est = S.ests.find(x => x.id === r0.establishment_id) || {};
   const total = rows.reduce((a, m) => a + Number(m.amount), 0);
   await teamNames();
-  w.document.write(`<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Reçu ${receiptNo(key)}</title><style>body{font:14px/1.5 system-ui,sans-serif;color:#2B1E16;max-width:420px;margin:30px auto;padding:0 18px}h1{font-size:20px;margin:0;color:#B4532A}table{width:100%;border-collapse:collapse;margin:14px 0}td{padding:7px 0;border-bottom:1px dashed #ccc}.r{text-align:right}.t{font-size:18px;font-weight:700}.m{color:#6B5646;font-size:12px}${printCss('ticket')}</style></head><body>
-    ${rcptHead(est)}
-    <p><strong>Reçu ${receiptNo(key)}</strong><br>${new Date(r0.created_at).toLocaleString('fr-FR', { dateStyle:'long', timeStyle:'short' })}</p>
-    ${b ? `<p>Client : <strong>${esc(b.guest_name)}</strong><br>Chambre ${esc(b.room_number)} · du ${dfr(b.check_in)} au ${dfr(b.check_out)}</p>` : ''}
+  w.document.write(`<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Reçu ${receiptNo(key)}</title><style>body{font:14px/1.5 system-ui,sans-serif;color:#1C2B26;max-width:420px;margin:30px auto;padding:0 18px}h1{font-size:20px;margin:0;color:#1F5C4A}table{width:100%;border-collapse:collapse;margin:10px 0}td{padding:7px 0;border-bottom:1px dashed #C9D8D1}.r{text-align:right}.t{font-size:18px;font-weight:800}.m{color:#5E6E68;font-size:12px}${printCss('ticket')}</style></head><body>
+    ${rcptHead(est)}<hr class="tk-sep">
+    <div class="tk-c"><div class="tk-big">REÇU N° ${receiptNo(key)}</div><div class="m">${new Date(r0.created_at).toLocaleString('fr-FR', { dateStyle:'long', timeStyle:'short' })}</div></div>
+    ${b ? `<hr class="tk-sep"><p style="margin:4px 0">Client : <strong>${esc(b.guest_name)}</strong><br>Chambre ${esc(b.room_number)} · du ${dfr(b.check_in)} au ${dfr(b.check_out)}</p>` : ''}
     <table>${rows.map(m => `<tr><td>${esc(m.label)} · ${PMETHOD[m.method]}${m.reference ? `<br><span class="m">réf. ${esc(m.reference)}</span>` : ''}</td><td class="r">${money(m.amount)}</td></tr>`).join('')}
-    <tr><td class="t">Total reçu</td><td class="r t">${money(total)}</td></tr></table>
-    ${b ? `<p>${Number(b.balance) > 0 ? 'Reste à payer : <strong>' + money(b.balance) + '</strong>' : 'Séjour entièrement réglé.'}</p>` : ''}
+    <tr class="tot"><td class="t">Total reçu</td><td class="r t">${money(total)}</td></tr></table>
+    ${b ? `<p class="tk-c" style="margin:6px 0">${Number(b.balance) > 0 ? 'Reste à payer : <strong>' + money(b.balance) + '</strong>' : '<strong>✓ Séjour entièrement réglé</strong>'}</p>` : ''}<hr class="tk-sep">
     ${rcpt(est).show_server !== false ? `<p class="m">Encaissé par ${esc(who(r0.created_by))}.</p>` : ''}${rcptFoot(est, 'Merci de votre confiance.')}${S.overview && S.overview.plan && S.overview.plan.slug === 'decouverte' ? '<p class="m" style="text-align:center;margin-top:18px">Propulsé par Horus Hotel · gestion hôtelière gratuite</p>' : ''}
     <script>window.onload=()=>window.print()<\/script></body></html>`);
   w.document.close();
@@ -2912,12 +2918,12 @@ async function printClosure(s){
   const est = S.ests.find(x => x.id === s.establishment_id) || {};
   const det = s.counted_detail || {};
   const byM = Object.keys(PMETHOD).map(k => [k, sum(rows.filter(m => m.method === k), ['payment','income'])]).filter(x => x[1] > 0);
-  w.document.write(`<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Clôture de caisse</title><style>body{font:13px/1.5 system-ui,sans-serif;color:#2B1E16;max-width:760px;margin:30px auto;padding:0 20px}h1{color:#B4532A;font-size:22px;margin:0}h2{font-size:15px;margin:20px 0 6px}table{width:100%;border-collapse:collapse}td,th{padding:6px 8px;border-bottom:1px solid #ddd;text-align:left}.r{text-align:right}.sig{display:flex;gap:40px;margin-top:40px}.sig div{flex:1;border-top:1px solid #2B1E16;padding-top:6px}${printCss('ticket')}</style></head><body>
-    <h1>Clôture de caisse — ${esc(est.name || '')}</h1>
+  w.document.write(`<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Clôture de caisse</title><style>body{font:13px/1.5 system-ui,sans-serif;color:#1C2B26;max-width:760px;margin:30px auto;padding:0 20px}h1{color:#1F5C4A;font-size:22px;margin:0}h2{font-size:15px;margin:20px 0 6px}table{width:100%;border-collapse:collapse}td,th{padding:6px 8px;border-bottom:1px solid #ddd;text-align:left}.r{text-align:right}.sig{display:flex;gap:40px;margin-top:40px}.sig div{flex:1;border-top:1px solid #1C2B26;padding-top:6px}${printCss('ticket')}</style></head><body>
+    ${['80', '58'].includes(getFmt('ticket')) ? `<h1>Clôture de caisse — ${esc(est.name || '')}</h1>` : docHead(est, 'Clôture de caisse', '', s.closed_at ? new Date(s.closed_at).toLocaleDateString('fr-FR', { dateStyle: 'long' }) : '')}
     <p>Ouverte le ${new Date(s.opened_at).toLocaleString('fr-FR')} par ${esc(who(s.opened_by))}<br>Clôturée le ${s.closed_at ? new Date(s.closed_at).toLocaleString('fr-FR') : '—'} par ${esc(who(s.closed_by))}</p>
     <h2>Espèces</h2><table><tr><td>Fond de caisse</td><td class="r">${money(s.opening_balance)}</td></tr><tr><td>Entrées en espèces</td><td class="r">${money(sum(cash, ['payment','income']))}</td></tr>
     <tr><td>Dépenses en espèces</td><td class="r">−${money(sum(cash, ['expense']))}</td></tr><tr><td>Remboursements</td><td class="r">−${money(sum(cash, ['refund']))}</td></tr><tr><td>Versements banque</td><td class="r">−${money(sum(cash, ['deposit']))}</td></tr>
-    <tr><td><strong>Attendu</strong></td><td class="r"><strong>${money(expected)}</strong></td></tr><tr><td><strong>Compté</strong></td><td class="r"><strong>${money(s.counted_balance)}</strong></td></tr>
+    <tr class="tot"><td>Attendu</td><td class="r">${money(expected)}</td></tr><tr><td><strong>Compté</strong></td><td class="r"><strong>${money(s.counted_balance)}</strong></td></tr>
     <tr><td><strong>Écart</strong></td><td class="r"><strong>${money(Number(s.counted_balance || 0) - expected)}</strong></td></tr>${s.gap_reason ? `<tr><td colspan="2">Motif : ${esc(s.gap_reason)}</td></tr>` : ''}</table>
     ${Object.keys(det).length ? `<h2>Comptage</h2><table>${DENOMS.map(d => `<tr><td>${money(d)} × ${det[d] || 0}</td><td class="r">${money(d * (det[d] || 0))}</td></tr>`).join('')}<tr><td>Pièces</td><td class="r">${money(det.pieces || 0)}</td></tr></table>` : ''}
     <h2>Encaissements par moyen</h2><table>${byM.map(([k, v]) => `<tr><td>${PMETHOD[k]}</td><td class="r">${money(v)}</td></tr>`).join('') || '<tr><td>Aucun</td><td></td></tr>'}</table>
@@ -3169,14 +3175,18 @@ function exportReportCsv(r){
 }
 function printReport(r){
   const w = window.open('', '_blank'); if (!w) return toast("Autorisez l'ouverture de fenêtres pour imprimer.", true);
+  const est = S.ests.find(x => x.id === S.est) || { name: $('orgLabel').textContent.split(' · ')[0] };
   const row = (a, b) => `<tr><td>${a}</td><td class="r">${b}</td></tr>`;
-  w.document.write(`<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Rapport ${esc(r.from)} – ${esc(r.to)}</title><style>body{font:13px/1.5 system-ui,sans-serif;color:#2B1E16;max-width:800px;margin:30px auto;padding:0 20px}h1{color:#B4532A;font-size:24px;margin:0}h2{font-size:16px;margin:22px 0 6px}table{width:100%;border-collapse:collapse}td,th{padding:6px 8px;border-bottom:1px solid #ddd;text-align:left}.r{text-align:right}${printCss('doc')}</style></head><body>
-    <h1>Rapport d\u2019activité</h1><p>${esc($('orgLabel').textContent.split(' · ')[0])} · du ${new Date(r.from + 'T00:00:00').toLocaleDateString('fr-FR')} au ${new Date(r.to + 'T00:00:00').toLocaleDateString('fr-FR')}</p>
-    <h2>Indicateurs</h2><table>${row('Chiffre d\u2019affaires hébergement', money(r.room_revenue))}${row('Nuits vendues / disponibles', r.sold_nights + ' / ' + r.available_nights)}${row('Taux d\u2019occupation', String(r.occupancy_pct).replace('.', ',') + ' %')}${row('ADR', money(r.adr))}${row('RevPAR', money(r.revpar))}${row('Encaissé', money(r.cash_in))}${row('Dépenses', money(r.expenses))}${row('Remboursements', money(r.refunds))}${row('Impayés', money(r.unpaid_total))}</table>
-    <h2>Encaissements par moyen</h2><table>${Object.entries(r.by_method).map(([m, v]) => row(PMETHOD[m] || esc(m), money(v))).join('') || row('Aucun', '')}</table>
-    <h2>Par chambre</h2><table><tr><th>Chambre</th><th>Nuits</th><th class="r">CA</th></tr>${r.by_room.map(x => `<tr><td>${esc(x.room)}</td><td>${x.nights}</td><td class="r">${money(x.revenue)}</td></tr>`).join('')}</table>
-    <h2>Impayés</h2><table><tr><th>Client</th><th>Séjour</th><th class="r">Reste</th></tr>${r.unpaid.map(u => `<tr><td>${esc(u.guest_name)}</td><td>Ch. ${esc(u.room_number)} · ${esc(u.check_in)} → ${esc(u.check_out)}</td><td class="r">${money(u.balance)}</td></tr>`).join('') || '<tr><td colspan="3">Aucun</td></tr>'}</table>
-    <p style="margin-top:24px;font-size:11px;color:#777">Édité le ${new Date().toLocaleString('fr-FR')} avec Horus Hotel.</p><script>window.print()<\/script></body></html>`);
+  const kpi = (l, v) => `<div class="kpi"><span>${l}</span><b>${v}</b></div>`;
+  const fr = (d) => new Date(d + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+  w.document.write(`<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Rapport ${esc(r.from)} – ${esc(r.to)}</title><style>body{max-width:800px;margin:30px auto;padding:0 20px}${printCss('doc')}</style></head><body>
+    ${docHead(est, 'Rapport d’activité', '', 'Du ' + fr(r.from) + '<br>au ' + fr(r.to))}
+    <div class="kpis">${kpi('Chiffre d’affaires', money(r.room_revenue))}${kpi('Occupation', String(r.occupancy_pct).replace('.', ',') + ' %')}${kpi('Prix moyen / nuit', money(r.adr))}${kpi('Encaissé', money(r.cash_in))}</div>
+    <h2>Indicateurs détaillés</h2><table>${row('Nuits vendues / disponibles', r.sold_nights + ' / ' + r.available_nights)}${row('Revenu par chambre disponible (RevPAR)', money(r.revpar))}${row('Dépenses', money(r.expenses))}${row('Remboursements', money(r.refunds))}${row('Impayés', money(r.unpaid_total))}</table>
+    <h2>Encaissements par moyen de paiement</h2><table>${Object.entries(r.by_method).map(([m, v]) => row(PMETHOD[m] || esc(m), money(v))).join('') || row('Aucun encaissement', '')}</table>
+    <h2>Par chambre</h2><table><thead><tr><th>Chambre</th><th class="r">Nuits</th><th class="r">Chiffre d’affaires</th></tr></thead><tbody>${r.by_room.map(x => `<tr><td>${esc(x.room)}</td><td class="r">${x.nights}</td><td class="r">${money(x.revenue)}</td></tr>`).join('')}</tbody></table>
+    <h2>Impayés</h2><table><thead><tr><th>Client</th><th>Séjour</th><th class="r">Reste</th></tr></thead><tbody>${r.unpaid.map(u => `<tr><td>${esc(u.guest_name)}</td><td>Ch. ${esc(u.room_number)} · ${dfr(u.check_in)} → ${dfr(u.check_out)}</td><td class="r">${money(u.balance)}</td></tr>`).join('') || '<tr><td colspan="3" class="m">Aucun impayé sur la période.</td></tr>'}</tbody></table>
+    ${docFoot('Document interne — confidentiel')}<script>window.onload=()=>window.print()<\/script></body></html>`);
   w.document.close();
 }
 
@@ -3467,12 +3477,51 @@ function printCss(kind){
   const f = getFmt(kind);
   const thermal = (w, page, fs, h1) => `@page{size:${page}mm auto;margin:${page === 58 ? 1.5 : 3}mm}html,body{width:${w}mm}body{max-width:${w}mm!important;margin:0!important;padding:0!important;font-size:${fs}px!important;line-height:1.35!important;color:#000!important}*{color:#000!important;background:transparent!important;box-shadow:none!important}h1{font-size:${h1}px!important;text-align:center}h2{font-size:${fs + 1}px!important;margin:8px 0 4px!important}table{margin:6px 0!important;font-size:${fs}px!important}td,th{padding:2px 1px!important;border-color:#000!important}img{max-width:100%;filter:grayscale(1)}.noprint,button{display:none!important}`;
   const sheet = (size, margin) => `@page{size:${size};margin:${margin}mm}body{max-width:none!important;margin:0!important;padding:0!important}.noprint,button{display:none!important}`;
-  if (f === '80') return thermal(72, 80, 12, 15);
-  if (f === '58') return thermal(48, 58, 10, 13);
-  if (f === 'A5') return sheet('A5', 10) + (kind === 'ticket' ? 'body{font-size:13px!important}' : 'body{font-size:12px!important}');
-  if (f === 'letter') return sheet('letter', 15);
-  return sheet('A4', 15);
+  if (f === '80') return DOC_TICKET + thermal(72, 80, 12, 15) + TICKET_SCREEN(72);
+  if (f === '58') return DOC_TICKET + thermal(48, 58, 10, 13) + TICKET_SCREEN(48);
+  if (f === 'A5') return DOC_SHEET + sheet('A5', 10) + (kind === 'ticket' ? 'body{font-size:13px!important}' : 'body{font-size:12px!important}') + SHEET_SCREEN('148mm');
+  if (f === 'letter') return DOC_SHEET + sheet('letter', 15) + SHEET_SCREEN('216mm');
+  return DOC_SHEET + sheet('A4', 15) + SHEET_SCREEN('210mm');
 }
+/* Charte des documents imprimés : sobre, lisible, aux couleurs Forêt (vert sapin + cuivre). */
+const DOC_SHEET = `*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+body{font:13px/1.55 "Inter","Segoe UI",system-ui,-apple-system,sans-serif!important;color:#1C2B26!important;font-variant-numeric:tabular-nums}
+h1{font-size:22px!important;line-height:1.2;color:#1F5C4A!important;margin:0!important;letter-spacing:-.01em}
+h2{font-size:11px!important;text-transform:uppercase;letter-spacing:.08em;color:#1F5C4A!important;margin:22px 0 8px!important;padding-bottom:5px;border-bottom:1px solid #D5E0DB}
+p{margin:6px 0}.m,.muted{color:#5E6E68!important;font-size:11.5px}
+table{width:100%;border-collapse:collapse;margin:6px 0 4px!important}
+th{background:#EEF4F1;color:#2E4A40;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:7px 9px!important;border-bottom:1px solid #C9D8D1!important;text-align:left}
+td{padding:7px 9px!important;border-bottom:1px solid #E6ECE9!important;vertical-align:top}
+tbody tr:nth-child(even) td,table tr:nth-child(even) td{background:#FAFCFB}
+.r{text-align:right!important;white-space:nowrap}
+tr.tot td,tr.tot th{border-top:2px solid #1F5C4A!important;border-bottom:none!important;background:#fff!important;font-weight:800;font-size:14px;color:#1F5C4A}
+tr.sub td,tr.sub th{background:#fff!important;border-bottom:none!important;color:#3B4D46}
+.dh{display:flex;justify-content:space-between;align-items:flex-start;gap:24px;padding-bottom:14px;margin-bottom:18px;border-bottom:3px solid #1F5C4A}
+.dh .brand{display:flex;gap:12px;align-items:center}.dh img{max-height:54px;max-width:120px;object-fit:contain}
+.dh .meta{text-align:right}.dh .kind{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.12em;color:#C9894B;text-transform:uppercase}
+.dh .num{font-size:18px;font-weight:800;color:#1C2B26;margin:2px 0}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:4px 0 8px}
+.box{border:1px solid #DCE5E1;border-radius:8px;padding:10px 12px}.box .lbl{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:#5E6E68;margin-bottom:3px}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:8px 0}
+.kpi{border:1px solid #DCE5E1;border-radius:8px;padding:9px 11px}.kpi b{display:block;font-size:16px;color:#1C2B26;margin-top:2px}.kpi span{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#5E6E68}
+.pill{display:inline-block;padding:2px 9px;border-radius:99px;font-size:10.5px;font-weight:700}.pill.ok{background:#E3F1EA;color:#1F5C4A}.pill.due{background:#FBEDE3;color:#9A4E1C}
+.sig{display:flex;gap:40px;margin-top:44px}.sig div{flex:1;border-top:1px solid #1C2B26;padding-top:6px;font-size:11px;color:#5E6E68}
+.df{margin-top:28px;padding-top:10px;border-top:1px solid #DCE5E1;font-size:10.5px;color:#7A8A84;display:flex;justify-content:space-between;gap:12px}`;
+const DOC_TICKET = `body{font-family:"Inter","Segoe UI",system-ui,sans-serif;font-variant-numeric:tabular-nums}
+h1{letter-spacing:-.01em;margin:0}.m{font-size:.85em}
+table td{border-bottom:1px dashed #000!important}
+tr.tot td{border-top:1.5px solid #000!important;border-bottom:none!important;font-weight:800;font-size:1.2em;padding-top:5px!important}
+.tk-sep{border:0;border-top:1px dashed #000;margin:8px 0}.tk-c{text-align:center}.tk-big{font-size:1.15em;font-weight:800}`;
+const SHEET_SCREEN = (w) => `@media screen{html{background:#E9EEEC}body{width:${w};max-width:${w}!important;min-height:90vh;margin:24px auto!important;padding:16mm 15mm!important;background:#fff;box-shadow:0 6px 30px rgba(20,40,32,.14);border-radius:4px}}`;
+const TICKET_SCREEN = (w) => `@media screen{html{background:#E9EEEC!important;width:auto!important}body{width:${w + 8}mm!important;max-width:${w + 8}mm!important;margin:24px auto!important;padding:5mm 4mm!important;background:#fff!important;box-shadow:0 6px 30px rgba(20,40,32,.14)}}`;
+/* En-tête commun des documents A4/A5 */
+function docHead(est, kind, num, sub){
+  const r = rcpt(est || {}), logo = r.show_logo !== false && est && est.public_logo_url;
+  const lines = [r.address ?? [est.address, est.city].filter(Boolean).join(', '), (r.phone ?? (est.phone || est.public_phone)) ? 'Tél. ' + (r.phone ?? (est.phone || est.public_phone)) : '', r.tax_id].filter(Boolean);
+  return `<div class="dh"><div class="brand">${logo ? `<img src="${esc(est.public_logo_url)}" alt="">` : ''}<div><h1>${esc(r.title || (est && est.name) || 'Horus Hotel')}</h1>${lines.map(l => `<div class="m">${esc(l)}</div>`).join('')}</div></div>
+    <div class="meta"><span class="kind">${esc(kind)}</span>${num ? `<div class="num">${esc(num)}</div>` : ''}${sub ? `<div class="m">${sub}</div>` : ''}</div></div>`;
+}
+const docFoot = (left) => `<div class="df"><span>${left || ''}</span><span>Édité le ${new Date().toLocaleString('fr-FR', { dateStyle: 'medium', timeStyle: 'short' })} · Horus Hotel</span></div>`;
 /* ---------- Reçu personnalisé (par établissement) ---------- */
 const rcpt = (est) => (est && est.receipt_settings) || {};
 const myName = () => (S.member && S.member.display_name) || ((S.session && S.session.user.email) || '').split('@')[0];

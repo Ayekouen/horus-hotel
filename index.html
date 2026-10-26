@@ -154,7 +154,7 @@ html[data-theme="indigo"] nav.side select.estsw{background:rgba(255,255,255,.08)
 .bar{height:10px;background:var(--line);border-radius:999px;overflow:hidden}.bar>div{height:100%;background:var(--green)}
 .bar.full>div{background:var(--red)}
 .table{width:100%;border-collapse:collapse;font-size:14px}
-.tablewrap{overflow-x:auto}
+.tablewrap{overflow-x:auto;position:relative;max-width:100%;-webkit-overflow-scrolling:touch}
 .table th{text-align:left;font-size:12px;color:var(--muted);padding:10px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
 .table td{padding:12px 8px;border-bottom:1px solid #F0ECE3;vertical-align:middle}
 .kpi .v{font-family:var(--display);font-size:30px;font-weight:800;letter-spacing:-.5px}
@@ -640,6 +640,16 @@ html nav.side [data-view="naya"]{--ic:url("data:image/svg+xml,%3Csvg xmlns='http
 @keyframes netb{0%{left:-30%}100%{left:100%}}
 .cachedtag{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:#9A5B00;background:#FFF4E0;border-radius:99px;padding:3px 10px;margin-bottom:10px}
 @media (prefers-reduced-motion:reduce){#boot .bl,#boot .bb i,.sk::after,#netBar::before{animation:none}}
+
+.syncpill{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;padding:5px 11px;border-radius:99px;background:var(--green-l,#E3F1EA);color:var(--green-d,#1F5C4A);white-space:nowrap;margin-right:auto;margin-left:10px}
+.syncpill::before{content:"";width:8px;height:8px;border-radius:50%;background:currentColor}
+.syncpill.off{background:#2B1E16;color:#FBF6EE}.syncpill.busy{background:#FFF4E0;color:#9A5B00}.syncpill.busy::before{animation:bootp .9s ease-in-out infinite}
+@media (max-width:720px){.syncpill{position:fixed;top:8px;right:10px;z-index:65;margin:0;box-shadow:0 2px 8px rgba(0,0,0,.12)}}
+/* Téléphone : pas de défilement horizontal, montants sur une ligne */
+html,body{overflow-x:hidden;max-width:100%}
+td .sr-only,th .sr-only{position:absolute;left:0;top:0}
+.kpi .v{overflow-wrap:anywhere}
+@media (max-width:720px){.kpi .v{font-size:clamp(19px,5.6vw,26px)!important;white-space:nowrap;letter-spacing:-.02em}.kpi{padding:14px 16px!important;min-width:0}.grid.g5{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
 </style>
 </head>
 <body>
@@ -754,6 +764,7 @@ html nav.side [data-view="naya"]{--ic:url("data:image/svg+xml,%3Csvg xmlns='http
   <div class="mainwrap">
   <header class="dtop" id="dTop">
     <div class="dtitle" id="dTitle"></div>
+      <span id="syncPill" class="syncpill" role="status" aria-live="polite"></span>
       <button type="button" id="navSearch" class="navsearch" aria-label="Rechercher une action">Que voulez-vous faire ?<kbd>/</kbd></button>
       <button type="button" id="navAsk" class="navsearch" style="justify-content:flex-start;gap:8px;color:var(--ink)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"></path></svg>Assistant</button>
       <button type="button" id="navNotif" class="navsearch" style="justify-content:flex-start;gap:10px;color:var(--ink)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10 21h4"></path></svg>Notifications<span id="notifBadge" class="hidden" style="margin-left:auto;min-width:22px;padding:2px 7px;border-radius:999px;background:var(--green);color:#fff;font-size:12px;font-weight:800;text-align:center"></span></button>
@@ -817,7 +828,17 @@ const RECOVERY = { pending: /type=recovery/.test(location.hash + location.search
 const NET = { n: 0, cachedAt: null };
 const READ_RPC = /\/rpc\/(is_platform_admin|get_subscription_overview|admin_platform_stats|admin_orgs_overview|admin_naya_overview|financial_report|daily_report|org_team|org_team_v2|business_analytics|pos_summary|my_invitations|stay_price|public_directory|public_reviews|public_get_establishment|public_quote)\b/;
 const DATA_CACHE = 'horus-data-v1';
-function netBarSet(){ const b = document.getElementById('netBar'); if (b) b.classList.toggle('on', NET.n > 0); }
+function netBarSet(){ const b = document.getElementById('netBar'); if (b) b.classList.toggle('on', NET.n > 0); syncPill(); }
+let SYNC_LAST = null;
+function syncPill(){
+  const p = document.getElementById('syncPill'); if (!p) return;
+  let q = 0; try { q = JSON.parse(localStorage.getItem('hh_offline_sales') || '[]').length; } catch (_) {}
+  if (!navigator.onLine) { p.className = 'syncpill off'; p.textContent = 'Hors ligne' + (q ? ` · ${q} en attente` : ''); p.title = 'Les données affichées sont celles enregistrées sur cet appareil.'; return; }
+  if (NET.n > 0 || q) { p.className = 'syncpill busy'; p.textContent = q ? `Synchronisation · ${q}` : 'Synchronisation…'; return; }
+  if (NET.cachedAt) { p.className = 'syncpill busy'; p.textContent = 'Connexion instable'; return; }
+  SYNC_LAST = new Date(); p.className = 'syncpill'; p.textContent = 'Synchronisé'; p.title = 'Dernière synchronisation : ' + SYNC_LAST.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+}
+window.addEventListener('online', () => setTimeout(syncPill, 50)); window.addEventListener('offline', () => setTimeout(syncPill, 50));
 function cacheUser(){ try { const raw = localStorage.getItem(Object.keys(localStorage).find(k => /^sb-.*-auth-token$/.test(k)) || '') || sessionStorage.getItem(Object.keys(sessionStorage).find(k => /^sb-.*-auth-token$/.test(k)) || ''); const j = raw && JSON.parse(raw); return (j && j.user && j.user.id) || 'anon'; } catch (_) { return 'anon'; } }
 async function dataKey(url, body){ const raw = url + '|' + (body || ''); let h = raw; try { const d = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(raw)); h = [...new Uint8Array(d)].map(x => x.toString(16).padStart(2, '0')).join(''); } catch (_) {} return `https://cache.horus.local/${cacheUser()}/${h}`; }
 async function hhFetch(input, init = {}){
@@ -836,7 +857,7 @@ async function hhFetch(input, init = {}){
 async function clearDataCache(){ try { await caches.delete(DATA_CACHE); } catch (_) {} }
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { global: { fetch: hhFetch }, auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, storage: authStore } });
 
-const S = { session:null, member:null, org:null, overview:null, plans:[], providers:[], isAdmin:false, cycle:'monthly', view:'dashboard', signup:false, est:null, ests:[], rooms:[] };
+const S = { session:null, member:null, org:null, overview:null, plans:[], providers:[], isAdmin:false, cycle:'monthly', view:(() => { try { return localStorage.getItem('hh_last_view') || 'dashboard'; } catch (_) { return 'dashboard'; } })(), signup:false, est:null, ests:[], rooms:[] };
 const VIEWS = ['naya','passes','inventaire','pointage','resto','rapports','controle','equipe','mapage','dashboard','reservations','planning','clients','caisse','depenses','factures','tarifs','abonnement','chambres','admin'];
 const $ = (id) => document.getElementById(id);
 const esc = (v) => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -859,7 +880,7 @@ function skeletonView(kind){
   const rows = `<div class="card" style="display:flex;flex-direction:column;gap:12px">${[1, 2, 3, 4, 5].map(i => `<div style="display:flex;gap:12px;align-items:center"><div class="sk" style="width:38px;height:38px;border-radius:10px;flex-shrink:0"></div><div style="flex:1;display:flex;flex-direction:column;gap:7px">${bar((70 - i * 6) + '%')}${bar((40 + i * 5) + '%', 10)}</div></div>`).join('')}</div>`;
   return `<div class="skv" aria-busy="true" aria-label="Chargement">${bar('220px', 30)}${kind === 'rows' ? '' : cards}${rows}</div>`;
 }
-function show(id){ ['auth','onboard','app','public'].forEach(x => $(x).classList.toggle('hidden', x !== id)); bootDone(); }
+function show(id){ ['auth','onboard','app','public'].forEach(x => $(x).classList.toggle('hidden', x !== id)); bootDone(); if (typeof syncPill === 'function') syncPill(); }
 function bootDone(){ const b = $('boot'); if (b && !b.classList.contains('out')) { b.classList.add('out'); setTimeout(() => b.remove(), 300); } }
 setTimeout(() => { const m = $('bootMsg'); if (m && $('boot')) m.textContent = navigator.onLine ? 'Connexion lente, merci de patienter…' : 'Hors connexion : ouverture avec les données de cet appareil…'; }, 4000);
 setTimeout(bootDone, 15000);
@@ -886,7 +907,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.10.26-23';
+const APP_VERSION = '2026.10.26-25';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -1554,7 +1575,7 @@ function go(view){
   if (view === 'admin' && !S.isAdmin) view = 'abonnement';
   if (S.org && !allowed(view)) view = (ROLE_VIEWS[S.member.role] || ['dashboard']).find(allowed) || 'dashboard';
   if (!S.org && view !== 'admin') view = 'admin';
-  S.view = view;
+  S.view = view; try { localStorage.setItem('hh_last_view', view); } catch (_) {}
   if (!navigator.onLine && S.offlineBoot && view !== 'resto') { /* vue sans données hors connexion */ }
   document.querySelectorAll('nav.side [data-view]').forEach(b => b.classList.toggle('active', b.dataset.view === view && (!b.dataset.rtab || b.dataset.rtab === (S.rTab || 'caisse'))));
   if (typeof drawSubnav === 'function') drawSubnav();
@@ -1848,11 +1869,14 @@ function admFlag(c){
 async function renderAdmin(){
   const el = $('v-admin'); el.innerHTML = skeletonView();
   const tab = S._admTab || 'apercu';
-  const [st, orgs, pend, plans, naya] = await Promise.all([
+  const [st, orgs, pend, plans, naya, npart, pset] = await Promise.all([
     sb.rpc('admin_platform_stats'), sb.rpc('admin_orgs_overview'),
     sb.from('payments').select('id,created_at,amount,payment_method,billing_cycle,organization_id,organizations(name),plans(name)').eq('status', 'pending').order('created_at'),
-    sb.from('plans').select('*').order('sort_order'), sb.rpc('admin_naya_overview', { p_month: S._admMonth || null })
+    sb.from('plans').select('*').order('sort_order'), sb.rpc('admin_naya_overview', { p_month: S._admMonth || null }),
+    sb.rpc('admin_naya_partners'), sb.from('platform_settings').select('key,value')
   ]);
+  const NP = (npart.data || []).filter(x => !x.is_test), PS = Object.fromEntries((pset.data || []).map(x => [x.key, x.value]));
+  const comDue = NP.reduce((a, x) => a + Number(x.balance || 0), 0), comPaid = NP.reduce((a, x) => a + Number(x.paid || 0), 0), comLate = NP.reduce((a, x) => a + Number(x.overdue || 0), 0);
   if (st.error) { el.innerHTML = `<p class="muted">${esc(errMsg(st.error))}</p>`; return; }
   const s = st.data, C = orgs.data || [], P = pend.data || [], N = naya.data || { rows: [] };
   const k = (l, v, h) => `<div class="card kpi"><div class="l">${l}</div><div class="v">${v}</div>${h ? `<div class="muted" style="font-size:12px;margin-top:2px">${h}</div>` : ''}</div>`;
@@ -1865,6 +1889,7 @@ async function renderAdmin(){
   if (tab === 'apercu') {
     const top = (s.plans_usage || [])[0];
     body = `<div class="grid g5" style="margin-bottom:18px">
+      ${k('Mon chiffre d’affaires encaissé', fcfa(Number(s.revenue_current_year || 0) + comPaid), 'abonnements de l’année + commissions NAYA réglées')}${k('Commissions NAYA à encaisser', fcfa(comDue), comLate ? `<span style="color:var(--red)">dont ${fcfa(comLate)} en retard</span>` : 'aucun retard')}
       ${k('Revenu mensuel récurrent', fcfa(s.mrr), 'abonnements payants actifs')}${k('Encaissé ce mois', fcfa(s.revenue_current_month))}${k('Encaissé cette année', fcfa(s.revenue_current_year))}${k('Commissions NAYA du mois', fcfa(nayaDue), `${(N.rows || []).reduce((a, r) => a + Number(r.bookings), 0)} réservation(s) · ${N.listed || 0} en ligne`)}${k('Paiements à valider', P.length)}
       ${k('Clients', real.length, `${C.length - real.length} compte(s) de test`)}${k('Abonnements actifs', s.subscriptions_active)}${k('Essais en cours', s.trials_active, `${s.trials_expired} expiré(s)`)}${k('Chambres gérées', s.rooms)}${k('Utilisateurs', s.users)}
     </div>
@@ -1906,9 +1931,22 @@ async function renderAdmin(){
   }
 
   if (tab === 'naya') {
+    const msg = (x) => `Bonjour, ici l’équipe NAYA. Votre solde de commissions NAYA est de ${fcfa(x.balance)}${Number(x.overdue) > 0 ? ` (dont ${fcfa(x.overdue)} en retard)` : ''}. ${PS.naya_payment_instructions ? 'Modalités de paiement : ' + PS.naya_payment_instructions : 'Merci de procéder au règlement.'} Merci de votre confiance.`;
+    const partners = `<div class="card" style="margin-bottom:16px"><div class="row between" style="margin-bottom:10px;flex-wrap:wrap;gap:8px"><h3 style="font-size:20px">Partenaires NAYA et commissions</h3>
+      <div class="row" style="gap:14px;font-size:14px"><span>À encaisser <strong>${fcfa(comDue)}</strong></span><span>En retard <strong style="color:${comLate ? 'var(--red)' : 'inherit'}">${fcfa(comLate)}</strong></span><span>Déjà encaissé <strong>${fcfa(comPaid)}</strong></span></div></div>
+      <div class="tablewrap"><table class="table"><thead><tr><th>Partenaire</th><th class="r">Séjours</th><th class="r">CA généré</th><th class="r">Commission due</th><th class="r">Réglé</th><th class="r">Solde</th><th>Dernier paiement</th><th><span class="sr-only">Actions</span></th></tr></thead><tbody>
+      ${NP.map(x => `<tr><td><strong>${esc(x.name)}</strong>${x.listed ? '' : ' <span class="pill st-cancelled">hors ligne</span>'}<div class="muted" style="font-size:12px">${esc(x.email || '')}${x.phone ? ' · ' + esc(x.phone) : ''} · ${Number(x.commission_pct || 0)} %</div></td>
+        <td class="r">${x.bookings_done}<div class="muted" style="font-size:12px">${x.bookings} au total</div></td><td class="r">${fcfa(x.revenue)}</td><td class="r">${fcfa(x.earned)}</td><td class="r">${fcfa(x.paid)}</td>
+        <td class="r"><strong style="color:${Number(x.overdue) > 0 ? 'var(--red)' : Number(x.balance) > 0 ? '#9A5B00' : 'var(--ok,#1F5C4A)'}">${fcfa(x.balance)}</strong>${Number(x.overdue) > 0 ? `<div style="font-size:12px;color:var(--red)">${fcfa(x.overdue)} en retard</div>` : ''}</td>
+        <td>${x.last_payment ? date(x.last_payment) : '<span class="muted">—</span>'}</td>
+        <td class="row" style="gap:6px">${Number(x.balance) > 0 ? `<button class="small primary" data-cpay="${esc(x.id)}">Enregistrer un paiement</button>` : ''}${Number(x.balance) > 0 && waPhone(x.phone) ? `<a class="small ghost btn" style="text-decoration:none" target="_blank" rel="noopener" href="https://wa.me/${waPhone(x.phone)}?text=${encodeURIComponent(msg(x))}">Relancer</a>` : ''}</td></tr>`).join('') || '<tr><td colspan="8" class="muted">Aucun partenaire NAYA pour le moment.</td></tr>'}</tbody></table></div>
+      <p class="muted" style="font-size:12px;margin-top:8px">Une commission est due dès l’arrivée du client (séjours confirmés, en cours ou terminés). Elle passe « en retard » après ${esc(PS.naya_payment_delay_days || '7')} jours. Les comptes de test ne sont pas comptés.</p></div>
+      <form class="card" id="psForm" style="margin-bottom:16px"><h3 style="font-size:18px;margin-bottom:8px">Modalités de paiement affichées aux partenaires</h3>
+        <div class="field"><label for="psIns">Instructions (numéro Wave / Orange Money, nom du bénéficiaire…)</label><textarea id="psIns" rows="3" maxlength="1000" placeholder="ex. Wave : 07 00 00 00 00 (NAYA) — indiquez le nom de votre hôtel en référence.">${esc(PS.naya_payment_instructions || '')}</textarea></div>
+        <div class="row" style="gap:10px;align-items:flex-end;flex-wrap:wrap"><div class="field" style="margin:0"><label for="psDel">Délai de paiement (jours après l’arrivée)</label><input id="psDel" type="number" min="0" max="60" value="${esc(PS.naya_payment_delay_days || '7')}" style="max-width:120px"></div><button class="primary">Enregistrer</button></div></form>`;
     const m = N.month || today().slice(0, 8) + '01';
     const listedEst = C.flatMap(c => (c.establishments_list || []).filter(e => e.listed || e.commission_pct != null).map(e => ({ ...e, org: c.name })));
-    body = `<div class="card" style="margin-bottom:16px"><div class="row between" style="margin-bottom:10px;flex-wrap:wrap;gap:8px"><h3 style="font-size:20px">Commissions NAYA — ${new Date(m + 'T00:00:00').toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}</h3>
+    body = partners + `<div class="card" style="margin-bottom:16px"><div class="row between" style="margin-bottom:10px;flex-wrap:wrap;gap:8px"><h3 style="font-size:20px">Commissions NAYA — ${new Date(m + 'T00:00:00').toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}</h3>
       <label class="row" style="gap:6px">Mois <input type="month" id="admMonth" value="${m.slice(0, 7)}" style="max-width:170px"></label></div>
       <p class="muted" style="margin-bottom:10px">Séjours NAYA dont l’arrivée tombe dans le mois. Les demandes en attente et les annulations ne génèrent pas de commission.</p>
       <div class="tablewrap"><table class="table"><thead><tr><th>Établissement</th><th class="r">Réservations</th><th class="r">En attente</th><th class="r">Annulées</th><th class="r">Chiffre d’affaires</th><th class="r">Commission due</th></tr></thead><tbody>
@@ -1942,6 +1980,11 @@ async function renderAdmin(){
   el.querySelectorAll('[data-admfil]').forEach(b => b.onclick = () => { S._admFilter = b.dataset.admfil; renderAdmin(); });
   el.querySelectorAll('[data-manage]').forEach(b => b.onclick = () => openAdminClient(C.find(c => c.id === b.dataset.manage), plans.data || []));
   if ($('admNewTest')) $('admNewTest').onclick = openNewTestAccount;
+  el.querySelectorAll('[data-cpay]').forEach(b => b.onclick = () => openCommissionPayment((npart.data || []).find(x => x.id === b.dataset.cpay)));
+  if ($('psForm')) $('psForm').onsubmit = async (e) => { e.preventDefault();
+    const d = Math.max(0, Math.min(60, parseInt($('psDel').value, 10) || 7));
+    const { error } = await sb.from('platform_settings').upsert([{ key: 'naya_payment_instructions', value: $('psIns').value.trim() || null, updated_at: new Date().toISOString() }, { key: 'naya_payment_delay_days', value: String(d), updated_at: new Date().toISOString() }]);
+    if (error) return toast(errMsg(error), true); toast('Modalités enregistrées : elles s’affichent chez vos partenaires.'); renderAdmin(); };
   const ss = $('subSearch'); if (ss) ss.oninput = (e) => { const q = e.target.value.toLowerCase(); $('subRows').querySelectorAll('tr[data-name]').forEach(r => r.classList.toggle('hidden', !r.dataset.name.includes(q))); };
   const am = $('admMonth'); if (am) am.onchange = () => { S._admMonth = am.value ? am.value + '-01' : null; renderAdmin(); };
   const num = (id) => { const v = $(id).value.trim(); return v === '' ? null : parseInt(v, 10); };
@@ -1974,6 +2017,18 @@ async function renderAdmin(){
     const { error } = await sb.from('plans').update({ monthly_price: num('pm-' + id) ?? 0, yearly_price: num('py-' + id), max_rooms: num('pr-' + id), max_users: num('pu-' + id), max_properties: num('pe-' + id), is_active: $('pa-' + id).checked }).eq('id', id);
     if (error) return toast(errMsg(error), true); toast('Formule enregistrée.');
   });
+}
+function openCommissionPayment(x){
+  if (!x) return;
+  modal(`<div class="eyebrow">Commission NAYA</div><h2 style="font-size:22px;margin:4px 0 6px">Paiement reçu de ${esc(x.name)}</h2>
+    <p class="muted" style="margin:0 0 12px">Solde actuel : <strong>${fcfa(x.balance)}</strong>${Number(x.overdue) > 0 ? ` (dont ${fcfa(x.overdue)} en retard)` : ''}.</p>
+    <form id="cpF"><div class="row" style="gap:10px;flex-wrap:wrap"><div class="field" style="flex:1 1 140px"><label for="cpA">Montant reçu (F)</label><input id="cpA" type="number" min="1" value="${Math.round(Number(x.balance))}" required></div>
+      <div class="field" style="flex:1 1 140px"><label for="cpM">Moyen</label><select id="cpM">${opt(METHOD, 'wave')}</select></div></div>
+      <div class="field"><label for="cpR">Référence (facultatif)</label><input id="cpR" maxlength="80" placeholder="N° de transaction"></div>
+      <div class="row" style="gap:8px"><button type="button" class="ghost" data-close>Annuler</button><button class="primary" style="flex:1">Enregistrer le paiement</button></div></form>`);
+  $('cpF').onsubmit = async (e) => { e.preventDefault();
+    const { error } = await sb.rpc('admin_record_commission_payment', { p_org: x.id, p_amount: +$('cpA').value, p_method: $('cpM').value, p_reference: $('cpR').value, p_note: null });
+    if (error) return toast(errMsg(error), true); closeModal(); toast('Paiement enregistré : le solde du partenaire est mis à jour.'); renderAdmin(); };
 }
 function openNewTestAccount(){
   modal(`<div class="eyebrow">Compte de test</div><h2 style="font-size:22px;margin:4px 0 6px">Créer un hôtel de test</h2>
@@ -2088,7 +2143,44 @@ function upgradeBtn(){
   if (!next) return '';
   return `<button data-go="tarifs" style="background:linear-gradient(135deg,#E9A27A,var(--green));border:0;color:#fff;display:inline-flex;align-items:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"></path></svg>${trial ? 'Choisir ma formule' : 'Passer à ' + esc(next.name)}</button>`;
 }
-async function renderDashboard(){
+/* Chiffre d'affaires encaissé par période (accueil) */
+const CA_PERIODS = [['today', 'Aujourd’hui'], ['yesterday', 'Hier'], ['before', 'Avant-hier'], ['7d', '7 jours'], ['1m', '1 mois'], ['3m', '3 mois'], ['6m', '6 mois']];
+function caRange(k){ const t = today();
+  if (k === 'yesterday') return [addDays(t, -1), t]; if (k === 'before') return [addDays(t, -2), addDays(t, -1)];
+  if (k === '7d') return [addDays(t, -6), addDays(t, 1)];
+  const m = { '1m': 1, '3m': 3, '6m': 6 }[k]; if (m) { const d = new Date(t + 'T00:00:00'); d.setMonth(d.getMonth() - m); return [iso(d), addDays(t, 1)]; }
+  return [t, addDays(t, 1)]; }
+async function drawCA(k){
+  const box = $('caCard'); if (!box) return; S._caP = k = k || S._caP || 'today'; try { localStorage.setItem('hh_ca_p', k); } catch (_) {}
+  const [a, b] = caRange(k);
+  box.innerHTML = `<div class="row between" style="flex-wrap:nowrap;gap:8px"><div style="font-size:13px;font-weight:600;opacity:.8">Chiffre d’affaires encaissé</div>
+    <label class="sr-only" for="caSel">Période</label><select id="caSel" style="min-height:32px;width:auto;padding:2px 26px 2px 10px;font-size:13px;background-color:rgba(255,255,255,.12);color:inherit;border-color:rgba(255,255,255,.25)">${CA_PERIODS.map(([v, l]) => `<option value="${v}" ${v === k ? 'selected' : ''} style="color:#111">${l}</option>`).join('')}</select></div>
+    <div style="font-family:var(--display);font-weight:800;font-size:34px;letter-spacing:-.02em" id="caVal">…</div><div style="font-size:13px;opacity:.75" id="caSub">&nbsp;</div>`;
+  $('caSel').onchange = (e) => drawCA(e.target.value);
+  const { data } = await sb.from('cash_movements').select('amount,kind,method').eq('establishment_id', S.est).in('kind', ['payment', 'income', 'refund']).gte('created_at', a + 'T00:00:00').lt('created_at', b + 'T00:00:00').limit(20000);
+  if (!$('caVal') || S._caP !== k) return;
+  const L = data || [], inc = L.filter(m => m.kind !== 'refund').reduce((x, m) => x + Number(m.amount), 0), ref = L.filter(m => m.kind === 'refund').reduce((x, m) => x + Number(m.amount), 0);
+  const byM = {}; L.filter(m => m.kind !== 'refund').forEach(m => { byM[m.method] = (byM[m.method] || 0) + Number(m.amount); });
+  const top = Object.entries(byM).sort((x, y) => y[1] - x[1]).slice(0, 2).map(([m, v]) => `${PMETHOD[m] || m} ${money(v)}`).join(' · ');
+  $('caVal').textContent = money(inc - ref);
+  $('caSub').textContent = (k === 'today' || k === 'yesterday' || k === 'before' ? dfr(a) : `du ${dfr(a)} au ${dfr(addDays(b, -1))}`) + ' · ' + plur(L.filter(m => m.kind !== 'refund').length, 'encaissement', 'encaissements') + (top ? ' · ' + top : '') + (ref ? ` · remboursé ${money(ref)}` : '');
+}
+/* Commission NAYA due : rappel au partenaire */
+function nayaBalanceCard(B, compact){
+  if (!B || !(Number(B.balance) > 0)) return compact ? '' : (B && Number(B.earned) > 0 ? `<div class="card" style="margin-bottom:14px;border-color:var(--green)"><strong>Commissions NAYA à jour.</strong> <span class="muted">Merci ! Total réglé : ${money(B.paid)}.</span></div>` : '');
+  const late = Number(B.overdue) > 0;
+  const ins = B.instructions ? `<div style="white-space:pre-line;font-size:14px;margin-top:6px">${esc(B.instructions)}</div>` : '<div class="muted" style="font-size:13px;margin-top:6px">Les modalités de paiement vous seront communiquées par l’équipe NAYA.</div>';
+  return `<div class="card" style="margin-bottom:14px;border:2px solid ${late ? 'var(--red,#B42318)' : 'var(--amber,#C48E26)'};background:${late ? '#FDEDEC' : '#FFF8EC'}">
+    <div class="row between" style="gap:12px;flex-wrap:wrap;align-items:flex-start"><div><div style="font-size:12px;font-weight:800;letter-spacing:.1em;color:${late ? 'var(--red,#B42318)' : '#9A5B00'}">${late ? 'COMMISSION NAYA EN RETARD' : 'COMMISSION NAYA À RÉGLER'}</div>
+      <div style="font-family:var(--display);font-weight:800;font-size:30px;color:#1C2B26">${money(B.balance)}</div>
+      <div style="font-size:13px;color:#3B4D46">${late ? `Dont <strong>${money(B.overdue)}</strong> dépassent le délai de ${B.delay_days} jours. Réglez rapidement pour rester visible sur NAYA.` : `À régler sous ${B.delay_days} jours après l’arrivée des clients.`}</div></div>
+      ${compact ? '<button class="small primary" data-go="naya">Voir le détail</button>' : `<div style="font-size:13px;color:#3B4D46;text-align:right">Dû au total : ${money(B.earned)}<br>Déjà réglé : ${money(B.paid)}${B.last_payment ? '<br>Dernier règlement : ' + dfr(String(B.last_payment).slice(0, 10)) : ''}</div>`}</div>
+    ${compact ? '' : `<div style="margin-top:10px;padding-top:10px;border-top:1px dashed rgba(0,0,0,.15)"><strong style="font-size:14px">Comment régler</strong>${ins}<div class="muted" style="font-size:12px;margin-top:6px">Indiquez le nom de votre établissement en référence. Le solde se met à jour dès que l’équipe NAYA enregistre votre paiement.</div></div>`}</div>`;
+}
+async function renderDashboard(){ await renderDashboardCore(); if (S.view !== 'dashboard') return; drawCA(S._caP || (() => { try { return localStorage.getItem('hh_ca_p'); } catch (_) { return null; } })() || 'today');
+  if (can(['owner','admin','manager']) && S.org) { const { data: B } = await sb.rpc('naya_commission_balance', { p_org: S.org }); const nb = $('nayaDueBanner'); if (nb) { nb.innerHTML = nayaBalanceCard(B, true); nb.querySelectorAll('[data-go]').forEach(x => x.onclick = () => go(x.dataset.go)); } }
+}
+async function renderDashboardCore(){
   const el = $('v-dashboard'); el.innerHTML = skeletonView();
   await loadEst();
   const t = today(), t7 = addDays(t, 7);
@@ -2135,7 +2227,7 @@ async function renderDashboard(){
       <div class="card row" style="gap:14px;flex-wrap:nowrap">${donut(occPct)}<div><div style="font-size:13px;font-weight:600;color:var(--muted)">Occupation</div><div style="font-weight:700">${inHouse.length} / ${total} chambres</div></div></div>
       ${kpi('Arrivées', arrivals.length, arrivals.length ? 'à accueillir aujourd’hui' : 'aucune aujourd’hui')}
       ${kpi('Départs', departures.length, departures.length ? 'à libérer aujourd’hui' : 'aucun aujourd’hui')}
-      ${kpi('Encaissé aujourd’hui', money(cashIn), 'toutes méthodes', true)}
+      ${can(['owner','admin','manager','accountant']) ? `<div class="card" id="caCard" style="background:var(--ink);color:var(--card);border-color:var(--ink);display:flex;flex-direction:column;gap:6px"></div>` : kpi('Encaissé aujourd’hui', money(cashIn), 'toutes méthodes', true)}
     </div>
     <div class="grid g2" style="margin-bottom:16px;align-items:start">
       <div class="card"><h3 style="font-size:20px;margin-bottom:4px">Arrivées du jour</h3>${arrivals.length ? arrivals.map(r => person(r, 'checkin', 'Check-in')).join('') : '<p class="muted">Aucune arrivée prévue.</p>'}</div>
@@ -2143,6 +2235,7 @@ async function renderDashboard(){
     </div>
     ${guide.reminders}
     <div id="dashResult"></div>
+    <div id="nayaDueBanner"></div>
     <div class="card" style="margin-bottom:16px">
       <div class="row between" style="margin-bottom:12px"><h3 style="font-size:22px">Chambres en direct</h3><div class="row" style="gap:6px">${Object.entries(LIVE).map(([k, v]) => `<span class="pill" style="background:${v[1]};color:${v[2]}">${v[0]} · ${countSt(k)}</span>`).join('')}</div></div>
       ${total ? `<div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:10px">${live.map(x => { const c = LIVE[x.st];
@@ -2391,8 +2484,9 @@ async function renderNaya(){
     const R = rs || [], due = R.filter(r => !['cancelled','no_show','pending'].includes(r.status));
     const ca = due.reduce((a, r) => a + Number(r.total_amount), 0), com = due.reduce((a, r) => a + Math.round(Number(r.total_amount) * (P[r.id] || 0) / 100), 0);
     const mLabel = new Date(st.month + 'T00:00:00').toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+    const { data: BAL } = await sb.rpc('naya_commission_balance', { p_org: S.org });
     if (S.view !== 'naya') return;
-    el.innerHTML = (`${head('NAYA', `<a class="small ghost btn" style="text-decoration:none" href="${NAYA_URL}" target="_blank" rel="noopener">Ouvrir le site NAYA</a>`)}
+    el.innerHTML = (`${nayaBalanceCard(BAL, false)}${head('NAYA', `<a class="small ghost btn" style="text-decoration:none" href="${NAYA_URL}" target="_blank" rel="noopener">Ouvrir le site NAYA</a>`)}
       <p class="muted" style="margin:0 0 14px">Les voyageurs trouvent et réservent votre établissement sur <a href="${NAYA_URL}" target="_blank" rel="noopener">NAYA</a>. Les réservations arrivent directement dans votre planning avec l’origine « NAYA ».</p>
       <div class="card" style="margin-bottom:14px;${L.listed ? 'border-color:var(--green)' : ''}">
         <div class="row between" style="gap:10px"><div><strong>${L.listed ? 'Publié sur NAYA' : 'Non publié'}</strong><div class="muted" style="font-size:13px">Commission NAYA : <strong>${Number(L.commission_pct)} %</strong> du séjour, uniquement sur les réservations venues de NAYA et honorées. Vos réservations directes restent sans commission.</div></div>
@@ -5265,11 +5359,17 @@ async function renderPublicPage(slug){
   };
 }
 
-sb.auth.onAuthStateChange((evt) => { if (PUBLIC_SLUG) return;
+sb.auth.onAuthStateChange((evt, sess) => { if (PUBLIC_SLUG) return;
   if (evt === 'PASSWORD_RECOVERY') {
     RECOVERY.pending = true; setTimeout(() => openNewPassword(true), 300);
     return;
-  } if (['SIGNED_IN','SIGNED_OUT'].includes(evt)) { S.view = 'dashboard'; boot(); } });
+  }
+  // Retour sur l'application (changement d'onglet, téléphone en veille, minuit…) : Supabase renvoie « SIGNED_IN » pour la même personne.
+  // On ne recharge que si l'utilisateur a réellement changé, et on reste sur l'écran en cours.
+  if (evt === 'SIGNED_OUT') { try { localStorage.removeItem('hh_last_view'); } catch (_) {} S.view = 'dashboard'; return boot(); }
+  if (evt === 'SIGNED_IN') { const was = S.session && S.session.user && S.session.user.id; if (sess && was === sess.user.id && (S.org || S.isAdmin)) { S.session = sess; return; } boot(); }
+  if (evt === 'TOKEN_REFRESHED' && sess) S.session = sess;
+});
 boot();
 </script>
 </body>

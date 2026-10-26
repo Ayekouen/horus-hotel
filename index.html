@@ -818,7 +818,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.10.26-10';
+const APP_VERSION = '2026.10.26-11';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -2506,7 +2506,7 @@ async function renderCaisse(){
   const [mvR, balR, histR] = await Promise.all([
     sb.from('cash_movements').select('*').eq('establishment_id', S.est).gte('created_at', since).order('created_at', { ascending: false }),
     sb.from('reservation_balances').select('id,guest_name,guest_phone,room_number,check_in,check_out,status,total_amount,paid,balance,establishment_id')
-      .eq('establishment_id', S.est).gt('balance', 0).in('status', ['confirmed','checked_in','checked_out']).lte('check_in', today()).gte('check_out', addDays(today(), -60)).order('check_out').limit(40),
+      .eq('establishment_id', S.est).gt('balance', 0).in('status', ['pending','confirmed','checked_in','checked_out']).lte('check_in', addDays(today(), 180)).gte('check_out', addDays(today(), -90)).order('check_in').limit(300),
     sb.from('cash_sessions').select('*').eq('establishment_id', S.est).eq('status', 'closed').order('closed_at', { ascending: false }).limit(8)
   ]);
   const mv = mvR.data || [], bal = balR.data || [], hist = histR.data || [];
@@ -2517,14 +2517,21 @@ async function renderCaisse(){
   const ins = mv.filter(m => ['payment','income'].includes(m.kind));
   const totalIn = sum(mv, ['payment','income']);
   const byMethod = Object.keys(PMETHOD).map(k => [k, sum(ins.filter(m => m.method === k), ['payment','income'])]).filter(x => x[1] > 0);
-  const balTotal = bal.reduce((a, b) => a + Number(b.balance), 0);
+  const balGroup = (b) => b.status === 'checked_out' ? 'parti' : b.status === 'checked_in' ? 'sejour' : b.check_in > today() ? 'avenir' : 'arrivee';
+  const BALG = { sejour: 'En séjour', arrivee: 'Arrivée aujourd’hui ou en retard', avenir: 'Arrivées à venir', parti: 'Partis sans avoir tout payé' };
+  const sumBal = (arr) => arr.reduce((a, b) => a + Number(b.balance), 0);
+  const balTotal = sumBal(bal.filter(b => balGroup(b) !== 'avenir')), balAvenir = sumBal(bal.filter(b => balGroup(b) === 'avenir'));
+  const sf = S.soldeFilter || 'tous';
+  const balRows = bal.filter(b => sf === 'tous' || balGroup(b) === sf).sort((x, y) => { const o = { sejour: 0, arrivee: 1, parti: 2, avenir: 3 }; return o[balGroup(x)] - o[balGroup(y)] || (x.check_in < y.check_in ? -1 : x.check_in > y.check_in ? 1 : 0); });
+  const payState = (b) => Number(b.paid) <= 0 ? ['Rien payé', 'st-expired'] : ['Acompte versé', 'st-pending'];
+  const relance = (b) => { const ph = waPhone(b.guest_phone); return ph ? `https://wa.me/${ph}?text=${encodeURIComponent(`Bonjour ${(b.guest_name || '').split(' ')[0]}, il reste ${money(b.balance)} à régler pour votre séjour du ${dfr(b.check_in)} au ${dfr(b.check_out)} (chambre ${b.room_number}). Vous pouvez payer à la réception ou par Mobile Money. Merci !`)}` : null; };
   const BARC = { cash:'#2B1E16', orange_money:'#D9822B', wave:'#2C6FB0', mtn_money:'#C9A227', moov_money:'#4C7A3A', card:'#B4532A', bank_transfer:'#6E5A4A' };
   const st = S.caisseFilter || { kind:'all', by:'all' }; S.caisseFilter = st;
   const people = [...new Set(mv.map(m => m.created_by).filter(Boolean))];
   const rows = mv.filter(m => (st.kind === 'all' || (st.kind === 'in' ? ['payment','income'].includes(m.kind) : st.kind === 'out' ? ['expense','refund'].includes(m.kind) : m.kind === 'deposit')) && (st.by === 'all' || m.created_by === st.by));
   const btn = (id, label, primary) => `<button class="${primary ? 'primary' : 'ghost'}" id="${id}">${label}</button>`;
   const kpi = (l, v, sub, style='') => `<div class="card kpi ${style === 'dark' ? 'dark' : ''}" style="${style === 'dark' ? '' : style}"><div class="l">${l}</div><div class="v">${v}</div>${sub ? `<div class="muted" style="font-size:13px;margin-top:4px">${sub}</div>` : ''}</div>`;
-  el.innerHTML = head('Caisse', sess ? btn('kExp', 'Dépense') + btn('kInc', 'Entrée diverse') + (can(['owner','admin','manager']) ? btn('kDep', 'Versement banque') : '') + btn('kClose', 'Clôturer') + btn('kPay', '+ Encaisser un client', true) : btn('kPay', '+ Encaisser un client', true)) + readOnlyNote() +
+  el.innerHTML = head('Caisse', sess ? btn('kExp', 'Dépense') + btn('kInc', 'Entrée diverse') + (can(['owner','admin','manager']) ? btn('kDep', 'Versement banque') : '') + btn('kClose', 'Clôturer') + btn('kPay', '+ Encaisser / acompte', true) : btn('kPay', '+ Encaisser / acompte', true)) + readOnlyNote() +
     (sess ? `<p class="muted" style="margin:-12px 0 16px">Session ouverte le ${new Date(sess.opened_at).toLocaleString('fr-FR', { dateStyle:'short', timeStyle:'short' })} par <strong>${esc(who(sess.opened_by))}</strong></p>`
       : `<div class="card" style="margin-bottom:16px"><h3 style="font-size:20px;margin-bottom:8px">La caisse est fermée</h3><p class="muted" style="margin:0 0 12px">Ouvrez la caisse avec le fond initial pour enregistrer des espèces. Les paiements Mobile Money, carte et virement restent possibles.</p>
       <form id="kOpen" class="row" style="align-items:flex-end"><div style="flex:0 1 200px"><label for="kFund">Fond de caisse (F)</label><input id="kFund" type="number" min="0" value="0"></div><button class="primary">Ouvrir la caisse</button></form></div>`) +
@@ -2532,14 +2539,22 @@ async function renderCaisse(){
       ${kpi('Espèces attendues en caisse', money(expected), sess ? `Fond ${money(sess.opening_balance)} + ${money(cashIn)} − ${money(cashOut)}` : 'Caisse fermée', 'dark')}
       ${kpi('Encaissé (toutes méthodes)', money(totalIn), `${plur(ins.length, 'opération', 'opérations')} ${sess ? 'dans la session' : "aujourd'hui"}`)}
       ${kpi('Dépenses', money(sum(mv, ['expense'])), `${plur(mv.filter(m => m.kind === 'expense').length, 'dépense', 'dépenses')}`)}
-      ${kpi('Reste à encaisser', money(balTotal), `${plur(bal.length, 'client', 'clients')}`, 'background:#F6E1D3')}
+      ${kpi('Reste à encaisser', money(balTotal), `${plur(bal.filter(b => balGroup(b) !== 'avenir').length, 'client', 'clients')} présents ou partis${balAvenir ? ' · ' + money(balAvenir) + ' sur les arrivées à venir' : ''}`, 'background:#F6E1D3')}
     </div>` +
     (byMethod.length ? `<div class="card" style="margin-bottom:16px"><h3 style="font-size:20px;margin-bottom:12px">Par moyen de paiement</h3><div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px">${byMethod.map(([k, v]) => `<div style="border:1px solid #E2D5C1;border-radius:16px;padding:14px"><div class="muted" style="font-size:13px">${PMETHOD[k]}</div><div style="font-weight:700;font-size:20px;margin-top:4px">${money(v)}</div><div style="height:6px;border-radius:3px;background:#E9DCC8;margin-top:10px"><div style="width:${Math.max(3, Math.round(v * 100 / totalIn))}%;height:6px;border-radius:3px;background:${BARC[k]}"></div></div></div>`).join('')}</div></div>` : '') +
-    `<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:16px;margin-bottom:16px;align-items:start">
-      <div class="card"><h3 style="font-size:20px;margin-bottom:2px">À encaisser</h3><p class="muted" style="font-size:13px;margin:0 0 12px">Clients présents ou partis avec un solde</p>
-        ${bal.length ? bal.map((b, i) => `<div class="row" style="gap:12px;padding:10px 12px;border-radius:14px;background:${b.status === 'checked_out' ? '#F6E1D3' : 'var(--bg)'};margin-bottom:8px;flex-wrap:nowrap"><div style="flex:1;min-width:0"><div style="font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(b.guest_name)}</div><div class="muted" style="font-size:13px">Ch. ${esc(b.room_number)} · ${b.status === 'checked_out' ? 'parti le ' + dfr(b.check_out) : b.status === 'checked_in' ? 'départ le ' + dfr(b.check_out) : 'arrivée le ' + dfr(b.check_in)}</div></div><strong style="color:var(--red);white-space:nowrap">${money(b.balance)}</strong><button class="small primary" data-bal="${i}">Encaisser</button></div>`).join('') : '<p class="muted">Aucun solde en attente.</p>'}
-      </div>
-      <div class="card" style="grid-column:span 2;min-width:0"><div class="row between" style="margin-bottom:10px;gap:10px"><h3 style="font-size:20px">Journal</h3>
+    `<div class="card" style="margin-bottom:16px"><div class="row between" style="gap:10px;margin-bottom:4px"><h3 style="font-size:20px">Soldes clients</h3><span class="muted" style="font-size:14px">Total dû : <strong style="color:var(--ink)">${money(sumBal(bal))}</strong></span></div>
+      <p class="muted" style="font-size:13px;margin:0 0 12px">Qui doit combien : séjours non soldés, du plus urgent au plus lointain.</p>
+      <div class="row" style="gap:6px;margin-bottom:12px">${[['tous', 'Tous'], ['sejour', 'En séjour'], ['arrivee', 'Arrivés'], ['avenir', 'À venir'], ['parti', 'Partis']].map(([k, l]) => { const n = k === 'tous' ? bal.length : bal.filter(b => balGroup(b) === k).length; return n || k === 'tous' ? `<button class="small ${sf === k ? 'primary' : 'ghost'}" data-sf="${k}">${l} · ${n}</button>` : ''; }).join('')}</div>
+      ${balRows.length ? `<div class="tablewrap"><table class="table"><thead><tr><th>Client</th><th>Séjour</th><th style="text-align:right">Total</th><th style="text-align:right">Payé</th><th style="text-align:right">Reste</th><th>État</th><th><span class="sr-only">Actions</span></th></tr></thead><tbody>
+        ${balRows.map(b0 => { const i = bal.indexOf(b0), ps = payState(b0), g = balGroup(b0), wa = relance(b0); return `<tr><td><strong>${esc(b0.guest_name)}</strong><div class="muted" style="font-size:12px">${esc(b0.guest_phone || '')}</div></td>
+          <td>Ch. ${esc(b0.room_number)} · ${dfr(b0.check_in)} → ${dfr(b0.check_out)}<div class="muted" style="font-size:12px">${BALG[g]}</div></td>
+          <td style="text-align:right;white-space:nowrap">${money(b0.total_amount)}</td><td style="text-align:right;white-space:nowrap">${money(b0.paid)}</td>
+          <td style="text-align:right;white-space:nowrap;font-weight:700;color:var(--red)">${money(b0.balance)}</td><td><span class="pill ${ps[1]}">${ps[0]}</span></td>
+          <td style="white-space:nowrap"><button class="small primary" data-bal="${i}">${g === 'avenir' ? 'Acompte' : 'Encaisser'}</button>${wa ? ` <a class="btn" style="min-height:36px;padding:0 12px;font-size:13px" href="${wa}" target="_blank" rel="noopener">Relancer</a>` : ''}</td></tr>`; }).join('')}
+        </tbody></table></div>` : '<p class="muted">Aucun solde en attente dans cette catégorie.</p>'}
+    </div>
+    <div class="grid" style="grid-template-columns:minmax(0,1fr);gap:16px;margin-bottom:16px;align-items:start">
+      <div class="card" style="min-width:0"><div class="row between" style="margin-bottom:10px;gap:10px"><h3 style="font-size:20px">Journal</h3>
         <div class="row" style="gap:6px">${[['all','Tout'],['in','Paiements'],['out','Dépenses'],['dep','Versements']].map(([k, l]) => `<button class="small ${st.kind === k ? 'primary' : 'ghost'}" data-kf="${k}">${l}</button>`).join('')}
         ${people.length > 1 ? `<select id="kBy" aria-label="Caissier" style="width:auto;height:36px"><option value="all">Tous les caissiers</option>${people.map(p => `<option value="${p}" ${st.by === p ? 'selected' : ''}>${esc(who(p))}</option>`).join('')}</select>` : ''}</div></div>
         ${rows.length === 0 ? '<p class="muted">Aucun mouvement.</p>' : `<div class="tablewrap"><table class="table"><thead><tr><th>Heure</th><th>Libellé</th><th>Moyen</th><th>Par</th><th style="text-align:right">Montant</th><th><span class="sr-only">Actions</span></th></tr></thead><tbody>
@@ -2553,6 +2568,7 @@ async function renderCaisse(){
 
   const o = $('kOpen'); if (o) o.onsubmit = async (e) => { e.preventDefault(); const { error } = await sb.from('cash_sessions').insert({ establishment_id: S.est, opening_balance: +$('kFund').value || 0 }); if (error) return toast(errMsg(error), true); toast('Caisse ouverte.'); renderCaisse(); };
   el.querySelectorAll('[data-kf]').forEach(b => b.onclick = () => { st.kind = b.dataset.kf; renderCaisse(); });
+  el.querySelectorAll('[data-sf]').forEach(b => b.onclick = () => { S.soldeFilter = b.dataset.sf; renderCaisse(); });
   const by = $('kBy'); if (by) by.onchange = () => { st.by = by.value; renderCaisse(); };
   el.querySelectorAll('[data-bal]').forEach(b => b.onclick = () => openEncaisser(bal[+b.dataset.bal], renderCaisse));
   el.querySelectorAll('[data-rcpt]').forEach(b => b.onclick = () => printReceipt(b.dataset.rcpt));
@@ -2560,11 +2576,15 @@ async function renderCaisse(){
   el.querySelectorAll('[data-hist]').forEach(b => b.onclick = () => printClosure(hist[+b.dataset.hist]));
   el.querySelectorAll('[data-histz]').forEach(b => b.onclick = () => printZ(hist[+b.dataset.histz]));
   $('kPay').onclick = () => {
-    if (!bal.length) return toast('Aucun client avec un solde à encaisser.', true);
-    if (bal.length === 1) return openEncaisser(bal[0], renderCaisse);
-    modal(`<h2 style="font-size:24px;margin-bottom:12px">Encaisser un client</h2><div class="field"><label for="pkB">Client</label><select id="pkB">${bal.map((b, i) => `<option value="${i}">${esc(b.guest_name)} · Ch. ${esc(b.room_number)} · ${money(b.balance)}</option>`).join('')}</select></div>
-      <div class="row"><button class="primary" id="pkGo">Continuer</button><button class="ghost" data-close>Annuler</button></div>`);
-    $('pkGo').onclick = () => openEncaisser(bal[+$('pkB').value], renderCaisse);
+    if (!bal.length) return toast('Aucune réservation avec un montant à encaisser.', true);
+    modal(`<h2 style="font-size:24px;margin-bottom:4px">Encaisser un client ou un acompte</h2><p class="muted" style="margin:0 0 12px;font-size:14px">Cherchez le client, le téléphone ou la chambre. Les arrivées à venir permettent d’enregistrer un acompte.</p>
+      <div class="field"><label for="pkQ">Rechercher</label><input id="pkQ" autocomplete="off" placeholder="Nom, téléphone ou chambre"></div><div id="pkL" style="max-height:52vh;overflow-y:auto"></div>`);
+    const norm = (x) => (x || '').toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const drawL = () => { const q = norm($('pkQ').value), qd = q.replace(/\D/g, '');
+      const list = bal.filter(b => !q || norm(b.guest_name).includes(q) || norm(b.room_number).includes(q) || (qd.length >= 3 && (b.guest_phone || '').replace(/\D/g, '').includes(qd)));
+      $('pkL').innerHTML = ['sejour', 'arrivee', 'parti', 'avenir'].map(g => { const it = list.filter(b => balGroup(b) === g); return it.length ? `<div style="font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:10px 0 6px">${BALG[g]}</div>` + it.map(b => `<button type="button" data-pk="${bal.indexOf(b)}" style="display:flex;width:100%;justify-content:space-between;align-items:center;gap:10px;text-align:left;margin-bottom:6px;min-height:52px;border-radius:12px"><span style="min-width:0"><strong>${esc(b.guest_name)}</strong><span class="muted" style="display:block;font-size:12px;font-weight:400">Ch. ${esc(b.room_number)} · ${dfr(b.check_in)} → ${dfr(b.check_out)} · payé ${money(b.paid)} sur ${money(b.total_amount)}</span></span><span style="white-space:nowrap;color:var(--red)">${g === 'avenir' ? 'Acompte · ' : ''}${money(b.balance)}</span></button>`).join('') : ''; }).join('') || '<p class="muted">Aucun résultat.</p>';
+      $('pkL').querySelectorAll('[data-pk]').forEach(x => x.onclick = () => openEncaisser(bal[+x.dataset.pk], renderCaisse)); };
+    $('pkQ').oninput = drawL; drawL(); $('pkQ').focus();
   };
   const a = (id, fn) => { const b = $(id); if (b) b.onclick = fn; };
   a('kExp', () => hasF('expenses') ? openExpenseForm({ fromCaisse: true, onDone: renderCaisse }) : openSimpleMove('expense', renderCaisse));

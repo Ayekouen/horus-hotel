@@ -611,6 +611,11 @@ html[data-theme="foret"] .auth{background:radial-gradient(900px 500px at 15% -10
   html[data-theme="foret"] .tabbar button.on{color:var(--green)}
   html[data-theme="foret"] .tabbar button.on svg{background:var(--green-l)}
 }
+
+/* Planning : glisser-déposer */
+.pmove{cursor:grab;touch-action:none;user-select:none}
+.pmove.pdragging{cursor:grabbing;z-index:5;box-shadow:0 8px 20px rgba(0,0,0,.18);opacity:.95;transition:none}
+.pgrip{position:absolute;right:0;top:0;bottom:0;width:12px;cursor:ew-resize;border-left:2px solid rgba(0,0,0,.12);border-radius:0 8px 8px 0}
 </style>
 </head>
 <body>
@@ -818,7 +823,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.10.26-11';
+const APP_VERSION = '2026.10.26-12';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -2388,8 +2393,9 @@ async function renderPlanning(){
   const start = S._ps || addDays(today(), -1), days = 14, end = addDays(start, days);
   const { data } = await sb.from('reservations').select('id,room_id,guest_name,check_in,check_out,status').eq('establishment_id', S.est).not('status', 'in', '(cancelled,no_show)').lt('check_in', end).gt('check_out', start);
   const dates = [...Array(days)].map((_, i) => addDays(start, i));
-  const col = { pending:'#F2DCA8', confirmed:'#C9D6E3', checked_in:'#B4532A', checked_out:'#DDD0BC' };
-  const cell = 52;
+  const col = { pending:['var(--amber-l)', 'var(--amber)'], confirmed:['var(--green-l)', 'var(--green-d)'], checked_in:['var(--green)', '#fff'], checked_out:['var(--line)', 'var(--muted)'] };
+  const cell = 52, canMove = can(['owner','admin','manager','receptionist']);
+  const RES = data || [];
   el.innerHTML = head('Planning', `<button class="ghost small" id="pPrev">← 7 jours</button><button class="ghost small" id="pToday">Aujourd'hui</button><button class="ghost small" id="pNext">7 jours →</button><button class="primary small" data-newresa>Nouvelle réservation</button>`) + `
     <div class="card" style="padding:0;overflow-x:auto"><div style="min-width:${110 + days * cell}px">
       <div style="display:grid;grid-template-columns:110px repeat(${days},${cell}px);position:sticky;top:0;background:#fff;border-bottom:1px solid var(--line)">
@@ -2397,19 +2403,78 @@ async function renderPlanning(){
         ${dates.map(d => `<div style="padding:8px 0;text-align:center;font-size:11px;${d === today() ? 'background:var(--green-l);font-weight:700' : ''}">${new Date(d + 'T00:00:00').toLocaleDateString('fr-FR', { weekday:'short' })}<br><strong>${d.slice(8)}</strong></div>`).join('')}
       </div>
       ${S.rooms.map(rm => { const rs = (data || []).filter(x => x.room_id === rm.id);
-        return `<div style="display:grid;grid-template-columns:110px repeat(${days},${cell}px);position:relative;border-bottom:1px solid #F0ECE3;height:46px">
-          <div style="padding:12px 10px;font-weight:700">${esc(rm.number)} <span class="muted" style="font-weight:400;font-size:11px">${HKS[rm.housekeeping_status] === 'Propre' ? '' : esc(HKS[rm.housekeeping_status])}</span></div>
+        return `<div data-prow="${rm.id}" style="display:grid;grid-template-columns:110px repeat(${days},${cell}px);position:relative;border-bottom:1px solid var(--line);height:46px">
+          <div style="padding:12px 10px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(rm.number)} <span class="muted" style="font-weight:400;font-size:11px">${HKS[rm.housekeeping_status] === 'Propre' ? '' : esc(HKS[rm.housekeeping_status])}</span></div>
           ${dates.map(d => `<button aria-label="Réserver ${esc(rm.number)} le ${d}" data-slot="${rm.id}|${d}" style="min-height:46px;border:none;border-left:1px solid #F4F1EA;border-radius:0;background:transparent;padding:0"></button>`).join('')}
           ${rs.map(x => { const a = Math.max(0, (new Date(x.check_in) - new Date(start)) / 864e5), b = Math.min(days, (new Date(x.check_out) - new Date(start)) / 864e5);
-            return `<button data-open="${x.id}" title="${esc(x.guest_name)}" style="position:absolute;top:6px;height:34px;min-height:34px;left:${110 + a * cell + cell / 2}px;width:${Math.max(cell / 2, (b - a) * cell - 4)}px;background:${col[x.status]};color:${x.status === 'checked_in' ? '#fff' : '#2B1E16'};border:none;border-radius:8px;font-size:12px;font-weight:700;padding:0 8px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;text-align:left">${esc(x.guest_name)}</button>`; }).join('')}
+            const movable = x.status !== 'checked_out' && canMove;
+            return `<button data-open="${x.id}" data-bar="${x.id}" title="${esc(x.guest_name)} · ${dfr(x.check_in)} → ${dfr(x.check_out)}${movable ? ' · glissez pour déplacer' : ''}" class="pbar${movable ? ' pmove' : ''}" style="position:absolute;top:6px;height:34px;min-height:34px;left:${110 + a * cell + cell / 2}px;width:${Math.max(cell / 2, (b - a) * cell - 4)}px;background:${col[x.status][0]};color:${col[x.status][1]};border:none;border-radius:8px;font-size:12px;font-weight:700;padding:0 ${movable ? 14 : 8}px 0 8px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;text-align:left">${esc(x.guest_name)}${movable ? '<span class="pgrip" data-grip="1" aria-hidden="true"></span>' : ''}</button>`; }).join('')}
         </div>`; }).join('') || '<p class="muted" style="padding:16px">Aucune chambre.</p>'}
     </div></div>
-    <div class="row" style="margin-top:10px;font-size:12px">${Object.entries(col).map(([k, c]) => `<span><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:${c};vertical-align:middle"></span> ${RSTATUS[k]}</span>`).join('')}<span class="muted">· Cliquez sur une case vide pour réserver.</span></div>`;
+    <div class="row" style="margin-top:10px;font-size:12px">${Object.entries(col).map(([k, c]) => `<span><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:${c[0]};vertical-align:middle"></span> ${RSTATUS[k]}</span>`).join('')}<span class="muted">· Cliquez sur une case vide pour réserver. Glissez une réservation pour changer de chambre ou de dates, tirez son bord droit pour changer le départ.</span></div>`;
   $('pPrev').onclick = () => { S._ps = addDays(start, -7); renderPlanning(); };
   $('pNext').onclick = () => { S._ps = addDays(start, 7); renderPlanning(); };
   $('pToday').onclick = () => { S._ps = null; renderPlanning(); };
   el.querySelectorAll('[data-slot]').forEach(b => b.onclick = () => { const [room, d] = b.dataset.slot.split('|'); const rm = S.rooms.find(x => x.id === room); openResaForm({ room_id: room, check_in: d, check_out: addDays(d, 1), nightly_rate: rm ? rm.base_rate : '' }, renderPlanning); });
   bindResaActions(el, renderPlanning);
+  if (canMove) planningDrag(el, RES, start, cell);
+}
+/* Glisser-déposer dans le planning : déplacer (chambre et dates) ou tirer le bord droit (date de départ). Souris et écran tactile. */
+function planningDrag(el, RES, start, cell){
+  let drag = null, justDragged = false;
+  el.addEventListener('click', (e) => { if (justDragged) { e.stopPropagation(); e.preventDefault(); justDragged = false; } }, true);
+  el.querySelectorAll('.pmove').forEach(bar => {
+    bar.addEventListener('pointerdown', (e) => {
+      if (e.button !== 0) return;
+      const r = RES.find(x => x.id === bar.dataset.bar); if (!r) return;
+      drag = { bar, r, x0: e.clientX, y0: e.clientY, mode: e.target.dataset.grip ? 'resize' : 'move', on: false, row0: bar.closest('[data-prow]'), w0: bar.offsetWidth, dd: 0, room: r.room_id };
+      bar.setPointerCapture(e.pointerId);
+    });
+    bar.addEventListener('pointermove', (e) => {
+      if (!drag || drag.bar !== bar) return;
+      const dx = e.clientX - drag.x0, dy = e.clientY - drag.y0;
+      if (!drag.on && Math.hypot(dx, dy) < 6) return;
+      drag.on = true; bar.classList.add('pdragging');
+      drag.dd = Math.round(dx / cell);
+      if (drag.mode === 'resize') { bar.style.width = Math.max(cell / 2, drag.w0 + drag.dd * cell) + 'px'; return; }
+      if (drag.r.status === 'checked_in') drag.dd = 0;
+      bar.style.visibility = 'hidden'; const under = document.elementFromPoint(e.clientX, e.clientY); bar.style.visibility = '';
+      const row = under && under.closest('[data-prow]');
+      if (row) drag.room = row.dataset.prow;
+      const tgt = el.querySelector(`[data-prow="${drag.room}"]`);
+      const oy = tgt ? tgt.getBoundingClientRect().top - drag.row0.getBoundingClientRect().top : 0;
+      bar.style.transform = `translate(${drag.dd * cell}px, ${oy}px)`;
+    });
+    const end = async (e) => {
+      if (!drag || drag.bar !== bar) return;
+      const d = drag; drag = null;
+      if (!d.on) return;
+      justDragged = true; setTimeout(() => { justDragged = false; }, 300);
+      bar.classList.remove('pdragging');
+      const r = d.r; let ci = r.check_in, co = r.check_out, room = r.room_id;
+      if (d.mode === 'resize') co = addDays(r.check_out, d.dd); else { ci = addDays(r.check_in, d.dd); co = addDays(r.check_out, d.dd); room = d.room; }
+      if (co <= ci || (ci === r.check_in && co === r.check_out && room === r.room_id)) { bar.style.transform = ''; bar.style.width = ''; return renderPlanning(); }
+      const from = S.rooms.find(x => x.id === r.room_id), to = S.rooms.find(x => x.id === room);
+      const nOld = Math.round((new Date(r.check_out) - new Date(r.check_in)) / 864e5), nNew = Math.round((new Date(co) - new Date(ci)) / 864e5);
+      const clash = RES.find(x => x.id !== r.id && x.room_id === room && x.check_in < co && x.check_out > ci && x.status !== 'checked_out');
+      if (clash) { toast(`Impossible : la chambre ${to ? to.number : ''} est déjà réservée par ${clash.guest_name} sur ces dates.`, true); return renderPlanning(); }
+      if (to && to.housekeeping_status === 'out_of_service') { toast(`La chambre ${to.number} est hors service.`, true); return renderPlanning(); }
+      modal(`<h2 style="font-size:22px;margin-bottom:6px">Modifier la réservation ?</h2>
+        <p style="margin:0 0 6px"><strong>${esc(r.guest_name)}</strong></p>
+        <p class="muted" style="margin:0 0 4px">Avant : chambre ${esc(from ? from.number : '')} · ${dfr(r.check_in)} → ${dfr(r.check_out)} · ${plur(nOld, 'nuit', 'nuits')}</p>
+        <p style="margin:0 0 14px;font-weight:600">Après : chambre ${esc(to ? to.number : '')} · ${dfr(ci)} → ${dfr(co)} · ${plur(nNew, 'nuit', 'nuits')}</p>
+        ${nNew !== nOld ? `<p class="muted" style="font-size:13px;margin:0 0 14px">Le total est recalculé au même prix par nuit.</p>` : ''}
+        <div class="row"><button class="ghost" data-close>Annuler</button><button class="primary" id="pmOk" style="margin-left:auto">Confirmer</button></div>`);
+      const mo = new MutationObserver(() => { if ($('modal').classList.contains('hidden')) { mo.disconnect(); renderPlanning(); } }); mo.observe($('modal'), { attributes: true });
+      $('pmOk').onclick = async () => { $('pmOk').disabled = true;
+        const upd = r.status === 'checked_in' ? { room_id: room, check_out: co } : { room_id: room, check_in: ci, check_out: co };
+        const { error } = await sb.from('reservations').update(upd).eq('id', r.id);
+        if (error) { $('pmOk').disabled = false; return toast((error.message || '').includes('no_double_booking') ? 'Impossible : la chambre est déjà réservée sur ces dates.' : errMsg(error), true); }
+        closeModal(); toast('Réservation modifiée.'); };
+    };
+    bar.addEventListener('pointerup', end);
+    bar.addEventListener('pointercancel', () => { if (drag && drag.bar === bar) { drag = null; renderPlanning(); } });
+  });
 }
 
 /* ---------- Clients ---------- */

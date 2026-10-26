@@ -650,6 +650,7 @@ html,body{overflow-x:hidden;max-width:100%}
 td .sr-only,th .sr-only{position:absolute;left:0;top:0}
 .kpi .v{overflow-wrap:anywhere}
 @media (max-width:720px){.kpi .v{font-size:clamp(19px,5.6vw,26px)!important;white-space:nowrap;letter-spacing:-.02em}.kpi{padding:14px 16px!important;min-width:0}.grid.g5{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+@media (max-width:720px){.dashkpi{grid-template-columns:1fr 1fr!important;gap:10px!important}.dashkpi>.card:first-child,.dashkpi>#caCard{grid-column:1/-1}.dashkpi>.card{padding:14px}.dashkpi .kpi .v{font-size:30px}select.casel{min-height:34px!important;height:34px;padding:0 28px 0 12px!important;border-radius:999px!important;max-width:150px}}
 </style>
 </head>
 <body>
@@ -907,7 +908,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.10.26-25';
+const APP_VERSION = '2026.10.26-26';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -2154,7 +2155,7 @@ async function drawCA(k){
   const box = $('caCard'); if (!box) return; S._caP = k = k || S._caP || 'today'; try { localStorage.setItem('hh_ca_p', k); } catch (_) {}
   const [a, b] = caRange(k);
   box.innerHTML = `<div class="row between" style="flex-wrap:nowrap;gap:8px"><div style="font-size:13px;font-weight:600;opacity:.8">Chiffre d’affaires encaissé</div>
-    <label class="sr-only" for="caSel">Période</label><select id="caSel" style="min-height:32px;width:auto;padding:2px 26px 2px 10px;font-size:13px;background-color:rgba(255,255,255,.12);color:inherit;border-color:rgba(255,255,255,.25)">${CA_PERIODS.map(([v, l]) => `<option value="${v}" ${v === k ? 'selected' : ''} style="color:#111">${l}</option>`).join('')}</select></div>
+    <label class="sr-only" for="caSel">Période</label><select id="caSel" class="casel" style="min-height:32px;width:auto;padding:2px 26px 2px 10px;font-size:13px;background-color:rgba(255,255,255,.12);color:inherit;border-color:rgba(255,255,255,.25)">${CA_PERIODS.map(([v, l]) => `<option value="${v}" ${v === k ? 'selected' : ''} style="color:#111">${l}</option>`).join('')}</select></div>
     <div style="font-family:var(--display);font-weight:800;font-size:34px;letter-spacing:-.02em" id="caVal">…</div><div style="font-size:13px;opacity:.75" id="caSub">&nbsp;</div>`;
   $('caSel').onchange = (e) => drawCA(e.target.value);
   const { data } = await sb.from('cash_movements').select('amount,kind,method').eq('establishment_id', S.est).in('kind', ['payment', 'income', 'refund']).gte('created_at', a + 'T00:00:00').lt('created_at', b + 'T00:00:00').limit(20000);
@@ -2223,7 +2224,7 @@ async function renderDashboardCore(){
     ${readOnlyNote()}
     ${guide.checklist}
     ${alertCount ? `<div class="banner b-danger"><span>${plur(alertCount, 'alerte de contrôle non lue', 'alertes de contrôle non lues')}.</span><button class="small primary" data-go="controle">Voir</button></div>` : ''}
-    <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:16px">
+    <div class="grid dashkpi" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:16px">
       <div class="card row" style="gap:14px;flex-wrap:nowrap">${donut(occPct)}<div><div style="font-size:13px;font-weight:600;color:var(--muted)">Occupation</div><div style="font-weight:700">${inHouse.length} / ${total} chambres</div></div></div>
       ${kpi('Arrivées', arrivals.length, arrivals.length ? 'à accueillir aujourd’hui' : 'aucune aujourd’hui')}
       ${kpi('Départs', departures.length, departures.length ? 'à libérer aujourd’hui' : 'aucun aujourd’hui')}

@@ -419,7 +419,7 @@ html[data-theme="cuir"] [style*="background:#F6E1D3"],html[data-theme="cuir"] [s
   body.navess nav.side .ngroup .ghead{display:none!important}
   body.navess nav.side .ngroup{margin-top:0}
   body.navess nav.side .ngroup > button:not(.ess){display:none!important}
-  body.navess nav.side .ngroup > button.ess,body.navess nav.side .ngroup > button.active{display:flex!important}
+  body.navess nav.side .ngroup > button.ess:not(.hidden),body.navess nav.side .ngroup > button.active:not(.hidden){display:flex!important}
   body.navess nav.side #navEssToggle{display:flex}
   nav.side .navmore-btn{display:flex;margin-top:6px}
 }
@@ -816,7 +816,8 @@ if (window.HorusApp && window.HorusApp.postMessage) {
   window.__nativeOpen = nativeOpen;
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
-const APP_VERSION = '2026.10.26-6';
+const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
+const APP_VERSION = '2026.10.26-7';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -1229,7 +1230,7 @@ function applyNavExtras(){
   const mgr = can(['owner','admin','manager']), acc = can(['owner','admin','manager','accountant']);
   document.querySelectorAll('nav.side [data-mgr]').forEach(b => { if (!mgr) b.classList.add('hidden'); });
   document.querySelectorAll('nav.side [data-acc]').forEach(b => { if (!acc) b.classList.add('hidden'); });
-  const na = $('navAna'); if (na) na.classList.toggle('hidden', !canAna());
+  const na = $('navAna'); if (na) na.classList.toggle('hidden', !canAna() || !moduleOn('rapports'));
   document.querySelectorAll('nav.side .ngroup').forEach(g => g.classList.toggle('hidden', ![...g.querySelectorAll('button:not(.ghead)')].some(b => !b.classList.contains('hidden'))));
   const notifOn = moduleOn('notifs'); ['navNotif','mNotif'].forEach(id => { const e = $(id); if (e) e.classList.toggle('hidden', !notifOn); });
   if (!notifOn) clearInterval(NOTIF_TIMER);
@@ -1258,9 +1259,9 @@ function openTab(t){
 }
 function openMore(){
   const pilot = groupViews('pilot').map(v => [VIEW_LABEL[v], () => go(v)]);
-  if (canAna()) pilot.unshift(['Résultat & analyse', () => openAnalysis(6)]);
+  if (canAna() && moduleOn('rapports')) pilot.unshift(['Résultat & analyse', () => openAnalysis(6)]);
   pilot.unshift(['Assistant', () => openAssistant()]);
-  pilot.push(['Avis clients', () => openReviews()]);
+  if (moduleOn('rapports')) pilot.push(['Avis clients', () => openReviews()]);
   if (moduleOn('pointage')) pilot.unshift([CLOCK.state === 'in' ? 'Pointer mon départ' : 'Pointer mon arrivée', () => toggleClock()]);
   const settings = [...document.querySelectorAll('nav.side .menu button')].filter(b => !b.classList.contains('hidden')).map(b => [b.textContent.trim(), () => b.click()]);
   const sec = (title, items) => items.length ? `<h3 style="font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:14px 0 6px">${title}</h3><div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px">${items.map(([l], i) => `<button type="button" class="ghost" data-mi="${title}|${i}" style="min-height:52px;border-radius:14px;justify-content:flex-start;text-align:left;white-space:normal">${esc(l)}</button>`).join('')}</div>` : '';
@@ -1311,7 +1312,7 @@ const ROLE_VIEWS = {
 };
 const ROLE_LABEL = { owner:'Propriétaire', admin:'Administrateur', manager:'Gérant', receptionist:'Réceptionniste', housekeeping:'Ménage', accountant:'Comptable', staff:'Serveur / Barman' };
 const allowed = (v) => v === 'admin' ? S.isAdmin : (moduleOn(v) && (!S.member || !ROLE_VIEWS[S.member.role] || ROLE_VIEWS[S.member.role].includes(v)));
-function applyRoleNav(){ document.querySelectorAll('nav.side [data-view]').forEach(b => { if (b.dataset.view !== 'admin') b.classList.toggle('hidden', !allowed(b.dataset.view)); b.classList.toggle('locked', !!lockedView(b.dataset.view)); }); renderEstSwitch(); applyNavExtras(); }
+function applyRoleNav(){ [['navAna', 'rapports'], ['navReviews', 'rapports'], ['navRates', 'mapage'], ['navDir', 'mapage'], ['navPrn', 'resto']].forEach(([id, m]) => { const e = $(id); if (e) e.classList.toggle('hidden', !moduleOn(m)); }); document.querySelectorAll('nav.side [data-view]').forEach(b => { if (b.dataset.view !== 'admin') b.classList.toggle('hidden', !allowed(b.dataset.view)); b.classList.toggle('locked', !!lockedView(b.dataset.view)); }); renderEstSwitch(); applyNavExtras(); }
 
 const VIEW_FEATURE = { resto: ['restaurant', 'Le module Restaurant & Bar', 'Vos plats et boissons en photo, une caisse tactile, le stock qui se décompte à chaque vente, les marges et les alertes de réapprovisionnement.'],
   mapage: ['online_booking', 'La page de présentation et la réservation en ligne', 'Une belle page avec votre logo, vos photos et un formulaire de réservation : vos clients réservent directement, sans commission.'],
@@ -1358,7 +1359,7 @@ async function openEstablishments(){
   await loadEst();
   const u = (S.overview && S.overview.usage) || {}, max = u.max_properties;
   const canAdd = can(['owner','admin']) && (max == null || S.ests.length < max);
-  modal(`<h2 style="font-size:24px;margin-bottom:4px">Mes établissements</h2><p class="muted" style="margin:0 0 14px">${S.ests.length} établissement(s)${max ? ' sur ' + max + ' inclus dans votre formule' : ' · illimité'}.</p>
+  modal(`<h2 style="font-size:24px;margin-bottom:4px">Mes établissements</h2><p class="muted" style="margin:0 0 14px">${plur(S.ests.length, 'établissement', 'établissements')}${max ? ' sur ' + max + ' inclus dans votre formule' : ' · illimité'}.</p>
     <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px">${S.ests.map(x => `<div class="row between" style="padding:10px 12px;border:1px solid var(--line);border-radius:12px;flex-wrap:nowrap"><span><strong>${esc(x.name)}</strong>${x.city ? ' <span class="muted">· ' + esc(x.city) + '</span>' : ''}</span>${x.id === S.est ? '<span class="pill st-active">Affiché</span>' : `<button class="small ghost" data-useest="${x.id}">Afficher</button>`}</div>`).join('')}</div>
     ${canAdd ? `<form id="neF" style="border-top:1px solid var(--line);padding-top:12px"><div style="font-weight:700;margin-bottom:8px">Ajouter un établissement</div><div class="row"><div class="field" style="flex:2 1 200px"><label for="neN">Nom</label><input id="neN" required maxlength="120"></div><div class="field" style="flex:1 1 140px"><label for="neC">Ville</label><input id="neC" maxlength="80"></div></div><button class="primary">Ajouter</button></form>`
       : can(['owner','admin']) ? `<div style="background:var(--green-l);border-radius:12px;padding:12px 14px;font-size:14px">Pour gérer plusieurs établissements, passez à la formule <strong>Pro</strong> (jusqu’à 10) ou <strong>Business</strong> (illimité). <a href="#" data-go="tarifs" id="neUp">Voir les formules</a></div>` : ''}
@@ -1505,8 +1506,8 @@ async function renderAbonnement(){
       </div>
     </div>
     <div class="grid g2" style="margin-bottom:16px">
-      <div class="card"><div class="row between"><strong>Chambres / unités</strong><strong>${u.rooms} / ${u.max_rooms ?? '∞'}</strong></div><div style="margin:10px 0">${bar(u.rooms, u.max_rooms)}</div><div class="muted" style="font-size:13px">${u.max_rooms ? Math.max(0, u.max_rooms - u.rooms) + ' unité(s) encore disponible(s)' : 'Sans limite'}</div></div>
-      <div class="card"><div class="row between"><strong>Utilisateurs</strong><strong>${u.users} / ${u.max_users ?? '∞'}</strong></div><div style="margin:10px 0">${bar(u.users, u.max_users)}</div><div class="muted" style="font-size:13px">${u.max_users ? Math.max(0, u.max_users - u.users) + ' place(s) disponible(s)' : 'Sans limite'}</div></div>
+      <div class="card"><div class="row between"><strong>Chambres / unités</strong><strong>${u.rooms} / ${u.max_rooms ?? '∞'}</strong></div><div style="margin:10px 0">${bar(u.rooms, u.max_rooms)}</div><div class="muted" style="font-size:13px">${u.max_rooms ? plur(Math.max(0, u.max_rooms - u.rooms), 'unité encore disponible', 'unités encore disponibles') : 'Sans limite'}</div></div>
+      <div class="card"><div class="row between"><strong>Utilisateurs</strong><strong>${u.users} / ${u.max_users ?? '∞'}</strong></div><div style="margin:10px 0">${bar(u.users, u.max_users)}</div><div class="muted" style="font-size:13px">${u.max_users ? plur(Math.max(0, u.max_users - u.users), 'place disponible', 'places disponibles') : 'Sans limite'}</div></div>
     </div>
     ${o.status === 'expired' ? `<div class="card" style="margin-bottom:16px"><span class="pill st-expired">ABONNEMENT EXPIRÉ</span><h3 style="font-size:22px;margin:10px 0 6px">Vos données sont en sécurité.</h3><p class="muted" style="margin:0 0 12px">Clients, réservations, factures, paiements, chambres et rapports sont conservés. Les nouvelles opérations (réservations, check-in, encaissements, ajout de chambres ou d'utilisateurs) reprendront dès la réactivation.</p><button class="primary" data-go="tarifs">Choisir une formule et réactiver</button></div>` : ''}
     <div class="card" id="histo">
@@ -1648,7 +1649,7 @@ async function openRoomForm(room, refresh, types){
     const { error } = room ? await sb.from('rooms').update({ ...base, number: $('rNum').value.trim(), floor: $('rFloor').value.trim() || null }).eq('id', room.id) : await sb.from('rooms').insert(rows);
     $('rmSave').disabled = false;
     if (error) return toast(error.code === '23505' ? 'Un de ces numéros de chambre existe déjà.' : errMsg(error), true);
-    closeModal(); toast(room ? 'Chambre enregistrée.' : `${rows.length} chambre(s) ajoutée(s).`); await loadCommon(); refresh();
+    closeModal(); toast(room ? 'Chambre enregistrée.' : `${plur(rows.length, 'chambre ajoutée', 'chambres ajoutées')}.`); await loadCommon(); refresh();
   };
 }
 
@@ -1816,7 +1817,7 @@ async function renderDashboard(){
   const week = [...Array(7)].map((_, i) => { const d = addDays(t, i); const n = R.filter(r => r.check_in <= d && r.check_out > d && r.status !== 'pending').length; const p = R.filter(r => r.check_in <= d && r.check_out > d && r.status === 'pending').length; return { d, n, p, pct: total ? Math.round(n / total * 100) : 0 }; });
   const hello = (() => { const h = new Date().getHours(); return h < 12 ? 'Bonjour' : h < 18 ? 'Bon après-midi' : 'Bonsoir'; })();
   const kpi = (l, v, sub, accent) => `<div class="card" style="display:flex;flex-direction:column;gap:2px;${accent ? 'background:var(--ink);color:var(--card);border-color:var(--ink)' : ''}"><div style="font-size:13px;font-weight:600;opacity:.75">${l}</div><div style="font-family:var(--display);font-weight:800;font-size:34px;letter-spacing:-.5px">${v}</div><div style="font-size:12px;opacity:.75">${sub}</div></div>`;
-  const person = (r, action, label) => `<div class="row" style="padding:12px 0;border-bottom:1px dashed var(--line);flex-wrap:nowrap"><div style="width:40px;height:40px;flex-shrink:0;border-radius:50%;background:var(--green-l);color:var(--green-d);display:grid;place-items:center;font-weight:800">${esc((r.guest_name || '?').split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase())}</div><div style="flex:1;min-width:0"><div style="font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(r.guest_name)}</div><div class="muted" style="font-size:12px">Ch. ${esc(r.room_number)} · ${r.nights} nuit(s)${r.source === 'en_ligne' ? ' · en ligne' : ''}</div></div>${r.balance > 0 ? `<span class="pill st-pending">${money(r.balance)}</span>` : '<span class="pill st-active">Réglé</span>'}<button class="small primary" data-${action}="${r.id}">${label}</button></div>`;
+  const person = (r, action, label) => `<div class="row" style="padding:12px 0;border-bottom:1px dashed var(--line);flex-wrap:nowrap"><div style="width:40px;height:40px;flex-shrink:0;border-radius:50%;background:var(--green-l);color:var(--green-d);display:grid;place-items:center;font-weight:800">${esc((r.guest_name || '?').split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase())}</div><div style="flex:1;min-width:0"><div style="font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(r.guest_name)}</div><div class="muted" style="font-size:12px">Ch. ${esc(r.room_number)} · ${plur(r.nights, 'nuit', 'nuits')}${r.source === 'en_ligne' ? ' · en ligne' : ''}</div></div>${r.balance > 0 ? `<span class="pill st-pending">${money(r.balance)}</span>` : '<span class="pill st-active">Réglé</span>'}<button class="small primary" data-${action}="${r.id}">${label}</button></div>`;
   const guideHtml = await dashGuide(R);
   el.innerHTML = `
     <div class="row between" style="margin-bottom:20px;align-items:flex-end">
@@ -1825,7 +1826,7 @@ async function renderDashboard(){
     </div>
     ${readOnlyNote()}
     ${guideHtml}
-    ${alertCount ? `<div class="banner b-danger"><span>${alertCount} alerte(s) de contrôle non lue(s).</span><button class="small primary" data-go="controle">Voir</button></div>` : ''}
+    ${alertCount ? `<div class="banner b-danger"><span>${plur(alertCount, 'alerte de contrôle non lue', 'alertes de contrôle non lues')}.</span><button class="small primary" data-go="controle">Voir</button></div>` : ''}
     <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:16px">
       <div class="card row" style="gap:14px;flex-wrap:nowrap">${donut(occPct)}<div><div style="font-size:13px;font-weight:600;color:var(--muted)">Occupation</div><div style="font-weight:700">${inHouse.length} / ${total} chambres</div></div></div>
       ${kpi('Arrivées', arrivals.length, arrivals.length ? 'à accueillir aujourd’hui' : 'aucune aujourd’hui')}
@@ -1847,7 +1848,7 @@ async function renderDashboard(){
     </div>
     <div class="grid g2" style="align-items:start">
       <div class="card"><h3 style="font-size:20px;margin-bottom:14px">Occupation des 7 prochains jours</h3>
-        <div style="display:flex;align-items:flex-end;gap:10px;height:150px">${week.map((w, i) => `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end" title="${w.n} chambre(s) réservée(s)${w.p ? ', ' + w.p + ' en attente' : ''}"><span style="font-size:12px;font-weight:700">${w.pct}%</span><div style="width:100%;height:${Math.max(4, w.pct)}%;border-radius:10px 10px 4px 4px;background:${i === 0 ? 'var(--green)' : '#D9A184'}"></div><span class="muted" style="font-size:12px">${new Date(w.d + 'T00:00:00').toLocaleDateString('fr-FR', { weekday:'short' })}</span></div>`).join('')}</div>
+        <div style="display:flex;align-items:flex-end;gap:10px;height:150px">${week.map((w, i) => `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end" title="${plur(w.n, 'chambre réservée', 'chambres réservées')}${w.p ? ', ' + w.p + ' en attente' : ''}"><span style="font-size:12px;font-weight:700">${w.pct}%</span><div style="width:100%;height:${Math.max(4, w.pct)}%;border-radius:10px 10px 4px 4px;background:${i === 0 ? 'var(--green)' : '#D9A184'}"></div><span class="muted" style="font-size:12px">${new Date(w.d + 'T00:00:00').toLocaleDateString('fr-FR', { weekday:'short' })}</span></div>`).join('')}</div>
       </div>
       <div class="card"><div class="row between" style="margin-bottom:4px"><h3 style="font-size:20px">Demandes en ligne</h3>${(pend.data || []).length ? `<span class="pill st-pending">${pend.data.length} en attente</span>` : ''}</div>
         ${(pend.data || []).length ? pend.data.map(p => `<div class="row" style="padding:10px 0;border-bottom:1px dashed var(--line);flex-wrap:nowrap"><div style="flex:1;min-width:0"><div style="font-weight:700">${esc(p.guest_name)}</div><div class="muted" style="font-size:12px">Ch. ${esc(p.room_number)} · ${dfr(p.check_in)} → ${dfr(p.check_out)} · ${money(p.total_amount)}</div></div><button class="small" data-open="${p.id}">Traiter</button></div>`).join('') : '<p class="muted">Aucune demande en attente.</p>'}
@@ -1875,7 +1876,7 @@ async function dashGuide(R){
     ['Première réservation', (nres.count || 0) > 0 || (R || []).length > 0, 'reservations'],
     ['Ouvrir la caisse du jour', !cashRole || !!(sess.data), 'caisse'],
     ...(can(['owner','admin']) ? [['Inviter votre gérant ou réceptionniste', (team.data || []).length > 1, 'equipe']] : []),
-    ...(isMgr && hasF('online_booking') ? [['Publier votre page de réservation', !!(est.data && est.data.public_enabled), 'mapage']] : [])
+    ...(isMgr && hasF('online_booking') && moduleOn('mapage') ? [['Publier votre page de réservation', !!(est.data && est.data.public_enabled), 'mapage']] : [])
   ];
   const done = steps.filter(s => s[1]).length, pct = Math.round(done * 100 / steps.length);
   let hide = false; try { hide = localStorage.getItem('hh_guide_hidden_' + S.org) === '1'; } catch (e) {}
@@ -1887,13 +1888,13 @@ async function dashGuide(R){
     ${nextS ? `<button class="primary" data-go="${nextS[2]}" style="margin-top:14px">Étape suivante : ${nextS[0]} →</button>` : ''}</section>` : '';
   const rem = [];
   const pend = (R || []).filter(r => r.status === 'pending');
-  if (pend.length) { const h = Math.round((Date.now() - new Date(pend[0].created_at)) / 36e5); rem.push(['#B4532A', `${pend.length} demande(s) en ligne en attente${h >= 1 ? ' depuis ' + h + ' h' : ''}`, 'Traiter', 'reservations', 'requests']); }
+  if (pend.length) { const h = Math.round((Date.now() - new Date(pend[0].created_at)) / 36e5); rem.push(['#B4532A', `${plur(pend.length, 'demande', 'demandes')} en ligne en attente${h >= 1 ? ' depuis ' + h + ' h' : ''}`, 'Traiter', 'reservations', 'requests']); }
   if (cashRole && !sess.data) rem.push(['#C9A227', 'La caisse n’est pas encore ouverte aujourd’hui', 'Ouvrir', 'caisse']);
   const arrRooms = new Set((R || []).filter(r => r.check_in === t && ['pending','confirmed'].includes(r.status)).map(r => r.room_id));
   S.rooms.filter(r => moduleOn('menage') && arrRooms.has(r.id) && ['dirty','cleaning'].includes(r.housekeeping_status)).forEach(r => rem.push(['#6E5A4A', `Chambre ${esc(r.number)} à nettoyer avant l’arrivée du jour`, 'Chambres', 'chambres']));
   const unpaidOut = (R || []).filter(r => r.status === 'checked_in' && r.check_out === t && r.balance > 0);
-  if (unpaidOut.length) rem.push(['var(--red)', `${unpaidOut.length} départ(s) aujourd’hui avec un solde impayé`, 'Encaisser', 'caisse']);
-  (dues.data || []).forEach(d => rem.push(['#2B1E16', `${esc(d.label)} (${money(d.amount)}) à payer le ${dfr(d.due_date)}`, 'Voir', 'depenses']));
+  if (unpaidOut.length) rem.push(['var(--red)', `${plur(unpaidOut.length, 'départ', 'départs')} aujourd’hui avec un solde impayé`, 'Encaisser', 'caisse']);
+  if (moduleOn('depenses')) (dues.data || []).forEach(d => rem.push(['#2B1E16', `${esc(d.label)} (${money(d.amount)}) à payer le ${dfr(d.due_date)}`, 'Voir', 'depenses']));
   const reminders = rem.length ? `<section class="card" style="margin-bottom:16px"><h3 style="font-size:20px;margin-bottom:10px">À faire aujourd’hui</h3><div style="display:flex;flex-direction:column;gap:8px">
     ${rem.map(([c, txt, lbl, v, tab]) => `<div class="row" style="gap:10px;padding:10px 12px;border-radius:14px;background:#fff;border:1px solid var(--line);flex-wrap:nowrap"><span style="width:10px;height:10px;flex-shrink:0;border-radius:50%;background:${c}"></span><span style="flex:1">${txt}</span><button class="small ghost" data-go="${v}" ${tab ? `data-rtabgo="${tab}"` : ''}>${lbl}</button></div>`).join('')}</div></section>` : '';
   return checklist + reminders;
@@ -1968,7 +1969,7 @@ function afterCheckOut(r, refresh){
 }
 function waConfirmText(r){
   const est = S.ests.find(x => x.id === S.est) || {};
-  return `Bonjour ${r.guest_name}, votre réservation à ${est.name || 'notre établissement'} est confirmée : chambre ${r.room_number}, du ${dfr(r.check_in)} au ${dfr(r.check_out)} (${r.nights} nuit(s)), total ${money(r.total_amount)}. À très bientôt !`;
+  return `Bonjour ${r.guest_name}, votre réservation à ${est.name || 'notre établissement'} est confirmée : chambre ${r.room_number}, du ${dfr(r.check_in)} au ${dfr(r.check_out)} (${plur(r.nights, 'nuit', 'nuits')}), total ${money(r.total_amount)}. À très bientôt !`;
 }
 
 async function renderReservations(){
@@ -1994,14 +1995,14 @@ async function renderReservations(){
       : `<button class="small primary" style="flex:1" data-confirm="${r.id}">Confirmer + WhatsApp</button><button class="small ghost" data-refuse="${r.id}">Refuser</button>`;
     const tl = telLink(r.guest_phone);
     return `<div style="border:${kind === 'req' ? '1.5px solid var(--green)' : '1px solid var(--line)'};border-radius:16px;padding:14px;background:#fff;margin-bottom:10px">
-      <div class="row" style="gap:10px;flex-wrap:nowrap"><span style="width:40px;height:40px;flex-shrink:0;border-radius:50%;background:var(--green-l);color:var(--green-d);display:grid;place-items:center;font-weight:800">${initials(r.guest_name)}</span><div style="flex:1;min-width:0"><div style="font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.guest_name)}</div><div class="muted" style="font-size:13px">Ch. ${esc(r.room_number)} · ${kind === 'req' ? dfr(r.check_in) + ' → ' + dfr(r.check_out) + ' · ' : ''}${r.nights} nuit(s) · ${SOURCE[r.source] || ''}</div></div></div>
+      <div class="row" style="gap:10px;flex-wrap:nowrap"><span style="width:40px;height:40px;flex-shrink:0;border-radius:50%;background:var(--green-l);color:var(--green-d);display:grid;place-items:center;font-weight:800">${initials(r.guest_name)}</span><div style="flex:1;min-width:0"><div style="font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.guest_name)}</div><div class="muted" style="font-size:13px">Ch. ${esc(r.room_number)} · ${kind === 'req' ? dfr(r.check_in) + ' → ' + dfr(r.check_out) + ' · ' : ''}${plur(r.nights, 'nuit', 'nuits')} · ${SOURCE[r.source] || ''}</div></div></div>
       <div class="row between" style="margin:10px 0;font-size:14px"><span>${kind === 'req' ? 'Total' : 'Solde'}</span><strong style="color:${kind === 'req' ? 'var(--ink)' : r.balance > 0 ? 'var(--red)' : 'var(--ok)'}">${kind === 'req' ? money(r.total_amount) : r.balance > 0 ? money(r.balance) : 'Réglé'}</strong></div>
       <div class="row" style="gap:6px;flex-wrap:wrap">${btns}${tl && kind !== 'dep' ? `<a class="btn" style="min-height:36px;padding:0 12px;font-size:13px" href="${tl}">Appeler</a>` : ''}<button class="small ghost" data-open="${r.id}" aria-label="Ouvrir la réservation">⋯</button></div></div>`;
   };
   const col = (title, badge, badgeStyle, items, kind, empty) => `<section class="card"><div class="row between" style="margin-bottom:12px"><h3 style="font-size:20px">${title}</h3>${items.length ? `<span class="pill" style="${badgeStyle}">${badge}</span>` : ''}</div>${items.length ? items.map(r => card(r, kind)).join('') : `<p class="muted">${empty}</p>`}</section>`;
   const table = (rows, empty) => rows.length ? `<div class="tablewrap"><table class="table"><thead><tr><th>Client</th><th>Séjour</th><th>Ch.</th><th>Paiement</th><th>Statut</th><th><span class="sr-only">Actions</span></th></tr></thead><tbody>
     ${rows.map(r => { const pct = r.total_amount > 0 ? Math.min(100, Math.round(r.paid * 100 / r.total_amount)) : 100;
-      return `<tr><td><strong>${esc(r.guest_name)}</strong><div class="muted" style="font-size:12px">${esc(r.guest_phone || '')}${r.guest_phone ? ' · ' : ''}${SOURCE[r.source] || ''}</div></td><td style="white-space:nowrap">${dfr(r.check_in)} → ${dfr(r.check_out)}<div class="muted" style="font-size:12px">${r.nights} nuit(s)</div></td><td>${esc(r.room_number)}</td>
+      return `<tr><td><strong>${esc(r.guest_name)}</strong><div class="muted" style="font-size:12px">${esc(r.guest_phone || '')}${r.guest_phone ? ' · ' : ''}${SOURCE[r.source] || ''}</div></td><td style="white-space:nowrap">${dfr(r.check_in)} → ${dfr(r.check_out)}<div class="muted" style="font-size:12px">${plur(r.nights, 'nuit', 'nuits')}</div></td><td>${esc(r.room_number)}</td>
       <td style="min-width:170px"><div style="font-size:13px;white-space:nowrap">${money(r.paid)} / ${money(r.total_amount)}</div><div style="height:6px;border-radius:3px;background:#E9DCC8;margin-top:4px"><div style="width:${pct}%;height:6px;border-radius:3px;background:${pct >= 100 ? 'var(--ok)' : 'var(--green)'}"></div></div></td>
       <td><span class="pill ${RSTCLS[r.status]}">${RSTATUS[r.status]}</span></td>
       <td style="text-align:right;white-space:nowrap">${r.balance > 0 && !['cancelled','no_show'].includes(r.status) && can(['owner','admin','manager','receptionist','accountant']) ? `<button class="small primary" data-pay="${r.id}">Encaisser</button> ` : ''}<button class="small ghost" data-open="${r.id}">Ouvrir</button></td></tr>`; }).join('')}
@@ -2073,11 +2074,11 @@ async function openResaForm(pre, refresh){
     if (st.step === 1) main = `<p class="muted" style="margin:0 0 14px">${pre.walkin ? 'Arrivée immédiate : choisissez la date de départ.' : 'Quand le client arrive-t-il et combien de personnes ?'}</p>
       <div class="row"><div class="field" style="flex:1 1 160px"><label for="wIn">Arrivée</label><input id="wIn" type="date" value="${st.ci}" ${pre.walkin ? 'readonly' : ''}></div><div class="field" style="flex:1 1 160px"><label for="wOut">Départ</label><input id="wOut" type="date" value="${st.co}" min="${addDays(st.ci, 1)}"></div><div class="field" style="flex:0 1 110px"><label for="wAd">Adultes</label><input id="wAd" type="number" min="1" value="${st.adults}"></div></div>
       <div class="row" style="gap:6px;margin-bottom:8px">${[1, 2, 3, 7].map(d => `<button type="button" class="small ghost" data-nn="${d}">${d === 7 ? '1 semaine' : d + ' nuit' + (d > 1 ? 's' : '')}</button>`).join('')}</div>
-      <p style="font-weight:700">${n > 0 ? n + ' nuit(s)' : '<span style="color:var(--red)">La date de départ doit suivre la date d’arrivée.</span>'}</p>`;
+      <p style="font-weight:700">${n > 0 ? plur(n, 'nuit', 'nuits') : '<span style="color:var(--red)">La date de départ doit suivre la date d’arrivée.</span>'}</p>`;
     if (st.step === 2) { const types = [...new Set(S.rooms.map(r => r.room_type).filter(Boolean))];
       const list = S.rooms.filter(r => st.type === 'all' || r.room_type === st.type);
       const free = list.filter(r => !st.busy.has(r.id) && r.housekeeping_status !== 'out_of_service'), off = list.filter(r => st.busy.has(r.id) || r.housekeeping_status === 'out_of_service');
-      main = `<div class="row between" style="margin-bottom:10px"><span><strong>${dfr(st.ci)} → ${dfr(st.co)}</strong> · ${n} nuit(s) · ${st.adults} adulte(s)</span><span class="muted" style="font-size:14px">${S.rooms.filter(r => !st.busy.has(r.id) && r.housekeeping_status !== 'out_of_service').length} chambre(s) libre(s)</span></div>
+      main = `<div class="row between" style="margin-bottom:10px"><span><strong>${dfr(st.ci)} → ${dfr(st.co)}</strong> · ${plur(n, 'nuit', 'nuits')} · ${plur(st.adults, 'adulte', 'adultes')}</span><span class="muted" style="font-size:14px">${plur(S.rooms.filter(r => !st.busy.has(r.id) && r.housekeeping_status !== 'out_of_service').length, 'chambre libre', 'chambres libres')}</span></div>
         ${types.length > 1 ? `<div class="row" style="gap:6px;margin-bottom:12px">${[['all', 'Toutes']].concat(types.map(x => [x, x])).map(([k, l]) => `<button type="button" class="small ${st.type === k ? 'primary' : 'ghost'}" data-ty="${esc(k)}">${esc(l)}</button>`).join('')}</div>` : ''}
         <div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px">
         ${free.map(r => { const x = X[r.id] || {}, sel = st.room === r.id, small = r.capacity && r.capacity < st.adults;
@@ -2085,7 +2086,7 @@ async function openResaForm(pre, refresh){
             <div style="height:110px;${photo(r)}"></div><div style="padding:10px 12px"><div class="row between"><strong style="font-size:17px">${esc(r.number)}</strong>${sel ? '<span style="color:var(--green);font-weight:700;font-size:13px">Choisie ✓</span>' : ''}</div>
             <div class="muted" style="font-size:12.5px">${esc([r.room_type, x.bed_type && BEDS[x.bed_type], ...(x.amenities || []).slice(0, 2), x.size_m2 && x.size_m2 + ' m²'].filter(Boolean).join(' · '))}</div>
             <div style="margin-top:4px;font-weight:700">${money(r.base_rate)} <span class="muted" style="font-weight:400">/ nuit</span></div>
-            ${moduleOn('menage') && ['dirty','cleaning'].includes(r.housekeeping_status) ? '<div style="font-size:12px;color:var(--red);margin-top:2px">À nettoyer avant l’arrivée</div>' : ''}${small ? `<div style="font-size:12px;color:var(--red);margin-top:2px">Prévue pour ${r.capacity} personne(s)</div>` : ''}</div></button>`; }).join('')}
+            ${moduleOn('menage') && ['dirty','cleaning'].includes(r.housekeeping_status) ? '<div style="font-size:12px;color:var(--red);margin-top:2px">À nettoyer avant l’arrivée</div>' : ''}${small ? `<div style="font-size:12px;color:var(--red);margin-top:2px">Prévue pour ${plur(r.capacity, 'personne', 'personnes')}</div>` : ''}</div></button>`; }).join('')}
         ${off.map(r => `<div style="border-radius:18px;border:1px dashed #C9B596;background:var(--bg);padding:14px;color:var(--muted);font-size:14px"><strong style="color:var(--ink)">${esc(r.number)} · ${r.housekeeping_status === 'out_of_service' ? 'hors service' : 'occupée'}</strong><br>${r.housekeeping_status === 'out_of_service' ? 'Indisponible' : 'Déjà réservée sur ces dates'}</div>`).join('')}
         </div>${!free.length ? '<p style="color:var(--red);font-weight:600;margin-top:12px">Aucune chambre libre sur ces dates : modifiez les dates.</p>' : ''}`; }
     if (st.step === 3) { const known = st.gid ? G.find(g => g.id === st.gid) : null;
@@ -2108,7 +2109,7 @@ async function openResaForm(pre, refresh){
       <aside style="background:var(--bg);padding:24px 22px;border-left:1px solid var(--line);display:flex;flex-direction:column;gap:12px">
         <h3 style="font-size:20px">Récapitulatif</h3>
         <div style="height:120px;border-radius:14px;${photo(rm)}"></div>
-        <div><strong>${rm ? 'Chambre ' + esc(rm.number) + (rm.room_type ? ' · ' + esc(rm.room_type) : '') : 'Chambre à choisir'}</strong><div class="muted" style="font-size:14px">${dfr(st.ci)} → ${dfr(st.co)} · ${n} nuit(s) · ${st.adults} adulte(s)</div></div>
+        <div><strong>${rm ? 'Chambre ' + esc(rm.number) + (rm.room_type ? ' · ' + esc(rm.room_type) : '') : 'Chambre à choisir'}</strong><div class="muted" style="font-size:14px">${dfr(st.ci)} → ${dfr(st.co)} · ${plur(n, 'nuit', 'nuits')} · ${plur(st.adults, 'adulte', 'adultes')}</div></div>
         ${st.name || st.gid ? `<div style="font-size:14px">Client : <strong>${esc(st.gid ? (G.find(g => g.id === st.gid) || {}).full_name : st.name)}</strong></div>` : ''}
         <div style="border-top:1px solid var(--line);padding-top:10px;font-size:14px;display:flex;flex-direction:column;gap:4px">
           <div class="row between"><span>${n} × ${money(st.rate || 0)}</span><span>${money(n * (st.rate || 0))}</span></div>
@@ -2198,7 +2199,7 @@ async function openResa(id, refresh, focusCheckout){
   if (!r) return toast('Réservation introuvable.', true);
   const active = ['pending','confirmed','checked_in'].includes(r.status);
   modal(`<div class="row between"><h2 style="font-size:24px">${esc(r.guest_name)}</h2><span class="pill ${RSTCLS[r.status]}">${RSTATUS[r.status]}</span></div>
-    <p class="muted" style="margin:4px 0 14px">Chambre ${esc(r.room_number)} · ${dfr(r.check_in)} → ${dfr(r.check_out)} · ${r.nights} nuit(s) · ${SOURCE[r.source]}${r.notes ? '<br>' + esc(r.notes) : ''}</p>
+    <p class="muted" style="margin:4px 0 14px">Chambre ${esc(r.room_number)} · ${dfr(r.check_in)} → ${dfr(r.check_out)} · ${plur(r.nights, 'nuit', 'nuits')} · ${SOURCE[r.source]}${r.notes ? '<br>' + esc(r.notes) : ''}</p>
     <div class="grid" style="grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;text-align:center">
       <div class="card" style="padding:12px"><div class="muted" style="font-size:12px">Total</div><strong>${money(r.total_amount)}</strong></div>
       <div class="card" style="padding:12px"><div class="muted" style="font-size:12px">Payé</div><strong style="color:var(--ok)">${money(r.paid)}</strong></div>
@@ -2398,9 +2399,9 @@ async function renderCaisse(){
       <form id="kOpen" class="row" style="align-items:flex-end"><div style="flex:0 1 200px"><label for="kFund">Fond de caisse (F)</label><input id="kFund" type="number" min="0" value="0"></div><button class="primary">Ouvrir la caisse</button></form></div>`) +
     `<div class="grid g4" style="margin-bottom:16px">
       ${kpi('Espèces attendues en caisse', money(expected), sess ? `Fond ${money(sess.opening_balance)} + ${money(cashIn)} − ${money(cashOut)}` : 'Caisse fermée', 'dark')}
-      ${kpi('Encaissé (toutes méthodes)', money(totalIn), `${ins.length} opération(s) ${sess ? 'dans la session' : "aujourd'hui"}`)}
-      ${kpi('Dépenses', money(sum(mv, ['expense'])), `${mv.filter(m => m.kind === 'expense').length} dépense(s)`)}
-      ${kpi('Reste à encaisser', money(balTotal), `${bal.length} client(s)`, 'background:#F6E1D3')}
+      ${kpi('Encaissé (toutes méthodes)', money(totalIn), `${plur(ins.length, 'opération', 'opérations')} ${sess ? 'dans la session' : "aujourd'hui"}`)}
+      ${kpi('Dépenses', money(sum(mv, ['expense'])), `${plur(mv.filter(m => m.kind === 'expense').length, 'dépense', 'dépenses')}`)}
+      ${kpi('Reste à encaisser', money(balTotal), `${plur(bal.length, 'client', 'clients')}`, 'background:#F6E1D3')}
     </div>` +
     (byMethod.length ? `<div class="card" style="margin-bottom:16px"><h3 style="font-size:20px;margin-bottom:12px">Par moyen de paiement</h3><div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px">${byMethod.map(([k, v]) => `<div style="border:1px solid #E2D5C1;border-radius:16px;padding:14px"><div class="muted" style="font-size:13px">${PMETHOD[k]}</div><div style="font-weight:700;font-size:20px;margin-top:4px">${money(v)}</div><div style="height:6px;border-radius:3px;background:#E9DCC8;margin-top:10px"><div style="width:${Math.max(3, Math.round(v * 100 / totalIn))}%;height:6px;border-radius:3px;background:${BARC[k]}"></div></div></div>`).join('')}</div></div>` : '') +
     `<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:16px;margin-bottom:16px;align-items:start">
@@ -2620,7 +2621,7 @@ async function printZ(s){
       <table><tr><td colspan="2"><b>Encaissements</b></td></tr>${d.byM.map(([k, v]) => `<tr><td>${PMETHOD[k]}</td><td class="r">${money(v)}</td></tr>`).join('')}<tr class="t"><td>Total</td><td class="r">${money(d.totalIn)}</td></tr></table>
       <table><tr><td colspan="2"><b>Espèces</b></td></tr><tr><td>Fond de caisse</td><td class="r">${money(s.opening_balance)}</td></tr><tr><td>Dépenses</td><td class="r">−${money(d.sum(d.cash, ['expense']))}</td></tr><tr><td>Remboursements</td><td class="r">−${money(d.sum(d.cash, ['refund']))}</td></tr><tr><td>Versements</td><td class="r">−${money(d.sum(d.cash, ['deposit']))}</td></tr>
       <tr class="t"><td>Attendu</td><td class="r">${money(d.expected)}</td></tr><tr><td>Compté</td><td class="r">${money(s.counted_balance)}</td></tr><tr><td><b>Écart</b></td><td class="r"><b>${gap === 0 ? '0' : (gap < 0 ? '−' : '+') + money(Math.abs(gap))}</b></td></tr></table>
-      ${s.gap_reason ? `<p>Motif : ${esc(s.gap_reason)}</p>` : ''}<p>${d.rows.length} opération(s)</p><p style="margin-top:30px">Signature : ______________</p><script>window.onload=()=>window.print()<\/script></body></html>`); w.document.close(); };
+      ${s.gap_reason ? `<p>Motif : ${esc(s.gap_reason)}</p>` : ''}<p>${plur(d.rows.length, 'opération', 'opérations')}</p><p style="margin-top:30px">Signature : ______________</p><script>window.onload=()=>window.print()<\/script></body></html>`); w.document.close(); };
   printDocument('caisse', (width) => { const e = new Esc(width).align('center').bold(true).size(1, 2).line(est.name || 'Horus Hotel').size(1, 1).line('TICKET Z - CLOTURE').bold(false)
       .line(new Date(s.closed_at || Date.now()).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })).line('par ' + who(s.closed_by)).align('left').rule().bold(true).line('ENCAISSEMENTS').bold(false);
     d.byM.forEach(([k, v]) => e.pair(PMETHOD[k], moneyTxt(v))); e.rule().bold(true).pair('TOTAL', moneyTxt(d.totalIn)).bold(false).rule().bold(true).line('ESPECES').bold(false)
@@ -2758,7 +2759,7 @@ async function renderDepenses(){
     `<div class="row" role="tablist" style="gap:6px;background:#E9DCC8;padding:5px;border-radius:26px;width:fit-content;max-width:100%;overflow-x:auto;margin-bottom:16px;flex-wrap:nowrap">${TABS.map(([k, l]) => `<button role="tab" aria-selected="${k === tab}" class="small ${k === tab ? 'primary' : 'ghost'}" style="white-space:nowrap;border:0" data-tab="${k}">${l}</button>`).join('')}</div>
     <div class="grid g4" style="margin-bottom:16px">
       ${kpi('Dépensé ce mois', money(total), `<div style="height:8px;border-radius:4px;background:rgba(255,255,255,.2);margin-top:10px"><div style="width:${Math.min(100, pct)}%;height:8px;border-radius:4px;background:var(--prog,#E9A27A)"></div></div><div style="font-size:13px;opacity:.8;margin-top:6px">${budgetTotal ? pct + ' % du budget de ' + money(budgetTotal) : 'Aucun budget défini'}</div>`, 'dark')}
-      ${kpi('Charges fixes', money(sumA(fixed)), `<div class="muted" style="font-size:13px;margin-top:4px">${fixedPaid.length} sur ${fixed.length} réglée(s)</div>`)}
+      ${kpi('Charges fixes', money(sumA(fixed)), `<div class="muted" style="font-size:13px;margin-top:4px">${fixedPaid.length} sur ${plur(fixed.length, 'réglée', 'réglées')}</div>`)}
       ${kpi('Charges opérationnelles', money(sumA(ops)), `<div style="font-size:13px;margin-top:4px;${overCats.length ? 'color:var(--red);font-weight:600' : ''}" class="${overCats.length ? '' : 'muted'}">${overCats.length ? esc(overCats.join(', ')) + ' au-dessus du budget' : 'Dans le budget'}</div>`)}
       ${kpi('Petite caisse', money(sumA(petty)), `<div class="muted" style="font-size:13px;margin-top:4px">sorties en espèces${budgets[PETTY] ? ' · plafond ' + money(budgets[PETTY]) : ''}</div>`)}
     </div>` + body;
@@ -2847,19 +2848,19 @@ async function renderRapports(){
       <div style="flex:1 1 150px"><label for="rTo">Au</label><input id="rTo" type="date" value="${to}"></div>
     </div>
     <div class="grid g4" style="margin-bottom:16px">
-      ${k('Chiffre d\u2019affaires hébergement', money(r.room_revenue), `${r.sold_nights} nuit(s) vendue(s)`)}
+      ${k('Chiffre d\u2019affaires hébergement', money(r.room_revenue), `${plur(r.sold_nights, 'nuit vendue', 'nuits vendues')}`)}
       ${k('Taux d\u2019occupation', String(r.occupancy_pct).replace('.', ',') + ' %', `${r.sold_nights} / ${r.available_nights} nuits`)}
       ${k('Prix moyen par nuit (ADR)', money(r.adr), 'CA ÷ nuits vendues')}
       ${k('Revenu par chambre (RevPAR)', money(r.revpar), 'CA ÷ nuits disponibles')}
       ${k('Encaissé', money(r.cash_in), 'toutes méthodes')}
       ${k('Dépenses', money(r.expenses), r.refunds > 0 ? `+ ${money(r.refunds)} remboursés` : '')}
       ${k('Résultat de caisse', money(r.cash_in - r.expenses - r.refunds), 'encaissé − dépenses − remboursements')}
-      ${k('Impayés', money(r.unpaid_total), `${r.unpaid.length} séjour(s)`)}
+      ${k('Impayés', money(r.unpaid_total), `${plur(r.unpaid.length, 'séjour', 'séjours')}`)}
     </div>
     <div class="card" style="margin-bottom:16px">
       <h3 style="font-size:20px;margin-bottom:12px">Chiffre d\u2019affaires par jour</h3>
       <div style="overflow-x:auto"><div style="display:flex;align-items:flex-end;gap:3px;height:200px;min-width:${Math.max(300, r.series.length * 14)}px" role="img" aria-label="Chiffre d'affaires quotidien du ${dlabel(from)} au ${dlabel(to)}">
-        ${r.series.map(x => `<div title="${dlabel(x.d)} : ${money(x.rev)} · ${x.sold} nuit(s)" style="flex:1;min-width:8px;height:${Math.max(2, x.rev / max * 100)}%;background:${x.d === today() ? 'var(--green)' : '#D9A184'};border-radius:5px 5px 2px 2px"></div>`).join('')}
+        ${r.series.map(x => `<div title="${dlabel(x.d)} : ${money(x.rev)} · ${plur(x.sold, 'nuit', 'nuits')}" style="flex:1;min-width:8px;height:${Math.max(2, x.rev / max * 100)}%;background:${x.d === today() ? 'var(--green)' : '#D9A184'};border-radius:5px 5px 2px 2px"></div>`).join('')}
       </div></div>
       <div class="row between muted" style="font-size:12px;margin-top:6px"><span>${dlabel(from)}</span><span>Maximum : ${money(max)}</span><span>${dlabel(to)}</span></div>
     </div>
@@ -2871,7 +2872,7 @@ async function renderRapports(){
       <div class="card"><h3 style="font-size:20px;margin-bottom:8px">Par chambre</h3><div class="tablewrap" style="max-height:340px;overflow-y:auto"><table class="table"><thead><tr><th>Chambre</th><th>Nuits</th><th>Occupation</th><th style="text-align:right">CA</th></tr></thead><tbody>${r.by_room.map(x => `<tr><td><strong>${esc(x.room)}</strong></td><td>${x.nights}</td><td>${Math.round(x.nights / r.days * 100)} %</td><td style="text-align:right">${money(x.revenue)}</td></tr>`).join('')}</tbody></table></div></div>
       <div class="card"><h3 style="font-size:20px;margin-bottom:8px">Impayés</h3>${r.unpaid.length ? `<div class="tablewrap" style="max-height:340px;overflow-y:auto"><table class="table"><thead><tr><th>Client</th><th>Séjour</th><th style="text-align:right">Reste</th><th><span class="sr-only">Actions</span></th></tr></thead><tbody>${r.unpaid.map(u => `<tr><td><strong>${esc(u.guest_name)}</strong><div class="muted" style="font-size:12px">${esc(u.guest_phone || '')}</div></td><td style="font-size:13px">Ch. ${esc(u.room_number)} · ${dfr(u.check_in)} → ${dfr(u.check_out)}<br><span class="pill ${RSTCLS[u.status]}">${RSTATUS[u.status]}</span></td><td style="text-align:right;font-weight:700;color:var(--amber)">${money(u.balance)}</td><td><button class="small ghost" type="button" data-open="${u.id}">Ouvrir</button></td></tr>`).join('')}</tbody></table></div>` : '<p class="muted">Aucun impayé.</p>'}</div>
     </div>
-    <p class="muted" style="font-size:12px">Le chiffre d\u2019affaires compte chaque nuit dans la période où elle est consommée (réservations confirmées, en séjour ou terminées), remise répartie sur les nuits. ${r.cancellations} annulation(s) et ${r.no_shows} non-présentation(s) sur la période.</p>`;
+    <p class="muted" style="font-size:12px">Le chiffre d\u2019affaires compte chaque nuit dans la période où elle est consommée (réservations confirmées, en séjour ou terminées), remise répartie sur les nuits. ${plur(r.cancellations, 'annulation', 'annulations')} et ${plur(r.no_shows, 'absence', 'absences')} sur la période.</p>`;
   $('rPer').onchange = (e) => { S._rk = e.target.value; if (S._rk === 'perso') { S._rfrom = from; S._rto = to; } renderRapports(); };
   const custom = () => { if ($('rFrom').value && $('rTo').value && $('rTo').value >= $('rFrom').value) { S._rk = 'perso'; S._rfrom = $('rFrom').value; S._rto = $('rTo').value; renderRapports(); } else toast('Période invalide.', true); };
   $('rFrom').onchange = custom; $('rTo').onchange = custom;
@@ -3094,7 +3095,9 @@ const CURRENCIES = { XOF: ['Franc CFA (UEMOA)', 'F', 0], XAF: ['Franc CFA (CEMAC
 const MODULES = { planning: 'Planning', clients: 'Clients', inventaire: 'Inventaire (linge, produits)', menage: 'Ménage (état des chambres)', pointage: 'Pointage du personnel', resto: 'Restaurant & Bar', depenses: 'Dépenses', factures: 'Factures', rapports: 'Rapports', mapage: 'Ma page de présentation', controle: 'Contrôle propriétaire', notifs: 'Notifications', multi: 'Plusieurs établissements', equipe: 'Équipe' };
 const MODULE_GROUPS = [['Hébergement', ['planning','clients','inventaire','menage']], ['Argent', ['depenses','factures']], ['Restaurant & Bar', ['resto']], ['Pilotage', ['rapports','controle','mapage']], ['Organisation', ['pointage','notifs','multi','equipe']]];
 const MODULE_HELP = { planning: 'Vue calendrier des chambres', clients: 'Fichier clients et historique', resto: 'Caisse restaurant/bar, produits et stock', depenses: 'Charges fixes, opérationnelles, budget', factures: 'Factures numérotées', rapports: 'Rapports financiers et exports', mapage: 'Page publique et réservation en ligne', controle: 'Alertes et journal des actions', inventaire: 'Draps, serviettes, savons, entretien, minibar', pointage: 'Arrivées et départs du personnel, heures du mois', menage: 'Statuts « à nettoyer » et rappels de ménage', notifs: 'La cloche et les alertes en direct', multi: 'Sélecteur d’établissement (si vous en avez plusieurs)', equipe: 'Comptes du personnel et invitations' };
-const moduleOn = (v) => !MODULES[v] || !S.modules || S.modules.includes(v);
+/* Mode « réservations » : par défaut, seul le cœur de la gestion des réservations est affiché. Le propriétaire peut réactiver les autres volets dans Réglages → Fonctionnalités. */
+const CORE_MODULES = ['planning', 'clients', 'menage', 'factures', 'notifs', 'multi', 'equipe'];
+const moduleOn = (v) => !MODULES[v] || (S.modules ? S.modules.includes(v) : CORE_MODULES.includes(v));
 async function loadOrgPrefs(){
   const { data } = await sb.from('organizations').select('display_currency,enabled_modules').eq('id', S.org).maybeSingle();
   S.currency = (data && data.display_currency) || 'XOF'; S.modules = data && data.enabled_modules ? data.enabled_modules : null;
@@ -3104,12 +3107,12 @@ function openModules(){
   modal(`<h2 style="font-size:22px;margin-bottom:4px">Fonctionnalités utilisées</h2><p class="muted" style="margin:0 0 12px;font-size:14px">Cochez ce dont votre établissement se sert : le menu n’affiche que ces modules. Rien n’est supprimé, vous pouvez les réactiver à tout moment.</p>
     ${MODULE_GROUPS.map(([gt, keys]) => `<div style="margin-bottom:12px"><label class="row between" style="flex-wrap:nowrap;margin-bottom:6px"><strong style="font-size:15px">${gt}</strong>${owner && keys.length > 1 ? `<span class="row" style="gap:6px;font-size:13px;flex-wrap:nowrap"><input type="checkbox" data-grp="${keys.join(',')}" ${keys.every(moduleOn) ? 'checked' : ''} style="width:18px;min-height:18px"> tout</span>` : ''}</label>
       <div style="display:grid;gap:6px">${keys.map(k => `<label class="card" style="margin:0;padding:10px 12px;display:flex;gap:10px;align-items:center;cursor:${owner ? 'pointer' : 'default'}"><input type="checkbox" data-mod="${k}" ${moduleOn(k) ? 'checked' : ''} ${owner ? '' : 'disabled'} style="width:20px;min-height:20px"><span><strong>${esc(MODULES[k])}</strong>${lockedView(k) ? ' <span class="pill st-trial">formule supérieure</span>' : ''}<br><span class="muted" style="font-size:12px">${esc(MODULE_HELP[k])}</span></span></label>`).join('')}</div></div>`).join('')}
-    <p class="muted" style="font-size:12px;margin:10px 0 0">Toujours affichés : Accueil, Réservations, Chambres, Caisse et Réglages. Le propriétaire garde toujours l’accès à Réglages → Fonctionnalités.</p>
+    <p class="muted" style="font-size:12px;margin:10px 0 0">Toujours affichés : Accueil, Réservations, Chambres, Caisse et Réglages. Par défaut, seuls les volets liés aux réservations sont activés. Le propriétaire garde toujours l’accès à Réglages → Fonctionnalités.</p>
     ${owner ? '<button class="primary" id="modSave" style="width:100%;margin-top:12px">Enregistrer</button>' : '<p class="muted">Seul le propriétaire peut modifier ce choix.</p>'}`);
   if (!owner) return;
   document.querySelectorAll('[data-grp]').forEach(g => g.onchange = () => g.dataset.grp.split(',').forEach(k => { document.querySelector(`[data-mod="${k}"]`).checked = g.checked; }));
   $('modSave').onclick = async () => { const list = [...document.querySelectorAll('[data-mod]')].filter(c => c.checked).map(c => c.dataset.mod);
-    const val = list.length === Object.keys(MODULES).length ? null : list;
+    const val = list;
     const { error } = await sb.from('organizations').update({ enabled_modules: val }).eq('id', S.org); if (error) return toast(errMsg(error), true);
     S.modules = val; closeModal(); applyRoleNav(); syncTabbar(); toast('Menu mis à jour.'); if (!allowed(S.view)) go('dashboard'); };
 }
@@ -3155,7 +3158,7 @@ async function openAnalysis(months){
     ...(a.budget_over || []).map(b => `Budget « ${esc(b.category)} » dépassé : ${money(b.spent)} pour ${money(b.budget)} prévus.`),
     ...(a.unpaid_total > 0 ? [`${money(a.unpaid_total)} restent à encaisser auprès de clients en séjour ou partis.`] : []),
     ...(a.due_expenses > 0 ? [`${money(a.due_expenses)} de charges arrivent à échéance dans les 7 jours.`] : []),
-    ...(a.low_stock > 0 ? [`${a.low_stock} produit(s) du restaurant/bar à réapprovisionner.`] : []),
+    ...(a.low_stock > 0 ? [`${plur(a.low_stock, 'produit', 'produits')} du restaurant/bar à réapprovisionner.`] : []),
     ...(cur.result < 0 ? ['Le mois est pour l’instant déficitaire : les dépenses dépassent les revenus.'] : []),
     ...(prev.occupancy && cur.occupancy < prev.occupancy - 10 ? [`Le taux d’occupation recule (${cur.occupancy} % contre ${prev.occupancy} %).`] : [])];
   const tile = (l, v, sub) => `<div class="card" style="padding:12px 14px"><div class="muted" style="font-size:12px;font-weight:700">${l}</div><div style="font-family:var(--display);font-size:22px;font-weight:800">${v}</div><div style="font-size:12px">${sub}</div></div>`;
@@ -3164,7 +3167,7 @@ async function openAnalysis(months){
       ${tile('Revenus du mois', money(cur.revenue), delta(cur.revenue, prev.revenue) + ' <span class="muted">vs mois dernier</span>')}
       ${tile('Dépenses du mois', money(cur.expenses), delta(cur.expenses, prev.expenses, true) + ' <span class="muted">vs mois dernier</span>')}
       ${tile('Résultat', `<span style="color:${cur.result < 0 ? 'var(--red)' : 'var(--green)'}">${cur.result < 0 ? '−' : ''}${money(Math.abs(cur.result))}</span>`, `Marge ${margin} %`)}
-      ${tile('Occupation', cur.occupancy + ' %', `${cur.sold} nuitée(s) · ${delta(cur.occupancy, prev.occupancy)}`)}
+      ${tile('Occupation', cur.occupancy + ' %', `${plur(cur.sold, 'nuitée', 'nuitées')} · ${delta(cur.occupancy, prev.occupancy)}`)}
       ${tile('Prix moyen / nuit', money(cur.adr), delta(cur.adr, prev.adr))}
     </div>
     <div class="card" style="margin-bottom:14px;padding:12px"><div class="row" style="gap:14px;font-size:12px;margin-bottom:4px"><span><span style="display:inline-block;width:10px;height:10px;background:var(--green);border-radius:2px"></span> Revenus</span><span><span style="display:inline-block;width:10px;height:10px;background:var(--gold-l);border-radius:2px;border:1px solid var(--line)"></span> Dépenses</span><span><span style="display:inline-block;width:14px;height:2px;background:var(--ink);vertical-align:middle"></span> Résultat</span></div>
@@ -3291,7 +3294,7 @@ function offBar(){
   if (!show) { if (b) b.remove(); return; }
   if (!b) { b = document.createElement('div'); b.id = 'offBar'; b.setAttribute('role', 'status'); b.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:70;padding:6px 12px;text-align:center;font-size:13px;font-weight:700'; document.body.appendChild(b); }
   b.style.background = navigator.onLine ? '#FFF4E0' : '#2B1E16'; b.style.color = navigator.onLine ? '#9A5B00' : '#FBF6EE';
-  b.innerHTML = navigator.onLine ? `${q.length} vente(s) faite(s) hors connexion en cours d’envoi… <button type="button" class="small ghost" id="offSync" style="min-height:26px;margin-left:6px">Envoyer</button>` : `Hors connexion — la caisse restaurant/bar continue de fonctionner${q.length ? ` · ${q.length} vente(s) en attente d’envoi` : ''}`;
+  b.innerHTML = navigator.onLine ? `${plur(q.length, 'vente faite', 'ventes faites')} hors connexion en cours d’envoi… <button type="button" class="small ghost" id="offSync" style="min-height:26px;margin-left:6px">Envoyer</button>` : `Hors connexion — la caisse restaurant/bar continue de fonctionner${q.length ? ` · ${plur(q.length, 'vente', 'ventes')} en attente d’envoi` : ''}`;
   const s = $('offSync'); if (s) s.onclick = syncOffline;
 }
 async function syncOffline(){
@@ -3304,9 +3307,9 @@ async function syncOffline(){
   }
   const rest = left.concat(q.slice(q.indexOf(left[0]) + 1).filter(x => !left.includes(x) && !x.done));
   offSave(q.filter(x => !x.done)); OFF.syncing = false; offBar();
-  if (ok) toast(`${ok} vente(s) hors connexion envoyée(s) : stock et caisse mis à jour.`);
+  if (ok) toast(`${plur(ok, 'vente hors connexion envoyée', 'ventes hors connexion envoyées')} : stock et caisse mis à jour.`);
   const failed = offQueue().filter(x => x.failed);
-  if (failed.length && can(['owner', 'admin', 'manager'])) toast(`${failed.length} vente(s) hors connexion refusée(s) (ex. stock insuffisant) : voir Restaurant & Bar → Ventes.`, true);
+  if (failed.length && can(['owner', 'admin', 'manager'])) toast(`${plur(failed.length, 'vente hors connexion refusée', 'ventes hors connexion refusées')} (ex. stock insuffisant) : voir Restaurant & Bar → Ventes.`, true);
   if (S.view === 'resto') renderResto();
 }
 window.addEventListener('online', () => { offBar(); syncOffline(); });
@@ -3355,14 +3358,14 @@ async function askAnswer(raw){
   if (/impaye|doit|pas (fini|encore) (de )?pay|reste a (payer|encaisser)|solde|dette/.test(q)) {
     const { data } = await sb.from('reservation_balances').select('guest_name,room_number,balance,status,check_out').eq('establishment_id', S.est).gt('balance', 0).in('status', ['checked_in', 'checked_out', 'confirmed']).order('balance', { ascending: false }).limit(20);
     const l = data || []; if (!l.length) return 'Aucun client n’a de solde à payer. 👍'.replace(' 👍', '');
-    return `${l.length} client(s) doivent au total <strong>${money(l.reduce((a, r) => a + Number(r.balance), 0))}</strong> :<ul>${l.slice(0, 8).map(r => `<li>${esc(r.guest_name)} · ch. ${esc(r.room_number)} : <strong>${money(r.balance)}</strong>${r.status === 'checked_out' ? ' (parti)' : ''}</li>`).join('')}</ul>`;
+    return `${plur(l.length, 'client', 'clients')} doivent au total <strong>${money(l.reduce((a, r) => a + Number(r.balance), 0))}</strong> :<ul>${l.slice(0, 8).map(r => `<li>${esc(r.guest_name)} · ch. ${esc(r.room_number)} : <strong>${money(r.balance)}</strong>${r.status === 'checked_out' ? ' (parti)' : ''}</li>`).join('')}</ul>`;
   }
   // Stock
   if (/stock|rupture|racheter|commander|manque/.test(q)) {
     const [p, sp] = await Promise.all([sb.from('products').select('name,stock_qty,alert_qty,unit,track_stock').eq('establishment_id', S.est).eq('is_active', true), sb.from('supplies').select('name,qty,alert_qty,unit').eq('establishment_id', S.est).eq('is_active', true)]);
     const lowP = (p.data || []).filter(x => x.track_stock && Number(x.stock_qty) <= Number(x.alert_qty)), lowS = (sp.data || []).filter(x => Number(x.qty) <= Number(x.alert_qty));
     if (!lowP.length && !lowS.length) return 'Tout est en stock : aucun produit ni article sous son seuil d’alerte.';
-    return `${lowP.length + lowS.length} article(s) à racheter :<ul>${[...lowP.map(x => [x.name, x.stock_qty, x.unit, 'resto/bar']), ...lowS.map(x => [x.name, x.qty, x.unit, 'chambres'])].map(([n, v, u, w]) => `<li>${esc(n)} : reste <strong>${+v} ${esc(u)}</strong> <span class="muted">(${w})</span></li>`).join('')}</ul>`;
+    return `${plur(lowP.length + lowS.length, 'article', 'articles')} à racheter :<ul>${[...lowP.map(x => [x.name, x.stock_qty, x.unit, 'resto/bar']), ...lowS.map(x => [x.name, x.qty, x.unit, 'chambres'])].map(([n, v, u, w]) => `<li>${esc(n)} : reste <strong>${+v} ${esc(u)}</strong> <span class="muted">(${w})</span></li>`).join('')}</ul>`;
   }
   // Dépenses
   if (/depense|charge|achete|sortie d argent|coute/.test(q)) {
@@ -3375,7 +3378,7 @@ async function askAnswer(raw){
     const day = from; const isDep = /depart|part /.test(q);
     const { data } = await sb.from('reservation_balances').select('guest_name,room_number,status,check_in,check_out').eq('establishment_id', S.est).eq(isDep ? 'check_out' : 'check_in', day).not('status', 'in', '(cancelled,no_show)');
     const l = data || []; if (!l.length) return `Aucun${isDep ? ' départ' : 'e arrivée'} prévu${isDep ? '' : 'e'} ${pl}.`;
-    return `${l.length} ${isDep ? 'départ(s)' : 'arrivée(s)'} ${pl} :<ul>${l.map(r => `<li>${esc(r.guest_name)} · ch. ${esc(r.room_number)}</li>`).join('')}</ul>`;
+    return `${l.length} ${isDep ? (l.length > 1 ? 'départs' : 'départ') : (l.length > 1 ? 'arrivées' : 'arrivée')} ${pl} :<ul>${l.map(r => `<li>${esc(r.guest_name)} · ch. ${esc(r.room_number)}</li>`).join('')}</ul>`;
   }
   // Occupation
   if (/occup|rempli|chambres? (libre|prise|occupee)|taux/.test(q)) {
@@ -3388,7 +3391,7 @@ async function askAnswer(raw){
   // Réservations à venir
   if (/reservation|reserve/.test(q)) {
     const { data, count } = await sb.from('reservations').select('id', { count: 'exact' }).eq('establishment_id', S.est).gte('check_in', from).lte('check_in', from === to ? addDays(to, 30) : to).not('status', 'in', '(cancelled,no_show)');
-    return `<strong>${count ?? (data || []).length}</strong> réservation(s) ${from === to ? 'dans les 30 prochains jours' : pl}.`;
+    return `<strong>${count ?? (data || []).length}</strong> réservation${(count ?? (data || []).length) > 1 ? 's' : ''} ${from === to ? 'dans les 30 prochains jours' : pl}.`;
   }
   // Encaissements / chiffre d'affaires (par défaut pour les questions d'argent)
   if (/encaiss|gagne|chiffre|vente|recette|argent|revenu|combien|caisse|ca\b/.test(q)) {
@@ -3403,7 +3406,7 @@ async function askTop(from, to, pl){
   const { data, error } = await sb.rpc('pos_summary', { p_est: S.est, p_from: from, p_to: to });
   if (error) return 'Les meilleures ventes sont réservées au gérant et au comptable.';
   const t = data.top || []; if (!t.length) return `Aucune vente au restaurant ou au bar ${pl}.`;
-  return `Meilleures ventes ${pl} :<ol>${t.slice(0, 5).map(x => `<li>${esc(x.name)} : ${+x.qty} vendu(s), ${money(x.amount)}</li>`).join('')}</ol>`;
+  return `Meilleures ventes ${pl} :<ol>${t.slice(0, 5).map(x => `<li>${esc(x.name)} : ${plur(+x.qty, 'vendu', 'vendus')}, ${money(x.amount)}</li>`).join('')}</ol>`;
 }
 function openAssistant(){
   modal(`<div class="row between" style="margin-bottom:6px"><h2 style="font-size:22px">Assistant</h2><button class="small ghost" data-close style="border:0;font-size:18px" aria-label="Fermer">✕</button></div>
@@ -3612,7 +3615,7 @@ async function renderDirectory(){
     $('dirRes').innerHTML = '<p class="muted">Recherche…</p>';
     const { data } = await sb.rpc('public_directory', { p_city: city || null, p_q: q || null, p_max_price: max ? Number(max) : null });
     const list = data || [];
-    $('dirRes').innerHTML = list.length ? `<p class="muted" style="margin:0 0 10px">${list.length} établissement(s)</p><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px">${list.map(h => `<a href="${location.pathname}?h=${encodeURIComponent(h.slug)}" class="card" style="padding:0;overflow:hidden;text-decoration:none;color:inherit;display:block">
+    $('dirRes').innerHTML = list.length ? `<p class="muted" style="margin:0 0 10px">${plur(list.length, 'établissement', 'établissements')}</p><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px">${list.map(h => `<a href="${location.pathname}?h=${encodeURIComponent(h.slug)}" class="card" style="padding:0;overflow:hidden;text-decoration:none;color:inherit;display:block">
       <div style="aspect-ratio:16/9;background:var(--green-l) ${h.cover ? `url('${esc(h.cover)}') center/cover` : ''};position:relative">${h.logo ? `<img src="${esc(h.logo)}" alt="" style="position:absolute;left:12px;bottom:-22px;width:52px;height:52px;border-radius:14px;object-fit:cover;border:3px solid var(--card);background:var(--card)">` : ''}</div>
       <div style="padding:${h.logo ? '28px' : '14px'} 14px 14px"><strong style="font-size:17px">${esc(h.name)}</strong><div class="muted" style="font-size:13px">${esc(h.city || '')}${h.tagline ? ' · ' + esc(h.tagline) : ''}</div>
       <div class="row between" style="margin-top:8px"><span>${h.reviews ? `${stars(h.rating, 14)} <span class="muted" style="font-size:12px">${Number(h.rating).toFixed(1)} (${h.reviews})</span>` : '<span class="muted" style="font-size:12px">Nouveau</span>'}</span>${h.price_from ? `<span style="font-size:13px">dès <strong style="color:var(--green)">${money(h.price_from)}</strong>/nuit</span>` : ''}</div></div></a>`).join('')}</div>` : '<div class="card" style="text-align:center;padding:30px"><p class="muted">Aucun établissement ne correspond à votre recherche.</p></div>';
@@ -3981,7 +3984,7 @@ function drawPos(){
       <div class="row between"><h3 style="font-size:20px">Panier</h3><span class="muted"> ${count} article${count > 1 ? 's' : ''}</span></div>
       <button type="button" class="ghost small" id="rHold" ${S.cart.length ? '' : 'disabled'} style="width:100%;background:#FFF4E5;border-color:#F3C98B;color:#9A5B00"> Mettre en attente</button>
       <div style="max-height:40vh;overflow-y:auto">${S.cart.map(it => `<div class="row" style="padding:8px 0;border-bottom:1px dashed var(--line);flex-wrap:nowrap;gap:8px">
-          <div style="min-width:0;flex:1"><strong style="display:block;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(it.name)}</strong><span class="muted" style="font-size:12px">${money(it.price)}${it.sent ? ` · ${it.sent} envoyé(s)` : ''}</span></div>
+          <div style="min-width:0;flex:1"><strong style="display:block;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(it.name)}</strong><span class="muted" style="font-size:12px">${money(it.price)}${it.sent ? ` · ${plur(it.sent, 'envoyé', 'envoyés')}` : ''}</span></div>
           <div class="row" style="gap:4px;flex-wrap:nowrap"><button type="button" class="small ghost" data-dec="${esc(it.key)}" aria-label="Retirer un" style="min-width:34px;padding:0">−</button><strong style="min-width:20px;text-align:center">${it.qty}</strong><button type="button" class="small ghost" data-inc="${esc(it.key)}" aria-label="Ajouter un" style="min-width:34px;padding:0">+</button></div>
           <button type="button" class="small ghost" data-del="${esc(it.key)}" aria-label="Supprimer" style="min-width:30px;padding:0;border:0;color:var(--red)">✕</button></div>`).join('') || '<p class="muted" style="text-align:center;padding:18px 0">Touchez un produit pour l’ajouter.</p>'}</div>
       <div class="row" style="gap:6px;flex-wrap:nowrap"><input id="rTable" placeholder="# N° table / chambre" value="${esc(S.rTable || '')}" maxlength="30" style="flex:1;min-width:0"><input id="rServer" list="rServers" placeholder="Serveur(se)" value="${esc(S.rServer || '')}" maxlength="60" style="flex:1;min-width:0"><datalist id="rServers">${(() => { try { return JSON.parse(localStorage.getItem('hh_servers') || '[]'); } catch (_) { return []; } })().map(n => `<option value="${esc(n)}">`).join('')}</datalist></div>
@@ -4025,7 +4028,7 @@ function holdCurrent(){
 }
 function openHolds(){
   const h = getHolds();
-  modal(`<h2 style="font-size:22px;margin-bottom:10px">Commandes en attente</h2>${h.length ? h.map(x => `<div class="card" style="padding:12px;margin-bottom:8px"><div class="row between" style="flex-wrap:nowrap"><div><strong>${x.table ? 'Table ' + esc(x.table) : 'Commande ' + esc(x.id)}</strong> <span class="muted">· ${esc(OUTLETS[x.outlet][0])}${x.server ? ' · ' + esc(x.server) : ''}</span><div class="muted" style="font-size:12px">${new Date(x.at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })} · ${x.cart.reduce((a, c) => a + c.qty, 0)} article(s) · ${money(x.cart.reduce((a, c) => a + c.qty * c.price, 0))}</div></div>
+  modal(`<h2 style="font-size:22px;margin-bottom:10px">Commandes en attente</h2>${h.length ? h.map(x => `<div class="card" style="padding:12px;margin-bottom:8px"><div class="row between" style="flex-wrap:nowrap"><div><strong>${x.table ? 'Table ' + esc(x.table) : 'Commande ' + esc(x.id)}</strong> <span class="muted">· ${esc(OUTLETS[x.outlet][0])}${x.server ? ' · ' + esc(x.server) : ''}</span><div class="muted" style="font-size:12px">${new Date(x.at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })} · ${plur(x.cart.reduce((a, c) => a + c.qty, 0), 'article', 'articles')} · ${money(x.cart.reduce((a, c) => a + c.qty * c.price, 0))}</div></div>
     <div class="row" style="gap:6px;flex-wrap:nowrap"><button class="small" type="button" data-resume="${esc(x.id)}">Reprendre</button><button class="small ghost" type="button" data-drop="${esc(x.id)}" aria-label="Supprimer" style="color:var(--red)">✕</button></div></div></div>`).join('') : '<p class="muted">Aucune commande en attente.</p>'}
     <p class="muted" style="font-size:12px">Les commandes en attente sont gardées sur cet appareil.</p>`);
   document.querySelectorAll('[data-resume]').forEach(b => b.onclick = () => { if (S.cart.length) holdCurrent(); const all = getHolds(); const x = all.find(y => y.id === b.dataset.resume); setHolds(all.filter(y => y.id !== x.id)); S.cart = x.cart; S.rTable = x.table; S.rServer = x.server; S.rOutlet = x.outlet; S.holdId = x.id; closeModal(); drawPos(); });
@@ -4178,10 +4181,10 @@ function drawProducts(){
   const body = $('rBody');
   const by = (o) => S.products.filter(p => p.outlet === o);
   const margin = (p) => Number(p.sale_price) > 0 ? Math.round((Number(p.sale_price) - Number(p.purchase_price)) / Number(p.sale_price) * 100) : 0;
-  body.innerHTML = Object.entries(OUTLETS).map(([o, [l, ic]]) => `<h3 style="font-size:18px;margin:6px 0 10px">${l} <span class="muted" style="font-size:14px">· ${by(o).length} produit(s)</span></h3>
+  body.innerHTML = Object.entries(OUTLETS).map(([o, [l, ic]]) => `<h3 style="font-size:18px;margin:6px 0 10px">${l} <span class="muted" style="font-size:14px">· ${plur(by(o).length, 'produit', 'produits')}</span></h3>
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-bottom:20px">${by(o).map(p => `<div class="card" style="padding:10px;display:flex;gap:10px;flex-direction:column">
       ${prodThumb(p, 110)}
-      <div style="${p.is_active === false ? 'color:var(--muted)' : ''}"><strong>${esc(p.name)}</strong>${p.is_active === false ? ' <span class="pill st-cancelled">inactif</span>' : ''}${effPrice(p) < Number(p.sale_price) ? ' <span class="pill st-past_due">promo</span>' : ''}${(p.variants || []).length ? ` <span class="pill st-trial">${p.variants.length} variante(s)</span>` : ''}<div class="muted" style="font-size:12px">${esc(p.category || 'Sans catégorie')} · ${esc(p.unit)}${p.barcode ? ' · ▦ ' + esc(p.barcode) : ''}</div></div>
+      <div style="${p.is_active === false ? 'color:var(--muted)' : ''}"><strong>${esc(p.name)}</strong>${p.is_active === false ? ' <span class="pill st-cancelled">inactif</span>' : ''}${effPrice(p) < Number(p.sale_price) ? ' <span class="pill st-past_due">promo</span>' : ''}${(p.variants || []).length ? ` <span class="pill st-trial">${plur(p.variants.length, 'variante', 'variantes')}</span>` : ''}<div class="muted" style="font-size:12px">${esc(p.category || 'Sans catégorie')} · ${esc(p.unit)}${p.barcode ? ' · ▦ ' + esc(p.barcode) : ''}</div></div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;font-size:12px"><div><div class="muted">Achat</div><strong>${money(p.purchase_price)}</strong></div><div><div class="muted">Vente</div><strong style="color:var(--green)">${money(p.sale_price)}</strong></div><div><div class="muted">Marge</div><strong>${margin(p)} %</strong></div></div>
       <div class="row between">${p.track_stock ? `<span><span class="muted" style="font-size:12px">Stock </span><strong>${+p.stock_qty}</strong></span>${stockTxt(p).includes('pill') ? stockTxt(p) : ''}` : '<span class="muted" style="font-size:12px">Stock non suivi</span>'}</div>
       <div class="row" style="gap:6px"><button class="small" type="button" data-edit="${esc(p.id)}" style="flex:1">Modifier</button>${p.track_stock ? `<button class="small ghost" type="button" data-sin="${esc(p.id)}" style="flex:1">+ Stock</button>` : ''}</div>
@@ -4245,7 +4248,7 @@ async function drawSales(){
       <div><label for="rFrom">Du</label><input type="date" id="rFrom" value="${S.rFrom}"></div><div><label for="rTo">Au</label><input type="date" id="rTo" value="${S.rTo}"></div>
       <button class="small ghost" type="button" data-rper="0">Aujourd’hui</button><button class="small ghost" type="button" data-rper="6">7 jours</button><button class="small ghost" type="button" data-rper="29">30 jours</button></div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:16px">
-      <div class="card kpi dark"><div class="l">Ventes</div><div style="font-family:var(--display);font-size:28px;font-weight:800">${money(s.sales)}</div><div class="muted" style="font-size:12px">${s.tickets} ticket(s)</div></div>
+      <div class="card kpi dark"><div class="l">Ventes</div><div style="font-family:var(--display);font-size:28px;font-weight:800">${money(s.sales)}</div><div class="muted" style="font-size:12px">${plur(s.tickets, 'ticket', 'tickets')}</div></div>
       <div class="card kpi"><div class="l muted">Coût des produits</div><div style="font-family:var(--display);font-size:24px;font-weight:800">${money(s.cost)}</div></div>
       <div class="card kpi"><div class="l muted">Marge brute</div><div style="font-family:var(--display);font-size:24px;font-weight:800;color:var(--green)">${money(marge)}</div><div class="muted" style="font-size:12px">${s.sales > 0 ? Math.round(marge / s.sales * 100) : 0} %</div></div>
       <div class="card kpi"><div class="l muted">Restaurant · Bar</div><div style="font-weight:800;font-size:16px;margin-top:6px">${money((s.by_outlet || {}).restaurant || 0)}<br>${money((s.by_outlet || {}).bar || 0)}</div></div></div>
@@ -4395,7 +4398,7 @@ async function renderMaPage(){
     const files = [...ev.target.files].slice(0, 12 - photos.length);
     if (!files.length) return toast('12 photos maximum.', true);
     toast('Envoi des photos…');
-    try { const urls = []; for (const f of files) urls.push(await upload(f)); save({ public_photos: photos.concat(urls) }, `${urls.length} photo(s) ajoutée(s).`); } catch (er) { toast(errMsg(er), true); }
+    try { const urls = []; for (const f of files) urls.push(await upload(f)); save({ public_photos: photos.concat(urls) }, `${plur(urls.length, 'photo ajoutée', 'photos ajoutées')}.`); } catch (er) { toast(errMsg(er), true); }
   };
   el.querySelectorAll('[data-delphoto]').forEach(b => b.onclick = () => save({ public_photos: photos.filter((_, i) => i !== +b.dataset.delphoto) }, 'Photo retirée.'));
   el.querySelectorAll('[data-first]').forEach(b => b.onclick = () => { const i = +b.dataset.first; save({ public_photos: [photos[i]].concat(photos.filter((_, j) => j !== i)) }, 'Ordre des photos mis à jour.'); });
@@ -4499,7 +4502,7 @@ async function renderPublicPage(slug){
     $('bOut').min = addDays($('bIn').value, 1);
     const { data: q } = await sb.rpc('public_quote', { p_slug: h.slug, p_room_type: $('bType').value, p_check_in: $('bIn').value, p_check_out: $('bOut').value, p_adults: +$('bAd').value || 1 });
     lastQuote = q;
-    box.innerHTML = q && q.ok ? `<div class="row between"><span>${q.nights} nuit(s) × ${money(q.rate)}</span><strong style="font-size:20px">${money(q.total)}</strong></div><div class="muted" style="font-size:12px">Prix estimé, confirmé par l’établissement.</div>` : `<span style="color:var(--red);font-weight:600">${esc(q ? q.error : 'Service indisponible.')}</span>`;
+    box.innerHTML = q && q.ok ? `<div class="row between"><span>${plur(q.nights, 'nuit', 'nuits')} × ${money(q.rate)}</span><strong style="font-size:20px">${money(q.total)}</strong></div><div class="muted" style="font-size:12px">Prix estimé, confirmé par l’établissement.</div>` : `<span style="color:var(--red);font-weight:600">${esc(q ? q.error : 'Service indisponible.')}</span>`;
   };
   const debounced = () => { clearTimeout(qt); qt = setTimeout(quote, 300); };
   ['bType','bIn','bOut','bAd'].forEach(id => $(id).addEventListener('change', debounced));
@@ -4517,7 +4520,7 @@ async function renderPublicPage(slug){
     const waMsg = wa ? `${wa}?text=${encodeURIComponent(`Bonjour, j'ai envoyé une demande de réservation (réf. ${r.reference}) du ${$('bIn').value} au ${$('bOut').value}.`)}` : null;
     $('bkForm').innerHTML = `<h2 style="font-size:24px;margin-bottom:8px">${r.status === 'confirmed' ? 'Réservation confirmée' : 'Demande envoyée'}</h2>
       <p>Référence : <strong style="font-size:20px;letter-spacing:1px">${esc(r.reference)}</strong></p>
-      <p>${r.nights} nuit(s) · Total estimé <strong>${money(r.total)}</strong></p>
+      <p>${plur(r.nights, 'nuit', 'nuits')} · Total estimé <strong>${money(r.total)}</strong></p>
       <p class="muted">${r.status === 'confirmed' ? 'Présentez cette référence à votre arrivée.' : 'L’établissement va vous contacter pour confirmer. Conservez votre référence.'}</p>
       ${waMsg ? `<a href="${waMsg}" target="_blank" rel="noopener" class="pill st-active" style="display:inline-block;padding:10px 14px;text-decoration:none">Prévenir l’établissement sur WhatsApp</a>` : ''}`;
   };

@@ -824,7 +824,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.10.26-14';
+const APP_VERSION = '2026.10.26-15';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -1664,52 +1664,117 @@ async function openRoomForm(room, refresh, types){
 }
 
 /* ---------- Administration plateforme ---------- */
+/* ================= Tableau de bord administrateur plateforme ================= */
+const ADM_TABS = [['apercu', 'Vue d’ensemble'], ['clients', 'Clients'], ['paiements', 'Paiements'], ['naya', 'NAYA'], ['formules', 'Formules']];
+const admDays = (d) => d ? Math.ceil((new Date(d) - Date.now()) / 86400000) : null;
+const admEnd = (c) => c.billing_cycle === 'trial' ? c.trial_end_at : c.period_end;
+function admFlag(c){
+  const left = admDays(admEnd(c)), idle = c.last_activity ? -admDays(c.last_activity) : null;
+  if (c.status === 'suspended') return ['Suspendu', 'st-expired'];
+  if (c.status === 'expired' || c.status === 'past_due' || (left !== null && left < 0 && c.billing_cycle !== 'free')) return ['Expiré', 'st-expired'];
+  if (left !== null && left <= 7 && c.billing_cycle !== 'free') return [left <= 0 ? 'Expire aujourd’hui' : `Expire dans ${left} j`, 'st-pending'];
+  if (idle === null || idle > 14) return ['Inactif', 'st-cancelled'];
+  return ['OK', 'st-active'];
+}
 async function renderAdmin(){
   const el = $('v-admin'); el.innerHTML = '<p class="muted">Chargement…</p>';
-  const [st, subs, pend, plans] = await Promise.all([
-    sb.rpc('admin_platform_stats'),
-    sb.from('subscriptions').select('organization_id,status,billing_cycle,trial_end_at,current_period_end,organizations(name),plans(name)').order('created_at', { ascending:false }).limit(500),
-    sb.from('payments').select('id,created_at,amount,payment_method,billing_cycle,organizations(name),plans(name)').eq('status', 'pending').order('created_at'),
-    sb.from('plans').select('*').order('sort_order')
+  const tab = S._admTab || 'apercu';
+  const [st, orgs, pend, plans, naya] = await Promise.all([
+    sb.rpc('admin_platform_stats'), sb.rpc('admin_orgs_overview'),
+    sb.from('payments').select('id,created_at,amount,payment_method,billing_cycle,organization_id,organizations(name),plans(name)').eq('status', 'pending').order('created_at'),
+    sb.from('plans').select('*').order('sort_order'), sb.rpc('admin_naya_overview', { p_month: S._admMonth || null })
   ]);
   if (st.error) { el.innerHTML = `<p class="muted">${esc(errMsg(st.error))}</p>`; return; }
-  const s = st.data;
-  const k = (l, v) => `<div class="card kpi"><div class="l">${l}</div><div class="v">${v}</div></div>`;
-  const top = (s.plans_usage || [])[0];
-  el.innerHTML = `
-    <div class="eyebrow">Administrateur national</div><h1 style="font-size:34px;margin:4px 0 20px">Vue d'ensemble de la plateforme</h1>
-    <div class="grid g5" style="margin-bottom:18px">
-      ${k('Établissements', s.establishments)}${k('Essais actifs', s.trials_active)}${k('Essais expirés', s.trials_expired)}${k('Abonnements actifs', s.subscriptions_active)}${k('Abonnements expirés', s.subscriptions_expired)}
-      ${k('Revenus du mois', fcfa(s.revenue_current_month))}${k("Revenus de l'année", fcfa(s.revenue_current_year))}${k('Revenu mensuel récurrent', fcfa(s.mrr))}${k('Utilisateurs', s.users)}${k('Chambres gérées', s.rooms)}
+  const s = st.data, C = orgs.data || [], P = pend.data || [], N = naya.data || { rows: [] };
+  const k = (l, v, h) => `<div class="card kpi"><div class="l">${l}</div><div class="v">${v}</div>${h ? `<div class="muted" style="font-size:12px;margin-top:2px">${h}</div>` : ''}</div>`;
+  const nayaDue = (N.rows || []).reduce((a, r) => a + Number(r.commission || 0), 0);
+  const todo = C.filter(c => admFlag(c)[0] !== 'OK');
+  const wa = (c, msg) => waPhone(c.phone) ? `<a class="small ghost btn" style="text-decoration:none;padding:6px 10px" target="_blank" rel="noopener" href="https://wa.me/${waPhone(c.phone)}?text=${encodeURIComponent(msg)}">WhatsApp</a>` : '';
+  const tabs = `<div class="row" role="tablist" aria-label="Sections" style="gap:6px;flex-wrap:wrap;margin-bottom:18px">${ADM_TABS.map(([id, l]) => `<button role="tab" aria-selected="${tab === id}" class="small ${tab === id ? 'primary' : 'ghost'}" data-admtab="${id}">${l}${id === 'paiements' && P.length ? ` (${P.length})` : ''}${id === 'clients' && todo.length ? ` · ${todo.length} à suivre` : ''}</button>`).join('')}</div>`;
+  let body = '';
+
+  if (tab === 'apercu') {
+    const top = (s.plans_usage || [])[0];
+    body = `<div class="grid g5" style="margin-bottom:18px">
+      ${k('Revenu mensuel récurrent', fcfa(s.mrr), 'abonnements payants actifs')}${k('Encaissé ce mois', fcfa(s.revenue_current_month))}${k('Encaissé cette année', fcfa(s.revenue_current_year))}${k('Commissions NAYA du mois', fcfa(nayaDue), `${(N.rows || []).reduce((a, r) => a + Number(r.bookings), 0)} réservation(s) · ${N.listed || 0} en ligne`)}${k('Paiements à valider', P.length)}
+      ${k('Clients', C.length, `${s.establishments} établissement(s)`)}${k('Abonnements actifs', s.subscriptions_active)}${k('Essais en cours', s.trials_active, `${s.trials_expired} expiré(s)`)}${k('Chambres gérées', s.rooms)}${k('Utilisateurs', s.users)}
     </div>
     <p class="muted" style="margin:-6px 0 18px">Formule la plus utilisée : <strong>${top ? esc(top.plan) + ' (' + top.count + ')' : '—'}</strong> · Suspendus : ${s.suspended}</p>
+    <div class="card"><h3 style="font-size:20px;margin-bottom:4px">À suivre</h3><p class="muted" style="margin-bottom:10px">Essais ou abonnements qui expirent sous 7 jours, comptes expirés, suspendus ou sans activité depuis 14 jours.</p>
+      ${todo.length ? `<div class="tablewrap"><table class="table"><thead><tr><th>Client</th><th>Formule</th><th>Situation</th><th>Dernière activité</th><th><span class="sr-only">Actions</span></th></tr></thead><tbody>
+      ${todo.map(c => { const f = admFlag(c); return `<tr><td><strong>${esc(c.name)}</strong><div class="muted" style="font-size:12px">${esc(c.owner_email || '')}</div></td><td>${esc(c.plan || '—')}</td><td><span class="pill ${f[1]}">${esc(f[0])}</span></td><td>${c.last_activity ? date(c.last_activity) : 'jamais'}</td>
+        <td class="row">${wa(c, `Bonjour, ici l'équipe Horus Hotel. Votre ${c.billing_cycle === 'trial' ? 'essai' : 'abonnement'} ${esc(c.plan || '')} arrive à échéance. Pouvons-nous vous aider à continuer ?`)}<button class="small" data-manage="${esc(c.id)}">Gérer</button></td></tr>`; }).join('')}</tbody></table></div>` : '<p class="muted">Rien à signaler.</p>'}</div>`;
+  }
 
-    <div class="card" style="margin-bottom:16px"><h3 style="font-size:20px;margin-bottom:10px">Paiements en attente de validation</h3>
-      ${(pend.data || []).length === 0 ? '<p class="muted">Aucun paiement en attente.</p>' : `<div class="tablewrap"><table class="table"><thead><tr><th>Date</th><th>Organisation</th><th>Formule</th><th>Moyen</th><th>Montant</th><th>Référence de transaction</th><th><span class="sr-only">Actions</span></th></tr></thead><tbody>
-      ${pend.data.map(p => `<tr><td>${date(p.created_at)}</td><td>${esc(p.organizations ? p.organizations.name : '')}</td><td>${esc(p.plans ? p.plans.name : '')} · ${CYCLE[p.billing_cycle]}</td><td>${METHOD[p.payment_method] || ''}</td><td><strong>${fcfa(p.amount)}</strong><div class="muted" style="font-size:12px">Réf. ${esc(String(p.id).slice(0,8).toUpperCase())}</div></td>
-        <td><input aria-label="Référence de transaction" id="ref-${esc(p.id)}" placeholder="N° de reçu / virement"></td>
-        <td class="row"><button class="small primary" data-confirm="${esc(p.id)}">Valider</button><button class="small ghost" data-fail="${esc(p.id)}">Rejeter</button></td></tr>`).join('')}</tbody></table></div>`}
-    </div>
+  if (tab === 'clients') {
+    const f = S._admFilter || 'tous';
+    const FIL = { tous: 'Tous', essai: 'En essai', payant: 'Payants', gratuit: 'Gratuits', suivre: 'À suivre', naya: 'Sur NAYA' };
+    const keep = (c) => f === 'tous' || (f === 'essai' && c.billing_cycle === 'trial') || (f === 'payant' && ['monthly', 'yearly'].includes(c.billing_cycle)) || (f === 'gratuit' && c.billing_cycle === 'free') || (f === 'suivre' && admFlag(c)[0] !== 'OK') || (f === 'naya' && c.naya_listed);
+    body = `<div class="card"><div class="row between" style="margin-bottom:12px;flex-wrap:wrap;gap:8px"><div class="row" style="gap:6px;flex-wrap:wrap">${Object.entries(FIL).map(([id, l]) => `<button class="small ${f === id ? 'primary' : 'ghost'}" data-admfil="${id}">${l}</button>`).join('')}</div>
+      <input id="subSearch" aria-label="Rechercher un client" placeholder="Nom, e-mail, ville…" style="max-width:260px"></div>
+      <div class="tablewrap"><table class="table"><thead><tr><th>Client</th><th>Formule</th><th>Échéance</th><th>Utilisation</th><th>Activité</th><th>NAYA</th><th><span class="sr-only">Actions</span></th></tr></thead><tbody id="subRows">
+      ${C.filter(keep).map(c => { const fl = admFlag(c); return `<tr data-name="${esc([c.name, c.owner_email, c.city, c.staff_code].join(' ').toLowerCase())}">
+        <td><strong>${esc(c.name)}</strong><div class="muted" style="font-size:12px">${esc(c.owner_email || '')}${c.phone ? ' · ' + esc(c.phone) : ''}${c.city ? ' · ' + esc(c.city) : ''}</div><div class="muted" style="font-size:12px">Inscrit le ${date(c.created_at)} · code ${esc(c.staff_code || '—')}</div></td>
+        <td>${esc(c.plan || '—')}<div class="muted" style="font-size:12px">${CYCLE[c.billing_cycle] || (c.billing_cycle === 'free' ? 'Gratuit' : esc(c.billing_cycle || ''))}${c.paid_total > 0 ? ' · payé ' + fcfa(c.paid_total) : ''}</div></td>
+        <td><span class="pill ${fl[1]}">${esc(fl[0] === 'OK' ? (STATUS[c.status] || c.status) : fl[0])}</span><div class="muted" style="font-size:12px">${c.billing_cycle === 'free' ? 'sans échéance' : date(admEnd(c))}</div></td>
+        <td style="font-size:13px">${c.establishments} étab. · ${c.rooms} ch.<br>${c.users} util. · ${c.reservations_30d} résa/30 j</td>
+        <td style="font-size:13px">${c.last_activity ? date(c.last_activity) : '<span class="muted">aucune</span>'}<div class="muted" style="font-size:12px">connexion : ${c.owner_last_login ? date(c.owner_last_login) : '—'}</div></td>
+        <td>${c.naya_listed ? `<span class="pill st-active">En ligne</span><div class="muted" style="font-size:12px">${c.naya_month} résa ce mois</div>` : '<span class="muted">—</span>'}</td>
+        <td class="row">${wa(c, 'Bonjour, ici l’équipe Horus Hotel. ')}<button class="small" data-manage="${esc(c.id)}">Gérer</button></td></tr>`; }).join('') || '<tr><td colspan="7" class="muted">Aucun client dans ce filtre.</td></tr>'}
+      </tbody></table></div></div>`;
+  }
 
-    <div class="card" style="margin-bottom:16px"><div class="row between" style="margin-bottom:10px"><h3 style="font-size:20px">Abonnements</h3><input id="subSearch" aria-label="Rechercher une organisation" placeholder="Rechercher…" style="max-width:260px"></div>
-      <div class="tablewrap"><table class="table"><thead><tr><th>Organisation</th><th>Formule</th><th>Statut</th><th>Échéance</th><th>Actions</th></tr></thead><tbody id="subRows">
-      ${(subs.data || []).map(x => `<tr data-name="${esc((x.organizations ? x.organizations.name : '').toLowerCase())}"><td><strong>${esc(x.organizations ? x.organizations.name : '')}</strong></td><td>${esc(x.plans ? x.plans.name : '')} · ${CYCLE[x.billing_cycle]}</td><td><span class="pill st-${esc(x.status)}">${STATUS[x.status] || esc(x.status)}</span></td><td>${date(x.billing_cycle === 'trial' ? x.trial_end_at : x.current_period_end)}</td>
-        <td class="row">${x.billing_cycle === 'trial' ? `<button class="small" data-extend="${esc(x.organization_id)}">Prolonger l'essai de 15 j</button>` : ''}
-        ${x.status === 'suspended' || x.status === 'expired' ? `<button class="small primary" data-status="active" data-org="${esc(x.organization_id)}">Activer 1 mois</button>` : `<button class="small ghost" data-status="suspended" data-org="${esc(x.organization_id)}">Suspendre</button>`}</td></tr>`).join('') || '<tr><td colspan="5" class="muted">Aucun établissement inscrit.</td></tr>'}
-      </tbody></table></div></div>
+  if (tab === 'paiements') {
+    const { data: hist } = await sb.from('payments').select('id,created_at,paid_at,amount,payment_method,billing_cycle,status,transaction_reference,organizations(name),plans(name)').neq('status', 'pending').order('created_at', { ascending: false }).limit(100);
+    body = `<div class="card" style="margin-bottom:16px"><h3 style="font-size:20px;margin-bottom:10px">À valider</h3>
+      ${P.length === 0 ? '<p class="muted">Aucun paiement en attente.</p>' : `<div class="tablewrap"><table class="table"><thead><tr><th>Date</th><th>Client</th><th>Formule</th><th>Moyen</th><th>Montant</th><th>Référence de transaction</th><th><span class="sr-only">Actions</span></th></tr></thead><tbody>
+      ${P.map(p => `<tr><td>${date(p.created_at)}</td><td>${esc(p.organizations ? p.organizations.name : '')}</td><td>${esc(p.plans ? p.plans.name : '')} · ${CYCLE[p.billing_cycle]}</td><td>${METHOD[p.payment_method] || ''}</td><td><strong>${fcfa(p.amount)}</strong><div class="muted" style="font-size:12px">Réf. ${esc(String(p.id).slice(0,8).toUpperCase())}</div></td>
+        <td><input aria-label="Référence de transaction" id="ref-${esc(p.id)}" placeholder="N° de reçu / transfert"></td>
+        <td class="row"><button class="small primary" data-confirm="${esc(p.id)}">Valider</button><button class="small ghost" data-fail="${esc(p.id)}">Rejeter</button></td></tr>`).join('')}</tbody></table></div>`}</div>
+      <div class="card"><h3 style="font-size:20px;margin-bottom:10px">Historique</h3>
+      <div class="tablewrap"><table class="table"><thead><tr><th>Date</th><th>Client</th><th>Formule</th><th>Moyen</th><th>Statut</th><th class="r">Montant</th></tr></thead><tbody>
+      ${(hist || []).map(p => `<tr><td>${date(p.paid_at || p.created_at)}</td><td>${esc(p.organizations ? p.organizations.name : '')}</td><td>${esc(p.plans ? p.plans.name : '')} · ${CYCLE[p.billing_cycle] || ''}</td><td>${METHOD[p.payment_method] || ''}${p.transaction_reference ? `<div class="muted" style="font-size:12px">${esc(p.transaction_reference)}</div>` : ''}</td><td>${{ succeeded: 'Validé', failed: 'Rejeté', cancelled: 'Annulé', refunded: 'Remboursé' }[p.status] || esc(p.status)}</td><td class="r">${fcfa(p.amount)}</td></tr>`).join('') || '<tr><td colspan="6" class="muted">Aucun paiement.</td></tr>'}</tbody></table></div></div>`;
+  }
 
-    <div class="card"><h3 style="font-size:20px;margin-bottom:10px">Formules et prix</h3>
-      <div class="tablewrap"><table class="table"><thead><tr><th>Formule</th><th>Mensuel (FCFA)</th><th>Annuel (FCFA)</th><th>Chambres max</th><th>Utilisateurs max</th><th>Active</th><th><span class="sr-only">Actions</span></th></tr></thead><tbody>
-      ${(plans.data || []).map(p => `<tr><td><strong>${esc(p.name)}</strong>${p.is_trial ? ' <span class="muted">(essai)</span>' : ''}</td>
-        <td><input type="number" min="0" id="pm-${esc(p.id)}" value="${p.monthly_price}" aria-label="Prix mensuel ${esc(p.name)}" style="max-width:130px"></td>
-        <td><input type="number" min="0" id="py-${esc(p.id)}" value="${p.yearly_price ?? ''}" placeholder="Sur devis" aria-label="Prix annuel ${esc(p.name)}" style="max-width:130px"></td>
-        <td><input type="number" min="1" id="pr-${esc(p.id)}" value="${p.max_rooms ?? ''}" placeholder="Illimité" aria-label="Chambres max ${esc(p.name)}" style="max-width:110px"></td>
-        <td><input type="number" min="1" id="pu-${esc(p.id)}" value="${p.max_users ?? ''}" placeholder="Illimité" aria-label="Utilisateurs max ${esc(p.name)}" style="max-width:110px"></td>
+  if (tab === 'naya') {
+    const m = N.month || today().slice(0, 8) + '01';
+    const listedEst = C.flatMap(c => (c.establishments_list || []).filter(e => e.listed || e.commission_pct != null).map(e => ({ ...e, org: c.name })));
+    body = `<div class="card" style="margin-bottom:16px"><div class="row between" style="margin-bottom:10px;flex-wrap:wrap;gap:8px"><h3 style="font-size:20px">Commissions NAYA — ${new Date(m + 'T00:00:00').toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}</h3>
+      <label class="row" style="gap:6px">Mois <input type="month" id="admMonth" value="${m.slice(0, 7)}" style="max-width:170px"></label></div>
+      <p class="muted" style="margin-bottom:10px">Séjours NAYA dont l’arrivée tombe dans le mois. Les demandes en attente et les annulations ne génèrent pas de commission.</p>
+      <div class="tablewrap"><table class="table"><thead><tr><th>Établissement</th><th class="r">Réservations</th><th class="r">En attente</th><th class="r">Annulées</th><th class="r">Chiffre d’affaires</th><th class="r">Commission due</th></tr></thead><tbody>
+      ${(N.rows || []).map(r => `<tr><td><strong>${esc(r.establishment)}</strong><div class="muted" style="font-size:12px">${esc(r.organization)}</div></td><td class="r">${r.bookings}</td><td class="r">${r.pending}</td><td class="r">${r.cancelled}</td><td class="r">${fcfa(r.revenue)}</td><td class="r"><strong>${fcfa(r.commission)}</strong></td></tr>`).join('') || '<tr><td colspan="6" class="muted">Aucune réservation NAYA ce mois.</td></tr>'}
+      ${(N.rows || []).length ? `<tr><td colspan="5" class="r"><strong>Total dû</strong></td><td class="r"><strong>${fcfa(nayaDue)}</strong></td></tr>` : ''}</tbody></table></div></div>
+      <div class="card"><h3 style="font-size:20px;margin-bottom:10px">Établissements inscrits sur NAYA</h3>
+      <div class="tablewrap"><table class="table"><thead><tr><th>Établissement</th><th>État</th><th>Commission</th><th><span class="sr-only">Actions</span></th></tr></thead><tbody>
+      ${listedEst.map(e => `<tr><td><strong>${esc(e.name)}</strong><div class="muted" style="font-size:12px">${esc(e.org)}${e.slug ? ` · <a href="${NAYA_URL}/#/hotel/${encodeURIComponent(e.slug)}" target="_blank" rel="noopener">voir la fiche</a>` : ''}</div></td>
+        <td>${e.listed ? '<span class="pill st-active">En ligne</span>' : '<span class="pill st-cancelled">Retiré</span>'}</td>
+        <td><div class="row" style="gap:6px"><input type="number" min="0" max="50" step="0.5" id="com-${esc(e.id)}" value="${e.commission_pct ?? 10}" aria-label="Commission ${esc(e.name)} en pourcentage" style="max-width:90px"> %<button class="small" data-setcom="${esc(e.id)}">OK</button></div></td>
+        <td><button class="small ${e.listed ? 'ghost' : 'primary'}" data-listing="${esc(e.id)}" data-on="${e.listed ? '0' : '1'}">${e.listed ? 'Retirer de NAYA' : 'Remettre en ligne'}</button></td></tr>`).join('') || '<tr><td colspan="4" class="muted">Aucun établissement ne s’est encore inscrit.</td></tr>'}</tbody></table></div></div>`;
+  }
+
+  if (tab === 'formules') {
+    body = `<div class="card"><h3 style="font-size:20px;margin-bottom:10px">Formules et prix</h3>
+      <div class="tablewrap"><table class="table"><thead><tr><th>Formule</th><th>Mensuel (FCFA)</th><th>Annuel (FCFA)</th><th>Chambres max</th><th>Utilisateurs max</th><th>Établ. max</th><th>Clients</th><th>Active</th><th><span class="sr-only">Actions</span></th></tr></thead><tbody>
+      ${(plans.data || []).map(p => `<tr><td><strong>${esc(p.name)}</strong>${p.is_trial ? ' <span class="muted">(essai)</span>' : ''}${p.is_public ? '' : ' <span class="muted">(cachée)</span>'}</td>
+        <td><input type="number" min="0" id="pm-${esc(p.id)}" value="${p.monthly_price}" aria-label="Prix mensuel ${esc(p.name)}" style="max-width:120px"></td>
+        <td><input type="number" min="0" id="py-${esc(p.id)}" value="${p.yearly_price ?? ''}" placeholder="Sur devis" aria-label="Prix annuel ${esc(p.name)}" style="max-width:120px"></td>
+        <td><input type="number" min="1" id="pr-${esc(p.id)}" value="${p.max_rooms ?? ''}" placeholder="Illimité" aria-label="Chambres max ${esc(p.name)}" style="max-width:100px"></td>
+        <td><input type="number" min="1" id="pu-${esc(p.id)}" value="${p.max_users ?? ''}" placeholder="Illimité" aria-label="Utilisateurs max ${esc(p.name)}" style="max-width:100px"></td>
+        <td><input type="number" min="1" id="pe-${esc(p.id)}" value="${p.max_properties ?? ''}" placeholder="Illimité" aria-label="Établissements max ${esc(p.name)}" style="max-width:100px"></td>
+        <td>${C.filter(c => c.plan_slug === p.slug).length}</td>
         <td><input type="checkbox" id="pa-${esc(p.id)}" ${p.is_active ? 'checked' : ''} aria-label="Formule ${esc(p.name)} active" style="width:22px;min-height:22px"></td>
         <td><button class="small" data-saveplan="${esc(p.id)}">Enregistrer</button></td></tr>`).join('')}
-      </tbody></table></div></div>`;
+      </tbody></table></div><p class="muted" style="margin-top:10px">Un changement de prix s’applique aux nouveaux paiements ; les abonnements en cours gardent leur échéance.</p></div>`;
+  }
+
+  el.innerHTML = `<div class="eyebrow">Administrateur plateforme</div><h1 style="font-size:34px;margin:4px 0 16px">Tableau de bord</h1>${tabs}${body}`;
+  el.querySelectorAll('[data-admtab]').forEach(b => b.onclick = () => { S._admTab = b.dataset.admtab; renderAdmin(); });
+  el.querySelectorAll('[data-admfil]').forEach(b => b.onclick = () => { S._admFilter = b.dataset.admfil; renderAdmin(); });
+  el.querySelectorAll('[data-manage]').forEach(b => b.onclick = () => openAdminClient(C.find(c => c.id === b.dataset.manage), plans.data || []));
+  const ss = $('subSearch'); if (ss) ss.oninput = (e) => { const q = e.target.value.toLowerCase(); $('subRows').querySelectorAll('tr[data-name]').forEach(r => r.classList.toggle('hidden', !r.dataset.name.includes(q))); };
+  const am = $('admMonth'); if (am) am.onchange = () => { S._admMonth = am.value ? am.value + '-01' : null; renderAdmin(); };
   const num = (id) => { const v = $(id).value.trim(); return v === '' ? null : parseInt(v, 10); };
-  $('subSearch').oninput = (e) => { const q = e.target.value.toLowerCase(); $('subRows').querySelectorAll('tr[data-name]').forEach(r => r.classList.toggle('hidden', !r.dataset.name.includes(q))); };
   el.querySelectorAll('[data-confirm]').forEach(b => b.onclick = async () => {
     const ref = $('ref-' + b.dataset.confirm).value.trim();
     if (!ref) return toast('Saisissez la référence de la transaction avant de valider.', true);
@@ -1719,22 +1784,57 @@ async function renderAdmin(){
     toast('Paiement validé – facture ' + (data.invoice || '') + ' émise.'); renderAdmin();
   });
   el.querySelectorAll('[data-fail]').forEach(b => b.onclick = async () => {
+    if (!confirm('Rejeter ce paiement ?')) return;
     const { error } = await sb.rpc('fail_subscription_payment', { p_payment_id: b.dataset.fail, p_reason: 'Rejeté par l’administrateur' });
     if (error) return toast(errMsg(error), true); toast('Paiement rejeté.'); renderAdmin();
   });
-  el.querySelectorAll('[data-extend]').forEach(b => b.onclick = async () => {
-    const { error } = await sb.rpc('admin_extend_trial', { p_org: b.dataset.extend, p_days: 15 });
-    if (error) return toast(errMsg(error), true); toast("Essai prolongé de 15 jours."); renderAdmin();
+  el.querySelectorAll('[data-setcom]').forEach(b => b.onclick = async () => {
+    const v = Number($('com-' + b.dataset.setcom).value);
+    const { error } = await sb.rpc('marketplace_set_commission', { p_establishment: b.dataset.setcom, p_pct: v });
+    if (error) return toast(errMsg(error), true); toast(`Commission fixée à ${v} % pour les prochaines réservations.`);
   });
-  el.querySelectorAll('[data-status]').forEach(b => b.onclick = async () => {
-    const { error } = await sb.rpc('admin_set_subscription_status', { p_org: b.dataset.org, p_status: b.dataset.status, p_until: null, p_reason: b.dataset.status === 'suspended' ? 'Suspension administrative' : null });
-    if (error) return toast(errMsg(error), true); toast('Statut mis à jour.'); renderAdmin();
+  el.querySelectorAll('[data-listing]').forEach(b => b.onclick = async () => {
+    const on = b.dataset.on === '1';
+    if (!on && !confirm('Retirer cet établissement de NAYA ? Il ne recevra plus de réservations en ligne.')) return;
+    const { error } = await sb.rpc('admin_marketplace_listing', { p_establishment: b.dataset.listing, p_listed: on });
+    if (error) return toast(errMsg(error), true); toast(on ? 'Remis en ligne sur NAYA.' : 'Retiré de NAYA.'); renderAdmin();
   });
   el.querySelectorAll('[data-saveplan]').forEach(b => b.onclick = async () => {
     const id = b.dataset.saveplan;
-    const { error } = await sb.from('plans').update({ monthly_price: num('pm-' + id) ?? 0, yearly_price: num('py-' + id), max_rooms: num('pr-' + id), max_users: num('pu-' + id), is_active: $('pa-' + id).checked }).eq('id', id);
+    const { error } = await sb.from('plans').update({ monthly_price: num('pm-' + id) ?? 0, yearly_price: num('py-' + id), max_rooms: num('pr-' + id), max_users: num('pu-' + id), max_properties: num('pe-' + id), is_active: $('pa-' + id).checked }).eq('id', id);
     if (error) return toast(errMsg(error), true); toast('Formule enregistrée.');
   });
+}
+function openAdminClient(c, plans){
+  if (!c) return;
+  const fl = admFlag(c);
+  const paid = plans.filter(p => p.is_active && !p.is_trial);
+  modal(`<div class="eyebrow">Client</div><h2 style="font-size:24px;margin:4px 0 4px">${esc(c.name)}</h2>
+    <p class="muted" style="margin-bottom:14px">${esc(c.owner_email || '')}${c.phone ? ' · ' + esc(c.phone) : ''} · <span class="pill ${fl[1]}">${esc(fl[0] === 'OK' ? (STATUS[c.status] || c.status) : fl[0])}</span></p>
+    <div class="grid g5" style="margin-bottom:16px">
+      <div class="card kpi"><div class="l">Formule</div><div class="v" style="font-size:18px">${esc(c.plan || '—')}</div><div class="muted" style="font-size:12px">${c.billing_cycle === 'free' ? 'sans échéance' : 'jusqu’au ' + date(admEnd(c))}</div></div>
+      <div class="card kpi"><div class="l">Utilisation</div><div class="v" style="font-size:18px">${c.rooms} ch. · ${c.users} util.</div><div class="muted" style="font-size:12px">${c.reservations_30d} réservations sur 30 j</div></div>
+      <div class="card kpi"><div class="l">Déjà payé</div><div class="v" style="font-size:18px">${fcfa(c.paid_total)}</div><div class="muted" style="font-size:12px">dernière activité ${c.last_activity ? date(c.last_activity) : '—'}</div></div>
+    </div>
+    <h3 style="font-size:17px;margin-bottom:8px">Changer la formule</h3>
+    <div class="row" style="gap:8px;flex-wrap:wrap;margin-bottom:6px">
+      <label class="sr-only" for="acPlan">Formule</label><select id="acPlan">${paid.map(p => `<option value="${esc(p.slug)}" ${p.slug === c.plan_slug ? 'selected' : ''}>${esc(p.name)} — ${fcfa(p.monthly_price)}/mois</option>`).join('')}</select>
+      <label class="sr-only" for="acCycle">Périodicité</label><select id="acCycle"><option value="monthly">Mensuel</option><option value="yearly">Annuel</option></select>
+      <label class="sr-only" for="acMonths">Durée offerte ou payée</label><select id="acMonths">${[[1, '+1 mois'], [3, '+3 mois'], [6, '+6 mois'], [12, '+12 mois'], [0, 'Sans prolonger']].map(([v, l]) => `<option value="${v}">${l}</option>`).join('')}</select>
+      <button class="primary small" id="acSave">Appliquer</button></div>
+    <p class="muted" style="font-size:12px;margin-bottom:16px">À utiliser pour un paiement reçu hors application, un geste commercial ou une migration. L’opération est tracée.</p>
+    <h3 style="font-size:17px;margin-bottom:8px">Actions rapides</h3>
+    <div class="row" style="gap:8px;flex-wrap:wrap">
+      ${c.billing_cycle === 'trial' ? '<button class="small" id="acTrial">Prolonger l’essai de 15 jours</button>' : ''}
+      ${['suspended', 'expired'].includes(c.status) ? '<button class="small primary" id="acOn">Réactiver 1 mois</button>' : '<button class="small ghost" id="acOff">Suspendre</button>'}
+      ${waPhone(c.phone) ? `<a class="small ghost btn" style="text-decoration:none" target="_blank" rel="noopener" href="https://wa.me/${waPhone(c.phone)}">Écrire sur WhatsApp</a>` : ''}
+      ${c.owner_email ? `<a class="small ghost btn" style="text-decoration:none" href="mailto:${esc(c.owner_email)}">Envoyer un e-mail</a>` : ''}
+    </div>`);
+  const act = async (fn, args, ok) => { const { error } = await sb.rpc(fn, args); if (error) return toast(errMsg(error), true); toast(ok); closeModal(); renderAdmin(); };
+  $('acSave').onclick = () => { const pl = $('acPlan').value, m = Number($('acMonths').value); if (confirm(`Passer « ${c.name} » en ${$('acPlan').selectedOptions[0].text.split(' — ')[0]}${m ? ` pour ${m} mois` : ''} ?`)) act('admin_change_plan', { p_org: c.id, p_plan_slug: pl, p_cycle: $('acCycle').value, p_months: m }, 'Formule mise à jour.'); };
+  if ($('acTrial')) $('acTrial').onclick = () => act('admin_extend_trial', { p_org: c.id, p_days: 15 }, 'Essai prolongé de 15 jours.');
+  if ($('acOn')) $('acOn').onclick = () => act('admin_set_subscription_status', { p_org: c.id, p_status: 'active', p_until: null, p_reason: null }, 'Abonnement réactivé.');
+  if ($('acOff')) $('acOff').onclick = () => { const r = prompt('Motif de la suspension (visible dans l’historique) :', 'Impayé'); if (r !== null) act('admin_set_subscription_status', { p_org: c.id, p_status: 'suspended', p_until: null, p_reason: r || 'Suspension administrative' }, 'Client suspendu.'); };
 }
 
 /* ================= Modules métier ================= */
@@ -2104,7 +2204,7 @@ async function openNaya(){
         ${owner ? `<button class="${L.listed ? 'ghost' : 'primary'}" id="nyToggle">${L.listed ? 'Retirer de NAYA' : 'Publier sur NAYA'}</button>` : ''}</div>
         ${L.listed ? `<label class="row" style="gap:8px;margin:12px 0 0;font-weight:600;flex-wrap:nowrap;color:var(--ink)"><input type="checkbox" id="nyAuto" ${L.auto_confirm ? 'checked' : ''} ${owner ? '' : 'disabled'} style="width:20px;min-height:20px"> Confirmer automatiquement les réservations NAYA</label>
           <p class="muted" style="font-size:12px;margin:4px 0 0">Sinon, elles arrivent « en attente » dans Réservations → Demandes en ligne, et vous les confirmez.</p>
-          ${slug ? `<p style="font-size:13px;margin:10px 0 0">Votre fiche : <a href="${NAYA_URL}/hotel/${esc(slug)}" target="_blank" rel="noopener">${NAYA_URL.replace('https://', '')}/hotel/${esc(slug)}</a></p>` : ''}` : (owner ? `<p class="muted" style="font-size:12px;margin:10px 0 0">En publiant, vous acceptez la commission indiquée et les conditions partenaires NAYA. Pensez à ajouter des photos de vos chambres.</p>` : '')}
+          ${slug ? `<p style="font-size:13px;margin:10px 0 0">Votre fiche : <a href="${NAYA_URL}/#/hotel/${esc(slug)}" target="_blank" rel="noopener">${NAYA_URL.replace("https://", "")}/#/hotel/${esc(slug)}</a></p>` : ''}` : (owner ? `<p class="muted" style="font-size:12px;margin:10px 0 0">En publiant, vous acceptez la commission indiquée et les conditions partenaires NAYA. Pensez à ajouter des photos de vos chambres.</p>` : '')}
       </div>
       <div class="row between" style="margin-bottom:8px;gap:8px"><h3 style="font-size:18px">Réservations NAYA · ${mLabel}</h3><div class="row" style="gap:6px"><button class="small ghost" id="nyPrev" aria-label="Mois précédent">←</button><button class="small ghost" id="nyNext" aria-label="Mois suivant">→</button></div></div>
       <div class="grid" style="grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:12px">

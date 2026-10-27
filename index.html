@@ -954,7 +954,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.10.27-08';
+const APP_VERSION = '2026.10.27-09';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -1719,6 +1719,8 @@ function renderTarifs(){
   if (q) q.onclick = () => modal(`<h2 style="font-size:24px;margin-bottom:10px">Formule Enterprise</h2><p class="muted">La formule Enterprise est établie sur devis selon le nombre d'établissements, de villes et les intégrations souhaitées. Votre demande est à adresser à l'administrateur de la plateforme, qui activera la formule après accord.</p><button class="primary" data-close>Fermer</button>`);
 }
 
+/* Paiement en ligne : désactivé tant que l'agrégateur n'est pas branché (boutons réservés). */
+const PAY_ONLINE = false;
 function openCheckout(slug, cycle){
   if (!['owner','admin'].includes(S.member.role)) return toast("Seul le propriétaire ou un administrateur peut gérer l'abonnement.", true);
   const p = S.plans.find(x => x.slug === slug); if (!p) return;
@@ -1727,9 +1729,10 @@ function openCheckout(slug, cycle){
   modal(`<h2 style="font-size:24px">${esc(p.name)} · ${CYCLE[cycle]}</h2>
     <p style="font-size:28px;font-weight:700;margin:10px 0 2px">${fcfa(amount)}</p>
     <p class="muted" style="margin:0 0 16px">${cycle === 'yearly' ? 'Valable 1 an' : 'Valable 1 mois'} à compter de l'activation.</p>
-    ${S.providers.length ? `<div class="field"><label for="payMethod">Moyen de paiement</label><select id="payMethod">${opts}</select></div>
-      <p class="muted" style="font-size:13px">Les paiements Mobile Money et carte seront proposés dès l'ouverture de ces services.</p>
-      <div class="row"><button class="primary" id="payGo">Confirmer la demande</button><button class="ghost" data-close>Annuler</button></div>`
+    ${!PAY_ONLINE ? `<div class="card" style="background:var(--green-l);border-color:var(--green-l);margin:0 0 14px;padding:14px 16px"><strong>Paiement en ligne bientôt disponible</strong><p class="muted" style="margin:6px 0 0;font-size:14px">Wave, Orange Money, MTN, Moov et carte bancaire arrivent prochainement. En attendant, demandez l’activation : notre équipe vous contacte pour le règlement.</p></div>` : ''}
+    ${S.providers.length ? `<div class="field"${PAY_ONLINE ? '' : ' hidden'}><label for="payMethod">Moyen de paiement</label><select id="payMethod">${opts}</select></div>
+      
+      <div class="row"><button class="primary" id="payGo">${PAY_ONLINE ? 'Payer' : 'Demander l’activation'}</button><button class="ghost" data-close>Annuler</button></div>`
       : `<p class="muted">Aucun moyen de paiement n'est disponible pour le moment.</p><button class="ghost" data-close>Fermer</button>`}`);
   const g = $('payGo'); if (!g) return;
   g.onclick = async () => {
@@ -1740,7 +1743,7 @@ function openCheckout(slug, cycle){
     const ref = String(data).slice(0, 8).toUpperCase();
     modal(`<h2 style="font-size:24px">Demande enregistrée</h2>
       <p>Référence de paiement : <strong>${ref}</strong> — montant : <strong>${fcfa(amount)}</strong>.</p>
-      <p class="muted">${method === 'bank_transfer' ? 'Effectuez le virement en indiquant cette référence.' : 'Réglez ce montant en espèces en indiquant cette référence.'} Votre abonnement sera activé dès la validation du paiement.</p>
+      <p class="muted">${PAY_ONLINE ? (method === 'bank_transfer' ? 'Effectuez le virement en indiquant cette référence.' : 'Réglez ce montant en espèces en indiquant cette référence.') : 'Notre équipe vous contacte rapidement pour le règlement.'} Votre abonnement sera activé dès la validation du paiement.</p>
       <button class="primary" data-close>Compris</button>`);
     await loadCommon(); if (S.view === 'abonnement') renderAbonnement();
   };

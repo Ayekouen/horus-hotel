@@ -693,6 +693,10 @@ button.st-it,html[data-theme] button.st-it{display:flex;width:100%;align-items:c
 .st-t{flex:1;min-width:0}.st-d{display:block;font-size:12.5px;color:var(--muted);font-weight:400;margin-top:1px}.st-v{color:var(--muted);font-size:13px}.st-ch{color:var(--muted);font-size:20px;line-height:1}
 button.st-out,html[data-theme] button.st-out{width:100%;margin-top:18px;min-height:48px;border:1px solid var(--line)!important;background:var(--card)!important;color:#B42318!important;font-weight:600;border-radius:12px!important;box-shadow:none!important}
 #navMore .menu > button:not(.keep){display:none!important}
+.loc-sug{position:absolute;left:0;right:0;top:100%;z-index:30;background:var(--card);border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 30px rgba(16,24,40,.12);max-height:280px;overflow:auto;margin-top:4px}
+.loc-sug button,html[data-theme] .loc-sug button{display:grid;grid-template-columns:1fr auto;width:100%;text-align:left;border:0!important;border-bottom:1px solid var(--line)!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;padding:9px 12px;min-height:0;gap:0 8px}
+.loc-sug button span{grid-column:1;font-size:12px;color:var(--muted);font-weight:400}.loc-sug button em{grid-row:1/3;grid-column:2;align-self:center;font-style:normal;font-size:11px;color:var(--muted);text-transform:capitalize}
+.loc-sug button:hover{background:var(--bg)!important}
 </style>
 </head>
 <body>
@@ -955,7 +959,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.10.27-12';
+const APP_VERSION = '2026.10.27-13';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -1955,7 +1959,7 @@ async function openRoomForm(room, refresh, types){
 
 /* ---------- Administration plateforme ---------- */
 /* ================= Tableau de bord administrateur plateforme ================= */
-const ADM_TABS = [['apercu', 'Vue d’ensemble'], ['clients', 'Clients'], ['paiements', 'Paiements'], ['naya', 'Nuittea'], ['formules', 'Formules']];
+const ADM_TABS = [['apercu', 'Vue d’ensemble'], ['clients', 'Clients'], ['paiements', 'Paiements'], ['naya', 'Nuittea'], ['formules', 'Formules'], ['lieux', 'Lieux']];
 const admDays = (d) => d ? Math.ceil((new Date(d) - Date.now()) / 86400000) : null;
 const admEnd = (c) => c.billing_cycle === 'trial' ? c.trial_end_at : c.period_end;
 function admFlag(c){
@@ -1989,7 +1993,7 @@ async function renderAdmin(){
   if (tab === 'apercu') {
     const top = (s.plans_usage || [])[0];
     body = `<div class="grid g5" style="margin-bottom:18px">
-      ${k('Mon chiffre d’affaires encaissé', fcfa(Number(s.revenue_current_year || 0) + comPaid), 'abonnements de l’année + commissions Nuittea réglées')}${k('Commissions Nuittea à encaisser', fcfa(comDue), comLate ? `<span style="color:var(--red)">dont ${fcfa(comLate)} en retard</span>` : 'aucun retard')}
+      ${k('Commissions Nuittea gagnées', fcfa(NP.reduce((a, x) => a + Number(x.earned || 0), 0)), 'séjours réalisés via Nuittea.com')}
       ${k('Revenu mensuel récurrent', fcfa(s.mrr), 'abonnements payants actifs')}${k('Encaissé ce mois', fcfa(s.revenue_current_month))}${k('Encaissé cette année', fcfa(s.revenue_current_year))}${k('Commissions Nuittea du mois', fcfa(nayaDue), `${(N.rows || []).reduce((a, r) => a + Number(r.bookings), 0)} réservation(s) · ${N.listed || 0} en ligne`)}${k('Paiements à valider', P.length)}
       ${k('Clients', real.length, `${C.length - real.length} compte(s) de test`)}${k('Abonnements actifs', s.subscriptions_active)}${k('Essais en cours', s.trials_active, `${s.trials_expired} expiré(s)`)}${k('Chambres gérées', s.rooms)}${k('Utilisateurs', s.users)}
     </div>
@@ -2032,18 +2036,13 @@ async function renderAdmin(){
 
   if (tab === 'naya') {
     const msg = (x) => `Bonjour, ici l’équipe Nuittea. Votre solde de commissions Nuittea est de ${fcfa(x.balance)}${Number(x.overdue) > 0 ? ` (dont ${fcfa(x.overdue)} en retard)` : ''}. ${PS.naya_payment_instructions ? 'Modalités de paiement : ' + PS.naya_payment_instructions : 'Merci de procéder au règlement.'} Merci de votre confiance.`;
-    const partners = `<div class="card" style="margin-bottom:16px"><div class="row between" style="margin-bottom:10px;flex-wrap:wrap;gap:8px"><h3 style="font-size:20px">Partenaires Nuittea et commissions</h3>
-      <div class="row" style="gap:14px;font-size:14px"><span>À encaisser <strong>${fcfa(comDue)}</strong></span><span>En retard <strong style="color:${comLate ? 'var(--red)' : 'inherit'}">${fcfa(comLate)}</strong></span><span>Déjà encaissé <strong>${fcfa(comPaid)}</strong></span></div></div>
-      <div class="tablewrap"><table class="table"><thead><tr><th>Partenaire</th><th class="r">Séjours</th><th class="r">CA généré</th><th class="r">Commission due</th><th class="r">Réglé</th><th class="r">Solde</th><th>Dernier paiement</th><th><span class="sr-only">Actions</span></th></tr></thead><tbody>
+    const partners = `<div class="card" style="margin-bottom:16px"><div class="row between" style="margin-bottom:10px;flex-wrap:wrap;gap:8px"><h3 style="font-size:20px">Partenaires Nuittea</h3>
+      <div class="row" style="gap:14px;font-size:14px"><span>Commissions gagnées <strong>${fcfa(NP.reduce((a, x) => a + Number(x.earned || 0), 0))}</strong></span></div></div>
+      <div class="tablewrap"><table class="table"><thead><tr><th>Partenaire</th><th class="r">Séjours</th><th class="r">CA généré</th><th class="r">Commission</th></tr></thead><tbody>
       ${NP.map(x => `<tr><td><strong>${esc(x.name)}</strong>${x.listed ? '' : ' <span class="pill st-cancelled">hors ligne</span>'}<div class="muted" style="font-size:12px">${esc(x.email || '')}${x.phone ? ' · ' + esc(x.phone) : ''} · ${Number(x.commission_pct || 0)} %</div></td>
-        <td class="r">${x.bookings_done}<div class="muted" style="font-size:12px">${x.bookings} au total</div></td><td class="r">${fcfa(x.revenue)}</td><td class="r">${fcfa(x.earned)}</td><td class="r">${fcfa(x.paid)}</td>
-        <td class="r"><strong style="color:${Number(x.overdue) > 0 ? 'var(--red)' : Number(x.balance) > 0 ? '#9A5B00' : 'var(--ok,#1F7AB8)'}">${fcfa(x.balance)}</strong>${Number(x.overdue) > 0 ? `<div style="font-size:12px;color:var(--red)">${fcfa(x.overdue)} en retard</div>` : ''}</td>
-        <td>${x.last_payment ? date(x.last_payment) : '<span class="muted">—</span>'}</td>
-        <td class="row" style="gap:6px">${Number(x.balance) > 0 ? `<button class="small primary" data-cpay="${esc(x.id)}">Enregistrer un paiement</button>` : ''}${Number(x.balance) > 0 && waPhone(x.phone) ? `<a class="small ghost btn" style="text-decoration:none" target="_blank" rel="noopener" href="https://wa.me/${waPhone(x.phone)}?text=${encodeURIComponent(msg(x))}">Relancer</a>` : ''}</td></tr>`).join('') || '<tr><td colspan="8" class="muted">Aucun partenaire Nuittea pour le moment.</td></tr>'}</tbody></table></div>
-      <p class="muted" style="font-size:12px;margin-top:8px">Une commission est due dès l’arrivée du client (séjours confirmés, en cours ou terminés). Elle passe « en retard » après ${esc(PS.naya_payment_delay_days || '7')} jours. Les comptes de test ne sont pas comptés.</p></div>
-      <form class="card" id="psForm" style="margin-bottom:16px"><h3 style="font-size:18px;margin-bottom:8px">Modalités de paiement affichées aux partenaires</h3>
-        <div class="field"><label for="psIns">Instructions (numéro Wave / Orange Money, nom du bénéficiaire…)</label><textarea id="psIns" rows="3" maxlength="1000" placeholder="ex. Wave : 07 00 00 00 00 (Nuittea) — indiquez le nom de votre hôtel en référence.">${esc(PS.naya_payment_instructions || '')}</textarea></div>
-        <div class="row" style="gap:10px;align-items:flex-end;flex-wrap:wrap"><div class="field" style="margin:0"><label for="psDel">Délai de paiement (jours après l’arrivée)</label><input id="psDel" type="number" min="0" max="60" value="${esc(PS.naya_payment_delay_days || '7')}" style="max-width:120px"></div><button class="primary">Enregistrer</button></div></form>`;
+        <td class="r">${x.bookings_done}<div class="muted" style="font-size:12px">${x.bookings} au total</div></td><td class="r">${fcfa(x.revenue)}</td><td class="r">${fcfa(x.earned)}</td></tr>`).join('') || '<tr><td colspan="4" class="muted">Aucun partenaire pour l’instant.</td></tr>'}
+      </tbody></table></div>
+      <p class="muted" style="font-size:12px;margin-top:8px">La commission sera retenue automatiquement par l’agrégateur de paiement au moment du paiement en ligne. Les comptes de test ne sont pas comptés.</p></div>`;
     const m = N.month || today().slice(0, 8) + '01';
     const listedEst = C.flatMap(c => (c.establishments_list || []).filter(e => e.listed || e.commission_pct != null).map(e => ({ ...e, org: c.name })));
     body = partners + `<div class="card" style="margin-bottom:16px"><div class="row between" style="margin-bottom:10px;flex-wrap:wrap;gap:8px"><h3 style="font-size:20px">Commissions Nuittea — ${new Date(m + 'T00:00:00').toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}</h3>
@@ -2075,8 +2074,33 @@ async function renderAdmin(){
       </tbody></table></div><p class="muted" style="margin-top:10px">Un changement de prix s’applique aux nouveaux paiements ; les abonnements en cours gardent leur échéance.</p></div>`;
   }
 
+  if (tab === 'lieux') {
+    const { data: LX, error: lxErr } = await sb.rpc('admin_localities');
+    const L = LX || [], f = S._lxFil || 'propose', q = _lxN(S._lxQ || '');
+    const kinds = { ville: 'Ville', commune: 'Commune', quartier: 'Quartier' }, stl = { valide: 'Validé', propose: 'À valider', rejete: 'Rejeté' };
+    const rows = L.filter(x => (f === 'all' || x.status === f) && (!q || _lxN(x.label + ' ' + (x.aliases || []).join(' ')).includes(q)));
+    const nP = L.filter(x => x.status === 'propose').length;
+    const opts = (sel) => L.filter(x => x.kind !== 'quartier' && x.status === 'valide').map(x => `<option value="${x.id}" ${sel === x.id ? 'selected' : ''}>${esc(x.label)}</option>`).join('');
+    S._lxAll = L; S._lxOpts = opts;
+    body = `<div class="card"><div class="row" style="justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px"><h3 style="font-size:20px;margin:0">Lieux (${L.length})</h3><button class="small primary" data-lxedit="">Ajouter un lieu</button></div>
+      <p class="muted" style="margin:0 0 12px">Liste officielle des villes, communes et quartiers utilisée par les hôtels et la recherche Nuittea.com. Validez les quartiers proposés par les hôtels, ou fusionnez-les avec un lieu existant s’il s’agit d’un doublon.</p>
+      <div class="row" style="gap:6px;flex-wrap:wrap;margin-bottom:12px">${[['propose', `À valider (${nP})`], ['valide', 'Validés'], ['rejete', 'Rejetés'], ['all', 'Tous']].map(([id, l]) => `<button class="small ${f === id ? 'primary' : 'ghost'}" data-lxfil="${id}">${l}</button>`).join('')}
+        <input id="lxQ" placeholder="Rechercher…" value="${esc(S._lxQ || '')}" style="flex:1;min-width:160px;max-width:280px"></div>
+      ${lxErr ? `<p class="muted">${esc(errMsg(lxErr))}</p>` : rows.length ? `<div class="tablewrap"><table class="table"><thead><tr><th>Lieu</th><th>Type</th><th>Statut</th><th>Hôtels</th><th>Proposé par</th><th>Carte</th><th></th></tr></thead><tbody>
+      ${rows.slice(0, 300).map(x => `<tr><td><strong>${esc(x.name)}</strong><div class="muted" style="font-size:12px">${esc(x.label)}${(x.aliases || []).length ? ' · aussi : ' + esc(x.aliases.join(', ')) : ''}</div></td><td>${kinds[x.kind] || x.kind}</td><td>${stl[x.status] || x.status}</td><td>${x.hotels}</td><td>${esc(x.proposed_by || '—')}</td><td>${x.lat ? 'Oui' : '—'}</td>
+        <td style="white-space:nowrap">${x.status === 'propose' ? `<button class="small primary" data-lxok="${x.id}">Valider</button> ` : ''}<button class="small ghost" data-lxedit="${x.id}">Modifier</button> <button class="small ghost" data-lxmerge="${x.id}">Fusionner</button></td></tr>`).join('')}
+      </tbody></table></div>` : `<p class="muted">Aucun lieu dans cette liste.</p>`}</div>`;
+  }
+
   el.innerHTML = `<div class="eyebrow">Administrateur plateforme</div><h1 style="font-size:34px;margin:4px 0 16px">Tableau de bord</h1>${tabs}${body}`;
   el.querySelectorAll('[data-admtab]').forEach(b => b.onclick = () => { S._admTab = b.dataset.admtab; renderAdmin(); });
+  el.querySelectorAll('[data-lxfil]').forEach(b => b.onclick = () => { S._lxFil = b.dataset.lxfil; renderAdmin(); });
+  if ($('lxQ')) { let t; $('lxQ').oninput = () => { clearTimeout(t); t = setTimeout(() => { S._lxQ = $('lxQ').value; const pos = $('lxQ').value.length; renderAdmin().then(() => { const i = $('lxQ'); if (i) { i.focus(); i.setSelectionRange(pos, pos); } }); }, 300); }; }
+  el.querySelectorAll('[data-lxok]').forEach(b => b.onclick = async () => { const x = S._lxAll.find(y => y.id === b.dataset.lxok); b.disabled = true;
+    const { error } = await sb.rpc('admin_locality_save', { p_id: x.id, p_kind: x.kind, p_name: x.name, p_parent: x.parent_id, p_aliases: x.aliases, p_lat: x.lat, p_lng: x.lng, p_status: 'valide' });
+    if (error) { b.disabled = false; return toast(errMsg(error), true); } toast('Lieu validé.'); renderAdmin(); });
+  el.querySelectorAll('[data-lxedit]').forEach(b => b.onclick = () => openLocalityEdit(S._lxAll.find(y => y.id === b.dataset.lxedit) || null));
+  el.querySelectorAll('[data-lxmerge]').forEach(b => b.onclick = () => openLocalityMerge(S._lxAll.find(y => y.id === b.dataset.lxmerge)));
   el.querySelectorAll('[data-admfil]').forEach(b => b.onclick = () => { S._admFilter = b.dataset.admfil; renderAdmin(); });
   el.querySelectorAll('[data-manage]').forEach(b => b.onclick = () => openAdminClient(C.find(c => c.id === b.dataset.manage), plans.data || []));
   if ($('admNewTest')) $('admNewTest').onclick = openNewTestAccount;
@@ -2202,7 +2226,7 @@ const can = (roles) => S.member && roles.includes(S.member.role);
 
 async function loadEst(){
   const [e, r] = await Promise.all([
-    sb.from('establishments').select('id,name,city,address,phone,slug,public_enabled,public_logo_url,public_phone,receipt_settings').eq('organization_id', S.org).eq('is_active', true).order('created_at'),
+    sb.from('establishments').select('id,name,city,address,phone,slug,public_enabled,public_logo_url,public_phone,receipt_settings,locality_id,latitude').eq('organization_id', S.org).eq('is_active', true).order('created_at'),
     sb.from('rooms').select('id,number,room_type,base_rate,capacity,photos,housekeeping_status,is_active,establishment_id').eq('organization_id', S.org).eq('is_active', true).order('number')
   ]);
   if (e.error && isNetErr(e.error)) { const c = cacheGet('ests_' + S.org); if (c) { e.data = c.ests; r.data = c.rooms; } } else cacheSet('ests_' + S.org, { ests: e.data || [], rooms: r.data || [] });
@@ -2339,6 +2363,7 @@ async function renderDashboardCore(){
     ${guide.reminders}
     <div id="dashResult"></div>
     <div id="nayaDueBanner"></div>
+    ${(() => { const e = (S.ests || []).find(x => x.id === S.est); return e && !e.latitude && can(['owner','admin','manager']) ? `<div class="card" style="margin-bottom:16px;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap"><div><strong>Indiquez la position de votre établissement</strong><div class="muted" style="font-size:13px">Les voyageurs vous trouveront dans la recherche par quartier et « Autour de moi » sur Nuittea.com.</div></div><button class="small primary" data-go="mapage">Compléter ma localisation</button></div>` : ''; })()}
     <div class="card" style="margin-bottom:16px">
       <div class="row between" style="margin-bottom:12px"><h3 style="font-size:22px">Chambres en direct</h3><div class="row" style="gap:6px">${Object.entries(LIVE).map(([k, v]) => `<span class="pill" style="background:${v[1]};color:${v[2]}">${v[0]} · ${countSt(k)}</span>`).join('')}</div></div>
       ${total ? `<div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:10px">${live.map(x => { const c = LIVE[x.st];
@@ -5268,6 +5293,133 @@ const THEMES = {
 const HIGHLIGHTS = ['Wi-Fi gratuit','Climatisation','Parking gratuit','Piscine','Petit-déjeuner','Restaurant','Bar','Groupe électrogène','Sécurité 24h/24','Navette aéroport','Vue mer','Jardin','Salle de réunion','Ménage quotidien','Cuisine équipée','Proche plage'];
 const themeVars = (k) => { const t = THEMES[k] || THEMES.terracotta; return `--green:${t[1]};--green-d:${t[2]};--green-l:${t[3]}`; };
 
+/* ---------- Localisation précise (liste officielle des lieux + carte) ---------- */
+let LEAFLET = null;
+function loadLeaflet(){
+  if (LEAFLET) return LEAFLET;
+  LEAFLET = new Promise((res, rej) => {
+    const css = document.createElement('link'); css.rel = 'stylesheet'; css.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'; document.head.appendChild(css);
+    const js = document.createElement('script'); js.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'; js.onload = () => res(window.L); js.onerror = () => { LEAFLET = null; rej(new Error('Carte indisponible')); }; document.head.appendChild(js);
+  });
+  return LEAFLET;
+}
+async function locLabel(id){
+  if (!id) return '';
+  const parts = []; let cur = id;
+  for (let i = 0; i < 3 && cur; i++) { const { data } = await sb.from('localities').select('id,name,parent_id,kind,status').eq('id', cur).maybeSingle(); if (!data) break; parts.push(data.name + (data.status === 'propose' ? ' (en attente de validation)' : '')); cur = data.parent_id; }
+  return parts.join(', ');
+}
+async function locWidget(box, e, canEdit){
+  const st = { id: e.locality_id || null, label: await locLabel(e.locality_id), lat: e.latitude, lng: e.longitude, landmark: e.landmark || '', kind: null };
+  if (st.id) { const { data } = await sb.from('localities').select('kind').eq('id', st.id).maybeSingle(); st.kind = data && data.kind; }
+  let map = null, marker = null, timer = null;
+  const draw = () => {
+    box.innerHTML = `
+      <div class="field" style="position:relative"><label for="locQ">Ville, commune ou quartier</label>
+        <input id="locQ" autocomplete="off" placeholder="Tapez : Cocody, Riviera, Zone 4, Bassam…" value="${esc(st.label)}" ${canEdit ? '' : 'disabled'}>
+        <div id="locSug" class="loc-sug hidden" role="listbox"></div></div>
+      ${canEdit ? `<div class="row" style="gap:8px;margin:-4px 0 12px;flex-wrap:wrap"><button type="button" class="small" id="locGps">Utiliser ma position actuelle</button>
+        ${st.id && st.kind !== 'quartier' ? `<button type="button" class="small ghost" id="locNew">Mon quartier n’est pas dans la liste</button>` : ''}</div>` : ''}
+      <div id="locProp" class="hidden" style="margin-bottom:12px"><div class="row" style="gap:8px;flex-wrap:nowrap"><input id="locPropName" maxlength="80" placeholder="Nom du quartier" style="flex:1;min-width:0"><button type="button" class="small primary" id="locPropGo">Proposer</button></div>
+        <p class="muted" style="font-size:12px;margin:4px 0 0">Le quartier est ajouté tout de suite à votre fiche ; l’équipe Nuittea le valide ensuite.</p></div>
+      <div class="field"><label for="locMark">Point de repère</label><input id="locMark" maxlength="200" value="${esc(st.landmark)}" placeholder="Ex. : derrière la pharmacie Sainte Famille, 2e rue à droite" ${canEdit ? '' : 'disabled'}></div>
+      <div style="font-weight:600;font-size:13px;color:var(--muted);margin-bottom:6px">Position exacte sur la carte ${canEdit ? '<span style="font-weight:400">(touchez la carte ou déplacez l’épingle)</span>' : ''}</div>
+      <div id="locMap" style="height:260px;border-radius:14px;border:1px solid var(--line);background:var(--bg)"></div>
+      <p class="muted" style="font-size:12px;margin:6px 0 0" id="locCoord">${st.lat ? `Position enregistrée : ${(+st.lat).toFixed(5)}, ${(+st.lng).toFixed(5)}` : 'Aucune position enregistrée.'}</p>
+      ${canEdit ? '<div class="row" style="margin-top:12px"><button type="button" class="primary" id="locSave">Enregistrer la localisation</button></div>' : ''}`;
+    bind(); initMap();
+  };
+  const setPoint = (lat, lng, pan) => {
+    st.lat = +(+lat).toFixed(6); st.lng = +(+lng).toFixed(6);
+    if (map) { if (!marker) { marker = L.marker([st.lat, st.lng], { draggable: canEdit }).addTo(map); marker.on('dragend', () => { const p = marker.getLatLng(); setPoint(p.lat, p.lng); }); } else marker.setLatLng([st.lat, st.lng]); if (pan) map.setView([st.lat, st.lng], 16); }
+    const c = $('locCoord'); if (c) c.textContent = `Position : ${st.lat.toFixed(5)}, ${st.lng.toFixed(5)}`;
+  };
+  const initMap = async () => {
+    try {
+      const L0 = await loadLeaflet(); window.L = L0; map = null; marker = null;
+      const center = st.lat ? [st.lat, st.lng] : [5.3484, -4.0305];
+      map = L0.map('locMap', { scrollWheelZoom: false }).setView(center, st.lat ? 16 : 12);
+      L0.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(map);
+      if (st.lat) setPoint(st.lat, st.lng);
+      if (canEdit) map.on('click', (ev) => setPoint(ev.latlng.lat, ev.latlng.lng));
+      setTimeout(() => map && map.invalidateSize(), 200);
+    } catch (_) { const m = $('locMap'); if (m) m.innerHTML = '<p class="muted" style="padding:14px">Carte indisponible hors connexion. Vous pouvez tout de même choisir le quartier et le repère.</p>'; }
+  };
+  const pick = (it) => { st.id = it.id; st.kind = it.kind; st.label = it.label; $('locQ').value = it.label; $('locSug').classList.add('hidden'); if (!st.lat && it.lat && map) map.setView([it.lat, it.lng], it.kind === 'quartier' ? 15 : 13); draw(); };
+  function bind(){
+    if (!canEdit) return;
+    const q = $('locQ'), sug = $('locSug');
+    q.oninput = () => { clearTimeout(timer); st.id = null; timer = setTimeout(async () => {
+      const v = q.value.trim(); if (v.length < 2) { sug.classList.add('hidden'); return; }
+      const { data } = await sb.rpc('locality_search', { p_q: v, p_limit: 8 });
+      const items = (data || []).filter(x => x.type === 'lieu');
+      sug.innerHTML = items.length ? items.map((x, i) => `<button type="button" data-li="${i}"><strong>${esc(x.name)}</strong><span>${esc(x.label)}</span><em>${x.kind}</em></button>`).join('') : '<div class="muted" style="padding:10px 12px;font-size:13px">Aucun lieu trouvé. Choisissez la commune ou la ville, puis proposez votre quartier.</div>';
+      sug.classList.remove('hidden'); sug.querySelectorAll('[data-li]').forEach(b => b.onclick = () => pick(items[+b.dataset.li]));
+    }, 220); };
+    $('locMark').oninput = () => { st.landmark = $('locMark').value; };
+    $('locGps').onclick = () => {
+      if (!navigator.geolocation) return toast('La localisation n’est pas disponible sur cet appareil.', true);
+      $('locGps').disabled = true; $('locGps').textContent = 'Recherche de votre position…';
+      navigator.geolocation.getCurrentPosition(async (pos) => {
+        setPoint(pos.coords.latitude, pos.coords.longitude, true);
+        const { data } = await sb.rpc('locality_nearest', { p_lat: pos.coords.latitude, p_lng: pos.coords.longitude });
+        if (data) { st.id = data.id; st.kind = data.kind; st.label = data.label; toast('Lieu trouvé : ' + data.label + '. Vérifiez avant d’enregistrer.'); }
+        else toast('Position enregistrée. Choisissez le quartier dans la liste.');
+        const keep = { lat: st.lat, lng: st.lng }; draw(); setTimeout(() => setPoint(keep.lat, keep.lng, true), 400);
+      }, (err) => { $('locGps').disabled = false; $('locGps').textContent = 'Utiliser ma position actuelle'; toast(err.code === 1 ? 'Autorisez la localisation dans votre navigateur.' : 'Position introuvable, réessayez dehors ou placez l’épingle sur la carte.', true); }, { enableHighAccuracy: true, timeout: 15000 });
+    };
+    const nw = $('locNew'); if (nw) nw.onclick = () => { $('locProp').classList.remove('hidden'); $('locPropName').focus(); };
+    const pg = $('locPropGo'); if (pg) pg.onclick = async () => {
+      const name = $('locPropName').value.trim(); if (name.length < 2) return toast('Indiquez le nom du quartier.', true);
+      pg.disabled = true;
+      const { data, error } = await sb.rpc('locality_propose', { p_parent: st.id, p_name: name, p_lat: st.lat || null, p_lng: st.lng || null });
+      pg.disabled = false; if (error) return toast(errMsg(error), true);
+      st.id = data; st.kind = 'quartier'; st.label = await locLabel(data); toast('Quartier ajouté à votre fiche.'); draw();
+    };
+    $('locSave').onclick = async () => {
+      if (!st.id) return toast('Choisissez votre ville, commune ou quartier dans la liste.', true);
+      $('locSave').disabled = true;
+      const { error } = await sb.from('establishments').update({ locality_id: st.id, latitude: st.lat || null, longitude: st.lng || null, landmark: (st.landmark || '').trim() || null }).eq('id', e.id);
+      $('locSave').disabled = false;
+      if (error) return toast(/geo_ci/.test(error.message || '') ? 'Cette position est hors de Côte d’Ivoire.' : errMsg(error), true);
+      e.locality_id = st.id; e.latitude = st.lat; e.longitude = st.lng; e.landmark = st.landmark;
+      const est = (S.ests || []).find(x => x.id === e.id); if (est) Object.assign(est, { locality_id: st.id, latitude: st.lat });
+      toast(st.lat ? 'Localisation enregistrée.' : 'Quartier enregistré. Ajoutez la position sur la carte pour apparaître dans « Autour de moi ».');
+    };
+    document.addEventListener('click', (ev) => { if (!box.contains(ev.target)) { const sg = $('locSug'); if (sg) sg.classList.add('hidden'); } }, { once: true });
+  }
+  draw();
+}
+
+function _lxN(t){ return String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase(); }
+function openLocalityEdit(x){
+  const L = S._lxAll || [];
+  openModal(`<h2 style="font-size:22px;margin-bottom:12px">${x ? 'Modifier le lieu' : 'Ajouter un lieu'}</h2><form id="lxF">
+    <div class="field"><label for="lxN">Nom</label><input id="lxN" required maxlength="80" value="${esc(x ? x.name : '')}"></div>
+    <div class="field"><label for="lxK">Type</label><select id="lxK">${['ville', 'commune', 'quartier'].map(k => `<option value="${k}" ${x && x.kind === k ? 'selected' : ''}>${k[0].toUpperCase() + k.slice(1)}</option>`).join('')}</select></div>
+    <div class="field"><label for="lxP">Rattaché à</label><select id="lxP"><option value="">— Aucun (ville) —</option>${L.filter(y => y.kind !== 'quartier' && y.status === 'valide' && (!x || y.id !== x.id)).map(y => `<option value="${y.id}" ${x && x.parent_id === y.id ? 'selected' : ''}>${esc(y.label)}</option>`).join('')}</select></div>
+    <div class="field"><label for="lxA">Autres noms (séparés par des virgules)</label><input id="lxA" value="${esc(x ? (x.aliases || []).join(', ') : '')}" placeholder="Ex. : Riv 2, Riviera II"></div>
+    <div class="row" style="gap:10px"><div class="field" style="flex:1"><label for="lxLa">Latitude</label><input id="lxLa" inputmode="decimal" value="${x && x.lat != null ? x.lat : ''}"></div><div class="field" style="flex:1"><label for="lxLo">Longitude</label><input id="lxLo" inputmode="decimal" value="${x && x.lng != null ? x.lng : ''}"></div></div>
+    <div class="field"><label for="lxS">Statut</label><select id="lxS">${[['valide', 'Validé'], ['propose', 'À valider'], ['rejete', 'Rejeté']].map(([k, l]) => `<option value="${k}" ${(x ? x.status : 'valide') === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+    <div class="row" style="gap:8px;justify-content:flex-end"><button type="button" class="ghost" data-close>Annuler</button><button class="primary">Enregistrer</button></div></form>`);
+  $('lxF').onsubmit = async (ev) => { ev.preventDefault();
+    const num = (v) => { v = String(v).trim().replace(',', '.'); return v === '' ? null : Number(v); };
+    const { error } = await sb.rpc('admin_locality_save', { p_id: x ? x.id : null, p_kind: $('lxK').value, p_name: $('lxN').value, p_parent: $('lxP').value || null,
+      p_aliases: $('lxA').value.split(',').map(t => t.trim()).filter(Boolean), p_lat: num($('lxLa').value), p_lng: num($('lxLo').value), p_status: $('lxS').value });
+    if (error) return toast(/geo_ci|check/.test(error.message || '') ? 'Coordonnées hors de Côte d’Ivoire.' : errMsg(error), true);
+    closeModal(); toast('Lieu enregistré.'); renderAdmin(); };
+}
+function openLocalityMerge(x){
+  const L = (S._lxAll || []).filter(y => y.id !== x.id && y.status === 'valide');
+  openModal(`<h2 style="font-size:22px;margin-bottom:8px">Fusionner « ${esc(x.name)} »</h2>
+    <p class="muted" style="margin:0 0 12px">Les hôtels rattachés (${x.hotels}) passent sur le lieu choisi, et « ${esc(x.name)} » devient un autre nom de ce lieu. Cette action est définitive.</p>
+    <div class="field"><label for="lxInto">Lieu à conserver</label><select id="lxInto">${L.map(y => `<option value="${y.id}" ${y.parent_id === x.parent_id && y.kind === x.kind ? '' : ''}>${esc(y.label)}</option>`).join('')}</select></div>
+    <div class="row" style="gap:8px;justify-content:flex-end"><button type="button" class="ghost" data-close>Annuler</button><button class="primary" id="lxGo">Fusionner</button></div>`);
+  $('lxGo').onclick = async () => { $('lxGo').disabled = true;
+    const { error } = await sb.rpc('admin_locality_merge', { p_from: x.id, p_into: $('lxInto').value });
+    if (error) { $('lxGo').disabled = false; return toast(errMsg(error), true); } closeModal(); toast('Lieux fusionnés.'); renderAdmin(); };
+}
+
 async function renderMaPage(){
   const el = $('v-mapage'); el.innerHTML = skeletonView();
   await loadEst();
@@ -5307,6 +5459,7 @@ async function renderMaPage(){
         <div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px">${photos.map((u, i) => `<div style="position:relative"><img src="${esc(u)}" alt="Photo ${i + 1}" style="width:100%;height:100px;object-fit:cover;border-radius:12px">${canEdit ? `<div class="row" style="position:absolute;top:4px;right:4px;gap:4px">${i > 0 ? `<button type="button" class="small" data-first="${i}" title="Mettre en premier" style="min-height:28px;padding:0 8px;background:#fff;border:0">↑</button>` : ''}<button type="button" class="small" data-delphoto="${i}" aria-label="Retirer la photo ${i + 1}" style="min-height:28px;padding:0 8px;background:#fff;border:0">✕</button></div>` : ''}</div>`).join('')}
           ${canEdit && photos.length < 12 ? `<label style="height:100px;border-radius:12px;border:1.5px dashed #C9B596;display:grid;place-items:center;cursor:pointer;margin:0;color:var(--green);font-weight:700">+ Photos<input type="file" id="photoFiles" accept="image/jpeg,image/png,image/webp" multiple class="hidden"></label>` : ''}</div>
         <p class="muted" style="font-size:12px;margin:8px 0 0">${photos.length} / 12 photos.</p>`)}
+      ${sec('Localisation', 'Votre position exacte permet aux voyageurs de vous trouver dans la recherche par quartier et « Autour de moi » sur Nuittea.com.', '<div id="locBox"><p class="muted">Chargement…</p></div>')}
       ${sec('Contact et réseaux', 'Facilitez la prise de contact : chaque champ rempli devient un bouton sur votre page.', `
         <div class="row"><div class="field" style="flex:1 1 150px"><label for="pPhone">Téléphone</label><input id="pPhone" type="tel" value="${esc(e.public_phone || '')}"></div><div class="field" style="flex:1 1 150px"><label for="pWa">WhatsApp</label><input id="pWa" value="${esc(e.public_whatsapp || '')}" placeholder="Ex. : 2250700000000"></div><div class="field" style="flex:1 1 180px"><label for="pMail">E-mail</label><input id="pMail" type="email" value="${esc(e.public_email || '')}"></div></div>
         <div class="row"><div class="field" style="flex:2 1 240px"><label for="pAddr">Adresse</label><input id="pAddr" value="${esc(e.public_address || '')}" placeholder="Rue, quartier, repère"></div><div class="field" style="flex:1 1 140px"><label for="pCity">Ville</label><input id="pCity" value="${esc(e.city || '')}"></div></div>
@@ -5342,6 +5495,7 @@ async function renderMaPage(){
   const cp = $('copyUrl'); if (cp) cp.onclick = async () => { try { await navigator.clipboard.writeText($('pubUrl').value); toast('Adresse copiée.'); } catch (_) { $('pubUrl').select(); toast('Sélectionnez puis copiez l’adresse.'); } };
   if (!canEdit) return;
   const markDirty = () => { const d = $('dirty'); if (d) { d.textContent = 'Modifications non enregistrées.'; d.style.color = '#8A3E1E'; } };
+  if ($('locBox')) locWidget($('locBox'), e, canEdit);
   $('pubForm').addEventListener('input', () => { markDirty(); preview(); const n = $('pTag').value.length; $('tagN').textContent = n ? `(${n}/120)` : ''; });
   const save = async (patch, msg) => { const { error: er } = await sb.from('establishments').update(patch).eq('id', e.id); if (er) { toast(er.code === '23505' ? 'Cette adresse est déjà prise.' : /check/.test(er.message || '') ? 'Vérifiez les liens : ils doivent commencer par https://' : errMsg(er), true); return false; } if (msg) toast(msg); renderMaPage(); return true; };
   $('pSlug').oninput = async () => { const v = slugify($('pSlug').value); if (v !== $('pSlug').value) $('pSlug').value = v;

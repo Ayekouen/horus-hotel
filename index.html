@@ -67,10 +67,11 @@ main{flex:1;min-width:0;width:100%;max-width:1360px;margin:0 auto;padding:28px c
   .mtop button{border:0;background:transparent;min-height:44px;width:44px;padding:0;display:grid;place-items:center;color:var(--ink)}
   #mNotifBadge{position:absolute;top:6px;right:4px;min-width:18px;height:18px;border-radius:9px;background:var(--green);color:#fff;font-size:11px;font-weight:800;display:grid;place-items:center;padding:0 4px}
   #mNotifBadge.hidden{display:none}
-  .tabbar{display:grid;grid-template-columns:repeat(5,1fr);position:fixed;left:0;right:0;bottom:0;z-index:30;background:var(--nav);border-top:1px solid var(--line);padding:6px 4px calc(6px + env(safe-area-inset-bottom));box-shadow:0 -6px 20px rgba(0,0,0,.06)}
+  .tabbar{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;grid-template-columns:none;position:fixed;left:0;right:0;bottom:0;z-index:30;background:var(--nav);border-top:1px solid var(--line);padding:6px 4px calc(6px + env(safe-area-inset-bottom));box-shadow:0 -6px 20px rgba(0,0,0,.06)}
   .tabbar button{border:0;background:transparent;min-height:52px;padding:4px 2px;border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:11px;font-weight:600;color:var(--muted)}
   .tabbar svg{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
   .tabbar button.on{color:var(--green)}
+  .tabbar>.hidden,.tabbar>[hidden]{display:none!important}
   .tabbar button.on svg{background:var(--green-l);border-radius:10px;padding:3px 10px;box-sizing:content-box}
   main{padding-bottom:calc(96px + env(safe-area-inset-bottom))!important}
   .toast{bottom:calc(84px + env(safe-area-inset-bottom))!important}
@@ -908,7 +909,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.10.26-26';
+const APP_VERSION = '2026.10.27-01';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}

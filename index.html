@@ -652,30 +652,31 @@ td .sr-only,th .sr-only{position:absolute;left:0;top:0}
 .kpi .v{overflow-wrap:anywhere}
 @media (max-width:720px){.kpi .v{font-size:clamp(19px,5.6vw,26px)!important;white-space:nowrap;letter-spacing:-.02em}.kpi{padding:14px 16px!important;min-width:0}.grid.g5{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
 @media (max-width:720px){.dashkpi{grid-template-columns:1fr 1fr!important;gap:10px!important}.dashkpi>.card:first-child,.dashkpi>#caCard{grid-column:1/-1}.dashkpi>.card{padding:14px}.dashkpi .kpi .v{font-size:30px}select.casel{min-height:34px!important;height:34px;padding:0 28px 0 12px!important;border-radius:999px!important;max-width:150px}}
-.k-top{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:14px;margin-bottom:14px}
-.k-hero{background:var(--green);color:#fff;border-radius:20px;padding:20px 22px;display:flex;flex-direction:column;justify-content:center}
-.k-hero .l{font-size:14px;opacity:.85;font-weight:600}.k-hero .v{font-family:var(--display);font-size:40px;font-weight:800;letter-spacing:-1px;margin:4px 0;white-space:nowrap}
-.k-hero .f{font-size:13px;opacity:.9;display:flex;gap:12px;flex-wrap:wrap}.k-hero .f b{font-weight:700}
-.k-side{display:flex;flex-direction:column;gap:10px}
-.k-cta{background:#E9B44C;color:#2A1E0E;border:0;border-radius:16px;min-height:58px;font-size:17px;font-weight:800;width:100%}
-.k-acts{display:grid;grid-template-columns:repeat(auto-fit,minmax(70px,1fr));gap:8px;flex:1}
-.k-act{background:var(--card);border:1px solid var(--line);border-radius:14px;min-height:66px;font-size:12.5px;font-weight:600;color:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:6px}
-.k-kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:16px}
-.k-k{margin:0;padding:14px 16px}.k-k .l{font-size:13px;color:var(--muted);font-weight:600}.k-k .v{font-family:var(--display);font-size:24px;font-weight:800;margin-top:2px;white-space:nowrap}.k-k .s{font-size:12px;color:var(--muted)}
-.k-pm{display:flex;flex-direction:column;gap:12px}.k-bar{height:8px;border-radius:9px;background:var(--line);overflow:hidden;margin-top:6px}.k-bar span{display:block;height:100%;border-radius:9px}
+.k-top{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px;align-items:stretch;margin-bottom:16px}
+.k-hero{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--green);border-radius:14px;padding:18px 20px}
+.k-hero .l{font-size:13px;color:var(--muted);font-weight:600}.k-hero .v{font-family:var(--display);font-size:36px;font-weight:800;letter-spacing:-.5px;margin:2px 0 6px;white-space:nowrap;color:var(--ink)}
+.k-hero .f{font-size:13px;color:var(--muted);display:flex;gap:14px;flex-wrap:wrap}.k-hero .f b{color:var(--ink);font-weight:600}
+.k-side{display:flex;flex-direction:column;gap:8px;justify-content:center;min-width:300px}
+.k-cta{width:100%;min-height:48px;font-size:15px;font-weight:700}
+.k-acts{display:flex;gap:8px}
+.k-act{flex:1;background:var(--card);border:1px solid var(--line);border-radius:10px;min-height:40px;font-size:13px;font-weight:600;color:var(--ink);display:flex;align-items:center;justify-content:center;gap:6px;padding:0 10px}
+.k-act svg{width:16px;height:16px;color:var(--muted)}
+.k-kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border:1px solid var(--line);border-radius:14px;background:var(--card);margin-bottom:16px;overflow:hidden}
+.k-k{margin:0;padding:14px 18px;border:0;border-radius:0;box-shadow:none;background:transparent}.k-k+.k-k{border-left:1px solid var(--line)}
+.k-k .l{font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.04em}.k-k .v{font-family:var(--display);font-size:22px;font-weight:800;margin-top:4px;white-space:nowrap}.k-k .s{font-size:12px;color:var(--muted);margin-top:2px}
+.k-pm{display:flex;flex-direction:column;gap:12px}.k-bar{height:6px;border-radius:6px;background:var(--line);overflow:hidden;margin-top:6px}.k-bar span{display:block;height:100%}
 .k-list{display:flex;flex-direction:column}
-.kj-row{display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--line)}.kj-row:last-child{border-bottom:0}
-.kj-rev{opacity:.55}.kj-rev .kj-a{text-decoration:line-through}
-.kj-ic{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;flex:none;color:var(--ink)}
-.kj-m{flex:1;min-width:0}.kj-t{font-weight:700;font-size:15px;overflow-wrap:anywhere}.kj-d{font-size:12.5px;color:var(--muted);margin-top:3px;display:flex;flex-wrap:wrap;gap:4px 6px;align-items:center}
-.kj-chip{font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px}
-.kj-r{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex:none}.kj-a{font-weight:800;font-size:16px;white-space:nowrap}.kj-btns{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.kj-row{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;padding:12px 0;border-bottom:1px solid var(--line)}.kj-row:last-child{border-bottom:0}
+.kj-rev{opacity:.5}.kj-rev .kj-a{text-decoration:line-through}
+.kj-time{width:44px;flex:none;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.kj-m{flex:1;min-width:0}.kj-t{font-weight:600;font-size:14.5px;overflow-wrap:anywhere}.kj-d{font-size:12.5px;color:var(--muted);margin-top:2px;display:flex;flex-wrap:wrap;gap:4px 6px;align-items:center}
+.kj-chip{display:inline-flex;align-items:center;gap:5px}.kj-chip i{width:7px;height:7px;border-radius:50%;display:inline-block}
+.kj-r{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex:none}.kj-a{font-weight:700;font-size:15px;white-space:nowrap;font-variant-numeric:tabular-nums}.kj-btns{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
 .kj-b{flex:none;min-width:150px}
 button.k-danger,html[data-theme] button.k-danger{background:#B3261E!important;border-color:#B3261E!important;color:#fff!important}
-button.k-cta,html[data-theme] button.k-cta{background:#E9B44C!important;color:#2A1E0E!important;border:0!important;box-shadow:0 6px 18px rgba(233,180,76,.35)!important}
 .cl-notes{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-top:12px}
-.cl-n{display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--bg);border-radius:12px;padding:6px 6px 6px 12px;font-size:13px;font-weight:500;margin:0}.cl-n input{width:72px;min-height:40px;text-align:center;font-weight:700}
-@media (max-width:720px){.k-top{grid-template-columns:1fr}.k-hero .v{font-size:36px}.k-acts{grid-template-columns:repeat(4,1fr)}.k-kpis{grid-template-columns:1fr 1fr;gap:10px}.k-wide{grid-column:1/-1}.kj-b{width:100%;min-width:0;justify-content:flex-start;padding-left:52px;margin-top:-4px}.kj-r .kj-btns .small{min-height:32px;padding:0 10px;font-size:12px}}
+.cl-n{display:flex;align-items:center;justify-content:space-between;gap:8px;border:1px solid var(--line);border-radius:10px;padding:4px 4px 4px 12px;font-size:13px;font-weight:500;margin:0}.cl-n input{width:70px;min-height:38px;text-align:center;font-weight:700}
+@media (max-width:720px){.k-top{grid-template-columns:1fr}.k-side{min-width:0}.k-hero .v{font-size:32px}.k-acts{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}.k-act{padding:0 4px;font-size:12px}.k-act svg{display:none}.k-kpis{grid-template-columns:1fr 1fr}.k-k+.k-k{border-left:0}.k-k:nth-child(2){border-left:1px solid var(--line)}.k-wide{grid-column:1/-1;border-top:1px solid var(--line)!important}.kj-b{width:100%;min-width:0;justify-content:flex-start;padding-left:58px}.kj-r .kj-btns .small,.kj-b .small{min-height:32px;padding:0 10px;font-size:12px}}
 </style>
 </head>
 <body>
@@ -934,7 +935,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.10.27-03';
+const APP_VERSION = '2026.10.27-04';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -3075,7 +3076,7 @@ async function renderCaisse(){
   const KBG = { payment:'#E3F2EA', income:'#FFF4DE', expense:'#FCE8E6', refund:'#FCE8E6', deposit:'#EAEFF6' };
   const ico = (k) => `<span class="kj-ic" style="background:${KBG[k]}"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${KICON[k] || ''}</svg></span>`;
   const CHIPC = { cash:['#E3F2EA','#1F5C4A'], wave:['#DDF2FE','#0B6E8F'], orange_money:['#FDEBD8','#A2520F'], mtn_money:['#FFF3C4','#7A5F00'], moov_money:['#E3EEDC','#3E6A2E'], card:['#F7E2D8','#9A3F1C'], bank_transfer:['#ECE7E1','#5A4A3C'] };
-  const chip = (k) => { const c = CHIPC[k] || CHIPC.bank_transfer; return `<span class="kj-chip" style="background-color:${c[0]};color:${c[1]}">${PMETHOD[k] || ''}</span>`; };
+  const chip = (k) => { const c = CHIPC[k] || CHIPC.bank_transfer; return `<span class="kj-chip"><i style="background-color:${c[1]}"></i>${PMETHOD[k] || ''}</span>`; };
   const act = (id, label, path, show = true) => show ? `<button type="button" class="k-act" id="${id}"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${path}</svg>${label}</button>` : '';
   const mvActions = (m) => `${m.kind === 'payment' ? `<button class="small ghost" data-rcpt="${m.payment_group || m.id}">Reçu</button>` : ''}${m.receipt_path ? `<button class="small ghost" data-just="${esc(m.receipt_path)}">Justificatif</button>` : ''}${canRev(m) ? `<button class="small ghost" data-rev="${m.id}" style="color:var(--red)">Annuler</button>` : ''}`;
   const isRev = (m) => reversed.has(m.id);
@@ -3088,13 +3089,13 @@ async function renderCaisse(){
     `<div class="k-top">
       <div class="k-hero"><div class="l">Espèces attendues dans le tiroir</div><div class="v">${money(expected)}</div>
         <div class="f">${sess ? `<span>Fond <b>${money(sess.opening_balance)}</b></span><span>+ Entrées <b>${money(cashIn)}</b></span><span>− Sorties <b>${money(cashOut)}</b></span>` : '<span>Caisse fermée</span>'}</div></div>
-      <div class="k-side"><button type="button" class="k-cta" id="kPay">+ Encaisser un client</button>
+      <div class="k-side"><button type="button" class="primary k-cta" id="kPay">Encaisser un client</button>
         ${sess ? `<div class="k-acts">${act('kExp', 'Dépense', '<path d="M5 12h14"></path>')}${act('kInc', 'Entrée', '<path d="M12 5v14M5 12h14"></path>')}${act('kDep', 'Versement', '<path d="M3 21h18M5 21V10M19 21V10M12 3l9 6H3z"></path>', mgr)}${act('kClose', 'Clôturer', '<rect x="4" y="11" width="16" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path>')}</div>` : ''}</div>
     </div>
     <div class="k-kpis">
-      <div class="card k-k"><div class="l">Encaissé</div><div class="v">${money(totalIn)}</div><div class="s">${plur(ins.length, 'opération', 'opérations')} ${sess ? 'dans la session' : "aujourd'hui"}</div></div>
-      <div class="card k-k"><div class="l">Dépenses</div><div class="v" style="color:var(--red)">${money(sum(mv, ['expense']))}</div><div class="s">${plur(mv.filter(m => m.kind === 'expense').length, 'dépense', 'dépenses')}</div></div>
-      <div class="card k-k k-wide"><div class="l">Reste à encaisser</div><div class="v">${money(balTotal)}</div><div class="s">${plur(bal.filter(b => balGroup(b) !== 'avenir').length, 'client', 'clients')} présents ou partis${balAvenir ? ' · ' + money(balAvenir) + ' sur les arrivées à venir' : ''}</div></div>
+      <div class="k-k"><div class="l">Encaissé</div><div class="v">${money(totalIn)}</div><div class="s">${plur(ins.length, 'opération', 'opérations')} ${sess ? 'dans la session' : "aujourd'hui"}</div></div>
+      <div class="k-k"><div class="l">Dépenses</div><div class="v" style="color:var(--red)">${money(sum(mv, ['expense']))}</div><div class="s">${plur(mv.filter(m => m.kind === 'expense').length, 'dépense', 'dépenses')}</div></div>
+      <div class="k-k k-wide"><div class="l">Reste à encaisser</div><div class="v">${money(balTotal)}</div><div class="s">${plur(bal.filter(b => balGroup(b) !== 'avenir').length, 'client', 'clients')} présents ou partis${balAvenir ? ' · ' + money(balAvenir) + ' sur les arrivées à venir' : ''}</div></div>
     </div>` +
     (byMethod.length ? `<div class="card" style="margin-bottom:16px"><h3 style="font-size:20px;margin-bottom:12px">Par moyen de paiement</h3><div class="k-pm">${byMethod.sort((x, y) => y[1] - x[1]).map(([k, v]) => `<div><div class="row between" style="flex-wrap:nowrap;font-weight:600;font-size:15px"><span>${PMETHOD[k]}</span><span>${money(v)} <span class="muted" style="font-weight:500">· ${pct(v)} %</span></span></div><div class="k-bar"><span style="width:${Math.max(3, pct(v))}%;background:${BARC[k]}"></span></div></div>`).join('')}</div></div>` : '') +
     `<div class="card" style="margin-bottom:16px"><div class="row between" style="gap:10px;margin-bottom:4px"><h3 style="font-size:20px">Soldes clients</h3><span class="muted" style="font-size:14px">Total dû : <strong style="color:var(--ink)">${money(sumBal(bal))}</strong></span></div>
@@ -3107,9 +3108,9 @@ async function renderCaisse(){
     <div class="card" style="margin-bottom:16px;min-width:0"><div class="row between" style="margin-bottom:10px;gap:10px"><h3 style="font-size:20px">Journal</h3>
         <div class="row" style="gap:6px">${[['all','Tout'],['in','Paiements'],['out','Dépenses'],['dep','Versements']].map(([k, l]) => `<button class="small ${st.kind === k ? 'primary' : 'ghost'}" data-kf="${k}">${l}</button>`).join('')}
         ${people.length > 1 ? `<select id="kBy" aria-label="Caissier" style="width:auto;height:36px"><option value="all">Tous les caissiers</option>${people.map(p => `<option value="${p}" ${st.by === p ? 'selected' : ''}>${esc(who(p))}</option>`).join('')}</select>` : ''}</div></div>
-      ${rows.length === 0 ? '<p class="muted">Aucun mouvement.</p>' : `<div class="k-list">${rows.map(m => `<div class="kj-row${isRev(m) ? ' kj-rev' : ''}">${ico(m.kind)}
+      ${rows.length === 0 ? '<p class="muted">Aucun mouvement.</p>' : `<div class="k-list">${rows.map(m => `<div class="kj-row${isRev(m) ? ' kj-rev' : ''}"><span class="kj-time">${hm(m.created_at)}</span>
           <div class="kj-m"><div class="kj-t">${KIND[m.kind]} · ${esc(m.label)}${m.category ? ` <span class="muted" style="font-weight:500">(${esc(m.category)})</span>` : ''}</div>
-            <div class="kj-d">${hm(m.created_at)} ${chip(m.method)} ${esc(who(m.created_by))}${m.reference && !m.reference.startsWith('ANN:') ? ` · réf. ${esc(m.reference)}` : ''}${isRev(m) ? ' · <strong style="color:var(--red)">annulé</strong>' : ''}</div></div>
+            <div class="kj-d">${chip(m.method)} · ${esc(who(m.created_by))}${m.reference && !m.reference.startsWith('ANN:') ? ` · réf. ${esc(m.reference)}` : ''}${isRev(m) ? ' · <strong style="color:var(--red)">annulé</strong>' : ''}</div></div>
           <div class="kj-r"><div class="kj-a" style="color:${out(m) ? 'var(--red)' : 'var(--ok)'}">${out(m) ? '−' : '+'}${money(m.amount)}</div></div>${mvActions(m) ? `<div class="kj-btns kj-b">${mvActions(m)}</div>` : ''}</div>`).join('')}</div>`}
     </div>` +
     (hist.length ? `<div class="card"><h3 style="font-size:20px;margin-bottom:10px">Dernières clôtures</h3><div class="k-list">

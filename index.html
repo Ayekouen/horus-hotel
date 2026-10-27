@@ -673,6 +673,7 @@ td .sr-only,th .sr-only{position:absolute;left:0;top:0}
 .kj-chip{display:inline-flex;align-items:center;gap:5px}.kj-chip i{width:7px;height:7px;border-radius:50%;display:inline-block}
 .kj-r{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex:none}.kj-a{font-weight:700;font-size:15px;white-space:nowrap;font-variant-numeric:tabular-nums}.kj-btns{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
 .kj-b{flex:none;min-width:150px}
+.tarif-grid .price{font-size:24px;white-space:nowrap;letter-spacing:-.5px}.tarif-grid .plan{padding:20px 16px}.tarif-grid s{white-space:nowrap}
 button.k-danger,html[data-theme] button.k-danger{background:#B3261E!important;border-color:#B3261E!important;color:#fff!important}
 .cl-notes{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-top:12px}
 .cl-n{display:flex;align-items:center;justify-content:space-between;gap:8px;border:1px solid var(--line);border-radius:10px;padding:4px 4px 4px 12px;font-size:13px;font-weight:500;margin:0}.cl-n input{width:70px;min-height:38px;text-align:center;font-weight:700}
@@ -913,7 +914,7 @@ const STATUS = { trial:'Essai', active:'Actif', past_due:'Échéance dépassée'
 const PAYST = { pending:'En attente', succeeded:'Payé', failed:'Échoué', cancelled:'Annulé', refunded:'Remboursé' };
 const CYCLE = { trial:'Essai', monthly:'Mensuel', yearly:'Annuel' };
 const METHOD = { orange_money:'Orange Money', mtn_money:'MTN MoMo', moov_money:'Moov Money', wave:'Wave', card:'Carte bancaire', bank_transfer:'Virement bancaire', cash:'Espèces' };
-const FEAT = { notifications:'Notifications', daily_summary:'Résumé quotidien au propriétaire (bientôt)', whatsapp_auto:'Messages WhatsApp automatiques (bientôt)', seasonal_rates:'Tarifs par saison (bientôt)', extra_services:'Services en plus : petit-déjeuner, linge… (bientôt)', online_booking:'Page de présentation & réservation en ligne', owner_control:'Contrôle propriétaire & alertes', multi_property:'Plusieurs établissements', priority_support:'Support prioritaire', training:'Installation & formation', reception:'Réception & planning', reservations:'Réservations', clients:'Fiches clients', billing:'Facturation', payments:'Encaissements', cash:'Caisse', housekeeping:'Housekeeping', expenses:'Dépenses', basic_reports:'Rapports de base', users:'Utilisateurs', pdf_export:'Export PDF', advanced_reservations:'Réservations avancées', rates:'Tarifs', promotions:'Promotions', services:'Services', advanced_housekeeping:'Housekeeping avancé', maintenance:'Maintenance', financial_reports:'Rapports financiers', occupancy_stats:"Statistiques d'occupation", full_history:'Historique complet', excel_export:'Export Excel', user_permissions:'Permissions utilisateurs', notifications:'Notifications', restaurant:'Restaurant', bar:'Bar', orders:'Commandes', room_charge_transfer:'Transfert sur chambre', inventory:'Stocks', suppliers:'Fournisseurs', staff:'Personnel', groups:'Groupes', accounting:'Comptabilité simplifiée', advanced_dashboard:'Dashboard avancé', adr_revpar:'ADR & RevPAR', revenue_by_service:'CA par service', online_booking:'Réservation en ligne', online_payment:'Paiement en ligne', whatsapp_sms:'WhatsApp / SMS', api:'API', channel_manager:'Channel Manager', ota:'Connexion OTA', dynamic_pricing:'Tarification dynamique', revenue_management:'Revenue Management', advanced_crm:'CRM avancé', loyalty:'Fidélité', advanced_promotions:'Promotions avancées', whatsapp_automation:'Automatisation WhatsApp', custom_reports:'Rapports personnalisables', ai_assistant:'Assistant IA', smart_alerts:'Alertes intelligentes', advanced_api:'API avancée', full_audit:'Audit complet', multi_property:'Multi-établissements', multi_city:'Multi-villes', central_admin:'Administration centralisée', hotel_groups:'Groupes hôteliers', financial_consolidation:'Consolidation financière', national_dashboard:'Dashboard national', advanced_permissions:'Permissions avancées', custom_api:'API personnalisée', custom_integrations:'Intégrations spécifiques', data_migration:'Migration des données', training:'Formation', priority_support:'Support prioritaire' };
+const FEAT = { notifications:'Notifications', daily_summary:'Résumé quotidien au propriétaire (bientôt)', whatsapp_auto:'Messages WhatsApp automatiques (bientôt)', seasonal_rates:'Tarifs automatiques (week-end, saisons)', extra_services:'Services en plus : petit-déjeuner, linge… (bientôt)', online_booking:'Visibilité sur Nuittea.com', owner_control:'Contrôle propriétaire & alertes', multi_property:'Plusieurs établissements', priority_support:'Support prioritaire', training:'Installation & formation', reception:'Réception & planning', reservations:'Réservations', clients:'Fiches clients', billing:'Facturation', payments:'Encaissements', cash:'Caisse', housekeeping:'Ménage et état des chambres', expenses:'Dépenses', basic_reports:'Rapports de base', users:'Utilisateurs', pdf_export:'Export PDF', advanced_reservations:'Réservations avancées', rates:'Tarifs', promotions:'Promotions', services:'Services', advanced_housekeeping:'Housekeeping avancé', maintenance:'Maintenance', financial_reports:'Rapports financiers', occupancy_stats:"Statistiques d'occupation", full_history:'Historique complet', excel_export:'Export Excel', user_permissions:'Permissions utilisateurs', notifications:'Notifications', restaurant:'Restaurant', bar:'Bar', orders:'Commandes', room_charge_transfer:'Transfert sur chambre', inventory:'Stocks', suppliers:'Fournisseurs', staff:'Personnel', groups:'Groupes', accounting:'Comptabilité simplifiée', advanced_dashboard:'Dashboard avancé', adr_revpar:'ADR & RevPAR', revenue_by_service:'CA par service', online_booking:'Réservation en ligne', online_payment:'Paiement en ligne', whatsapp_sms:'WhatsApp / SMS', api:'API', channel_manager:'Channel Manager', ota:'Connexion OTA', dynamic_pricing:'Tarification dynamique', revenue_management:'Revenue Management', advanced_crm:'CRM avancé', loyalty:'Fidélité', advanced_promotions:'Promotions avancées', whatsapp_automation:'Automatisation WhatsApp', custom_reports:'Rapports personnalisables', ai_assistant:'Assistant IA', smart_alerts:'Alertes intelligentes', advanced_api:'API avancée', full_audit:'Audit complet', multi_property:'Multi-établissements', multi_city:'Multi-villes', central_admin:'Administration centralisée', hotel_groups:'Groupes hôteliers', financial_consolidation:'Consolidation financière', national_dashboard:'Dashboard national', advanced_permissions:'Permissions avancées', custom_api:'API personnalisée', custom_integrations:'Intégrations spécifiques', data_migration:'Migration des données', training:'Formation', priority_support:'Support prioritaire' };
 
 function toast(msg, err=false){ const t=$('toast'); t.textContent=msg; t.className='toast'+(err?' err':''); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.add('hidden'), 5000); }
 function errMsg(e){ const m = (e && (e.message || e.error_description)) || 'Une erreur est survenue.'; if (typeof isNetErr === 'function' && isNetErr(e)) return 'Hors connexion : cette action sera possible dès le retour du réseau. Vous pouvez continuer à consulter vos données.'; return /momo_ref/.test(m) ? 'Saisissez le numéro de transaction Mobile Money (4 caractères minimum).' : m; }
@@ -954,7 +955,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.10.27-09';
+const APP_VERSION = '2026.10.27-11';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -1150,7 +1151,7 @@ async function ensureLegalAccepted(){
       const { error } = await sb.from('legal_acceptances').insert({ version: LEGAL_VERSION, user_agent: navigator.userAgent.slice(0, 300) });
       if (error && error.code !== '23505') { $('lgGo').disabled = false; return toast(errMsg(error), true); }
       delete $('modal').dataset.locked; closeModal(); resolve(true); };
-    $('lgOut').onclick = async () => { delete $('modal').dataset.locked; closeModal(); await sb.auth.signOut(); resolve(false); };
+    $('lgOut').onclick = () => { resolve(false); doLogout(); };
     // Les liens « Lire » ouvrent le document dans la même fenêtre : on rouvre l'acceptation après fermeture
     document.querySelectorAll('#modalBody [data-legal]').forEach(b => b.addEventListener('click', (e) => { e.stopPropagation(); e.preventDefault(); window.open(legalUrl(b.dataset.legal), '_blank', 'noopener'); }, true));
     reopen();
@@ -1320,7 +1321,16 @@ $('authForm').addEventListener('submit', async e => {
   } catch (err) { toast(err.message === 'Invalid login credentials' ? 'Identifiants incorrects.' : errMsg(err), true); }
   finally { btn.disabled = false; }
 });
-document.addEventListener('click', async e => { if (e.target.closest('[data-logout]')) { e.preventDefault(); delete $('modal').dataset.locked; closeModal(); await clearDataCache(); await sb.auth.signOut(); } });
+/* Déconnexion fiable : la session est effacée sur l'appareil même si le serveur ne répond pas (réseau faible, jeton expiré). */
+async function doLogout(){
+  try { delete $('modal').dataset.locked; closeModal(); } catch (_) {}
+  try { await clearDataCache(); } catch (_) {}
+  try { await Promise.race([sb.auth.signOut({ scope: 'local' }), new Promise(r => setTimeout(r, 2500))]); } catch (_) {}
+  try { Object.keys(localStorage).filter(k => k.startsWith('sb-') || k === 'hh_last_view').forEach(k => localStorage.removeItem(k)); } catch (_) {}
+  sb.auth.signOut({ scope: 'global' }).catch(() => {});
+  location.replace(location.pathname);
+}
+document.addEventListener('click', e => { if (e.target.closest('[data-logout]')) { e.preventDefault(); doLogout(); } });
 
 $('onboardAdmin').addEventListener('click', e => { e.preventDefault(); S.view = 'admin'; boot(); });
 $('onboardForm').addEventListener('submit', async e => {
@@ -1574,7 +1584,7 @@ function openSettings(){
     sub: () => { closeModal(); go('abonnement'); }, pwd: () => $('navPwd').click(),
     look: () => sub('Apparence et langue', [['theme', 'look', 'Thème de l’application'], ['lang', 'web', 'Langue / Language']]),
     theme: () => $('navTheme').click(), lang: () => openLang(),
-    out: () => { closeModal(); document.querySelector('[data-logout]').click(); }, guide: () => { closeModal(); $('navGuide').click(); }, legal: () => $('navLegal').click(), refresh: () => refreshApp()
+    out: () => doLogout(), guide: () => { closeModal(); $('navGuide').click(); }, legal: () => $('navLegal').click(), refresh: () => refreshApp()
   };
   function bind(){ document.querySelectorAll('#modalBody [data-st]').forEach(b => b.onclick = (e) => { e.preventDefault(); const f = A[b.dataset.st]; if (f) f(); }); }
   bind();
@@ -1690,10 +1700,10 @@ function renderTarifs(){
       ${p.is_recommended ? '<div class="badge">RECOMMANDÉ</div>' : ''}
       <h3 style="font-size:24px">${esc(p.name)}</h3>
       <div class="muted" style="font-size:13px">${p.max_rooms ? "Jusqu'à " + p.max_rooms + ' chambres' : 'Chambres illimitées'} · ${p.max_users ? p.max_users + ' utilisateurs' : 'utilisateurs illimités'} · ${p.max_properties ? p.max_properties + ' établissement' + (p.max_properties > 1 ? 's' : '') : 'établissements illimités'}</div>
-      <div>${Number(p.monthly_price) === 0 ? '<span class="price">Gratuit</span> <span class="muted" style="font-size:13px">à vie</span>' : `<span class="price">${fcfa(y ? p.yearly_price : p.monthly_price).replace(' FCFA','')}</span> <span class="muted" style="font-size:13px">FCFA / ${y ? 'an' : 'mois'}</span>`}</div>
+      <div>${Number(p.monthly_price) === 0 ? '<span class="price">Gratuit</span> <span class="muted" style="font-size:13px">à vie</span>' : `${y && save > 0 ? `<s class="muted" style="font-size:14px;display:block">${fcfa(p.monthly_price * 12).replace(' FCFA','')}</s>` : ''}<span class="price">${fcfa(y ? p.yearly_price : p.monthly_price).replace(' FCFA','')}</span> <span class="muted" style="font-size:13px">FCFA / ${y ? 'an' : 'mois'}</span>`}</div>
       <div class="save">${y && save > 0 ? 'Économisez ' + fcfa(save) + ' avec l’annuel' : ''}</div>
       ${Number(p.monthly_price) === 0 ? `<button disabled>${o.billing_cycle === 'free' ? 'Formule actuelle' : 'Automatique après l’essai'}</button>` : `<button data-checkout="${esc(p.slug)}" ${isCur ? 'disabled' : ''}>${label}</button>`}
-      <ul>${prev ? '<li>Tout ' + esc(prev.name) + ' +</li>' : ''}${feats}</ul>
+      <ul>${prev ? '<li>Tout ' + esc(prev.name) + ' +</li>' : ''}${feats || (prev ? `<li>Jusqu’à ${p.max_rooms || '∞'} chambres et ${p.max_users || '∞'} utilisateurs</li>` : '')}</ul>
     </div>`;
   }).join('');
   $('v-tarifs').innerHTML = `
@@ -1703,10 +1713,10 @@ function renderTarifs(){
       <p class="muted" style="margin:0 0 16px">Vos données sont toujours conservées, même après expiration.</p>
       <div class="toggle" role="group" aria-label="Périodicité">
         <button class="${y ? '' : 'on'}" data-cycle="monthly">Mensuel</button>
-        <button class="${y ? 'on' : ''}" data-cycle="yearly">Annuel · 2 mois offerts</button>
+        <button class="${y ? 'on' : ''}" data-cycle="yearly">Annuel · jusqu’à 1 mois offert</button>
       </div>
     </div>
-    <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(min(100%,210px),1fr));align-items:stretch;margin-bottom:18px;gap:14px">${cards}</div>
+    <div class="grid tarif-grid" style="grid-template-columns:repeat(auto-fit,minmax(min(100%,178px),1fr));align-items:stretch;margin-bottom:18px;gap:12px">${cards}</div>
     <div class="grid g2">
       ${trial ? `<div class="card row between"><div><h3 style="font-size:20px">${esc(trial.name)} · ${trial.trial_days} jours</h3><div class="muted" style="font-size:14px">0 FCFA · toutes les fonctions · chambres illimitées · ${trial.max_users} utilisateurs · 1 caisse · 1 devise</div></div>
         <button class="${o.billing_cycle === 'trial' ? '' : 'ghost'}" disabled>${o.billing_cycle === 'trial' ? 'Essai en cours' : 'Essai déjà utilisé'}</button></div>` : ''}
@@ -1716,7 +1726,7 @@ function renderTarifs(){
   $('v-tarifs').querySelectorAll('[data-cycle]').forEach(b => b.onclick = () => { S.cycle = b.dataset.cycle; renderTarifs(); });
   $('v-tarifs').querySelectorAll('[data-checkout]').forEach(b => b.onclick = () => openCheckout(b.dataset.checkout, S.cycle));
   const q = $('v-tarifs').querySelector('[data-quote]');
-  if (q) q.onclick = () => modal(`<h2 style="font-size:24px;margin-bottom:10px">Formule Enterprise</h2><p class="muted">La formule Enterprise est établie sur devis selon le nombre d'établissements, de villes et les intégrations souhaitées. Votre demande est à adresser à l'administrateur de la plateforme, qui activera la formule après accord.</p><button class="primary" data-close>Fermer</button>`);
+  if (q) q.onclick = () => modal(`<h2 style="font-size:24px;margin-bottom:10px">Formule ${esc(ent.name)}</h2><p class="muted">La formule ${esc(ent.name)} est établie sur devis selon le nombre d'établissements, de villes et les intégrations souhaitées. Votre demande est à adresser à l'administrateur de la plateforme, qui activera la formule après accord.</p><button class="primary" data-close>Fermer</button>`);
 }
 
 /* Paiement en ligne : désactivé tant que l'agrégateur n'est pas branché (boutons réservés). */
@@ -1724,25 +1734,28 @@ const PAY_ONLINE = false;
 function openCheckout(slug, cycle){
   if (!['owner','admin'].includes(S.member.role)) return toast("Seul le propriétaire ou un administrateur peut gérer l'abonnement.", true);
   const p = S.plans.find(x => x.slug === slug); if (!p) return;
-  const amount = cycle === 'yearly' ? p.yearly_price : p.monthly_price;
+  let months = 1;
+  const amt = () => cycle === 'yearly' ? p.yearly_price : p.monthly_price * months;
   const opts = S.providers.map(pr => `<option value="${esc(pr.code)}">${esc(pr.name)}</option>`).join('');
   modal(`<h2 style="font-size:24px">${esc(p.name)} · ${CYCLE[cycle]}</h2>
-    <p style="font-size:28px;font-weight:700;margin:10px 0 2px">${fcfa(amount)}</p>
-    <p class="muted" style="margin:0 0 16px">${cycle === 'yearly' ? 'Valable 1 an' : 'Valable 1 mois'} à compter de l'activation.</p>
+    ${cycle === 'monthly' ? `<div class="field" style="margin-top:12px"><label for="payMonths">Durée</label><select id="payMonths">${[1, 2, 3, 6, 9].map(m => `<option value="${m}">${m} mois · ${fcfa(p.monthly_price * m)}</option>`).join('')}</select></div>` : ''}
+    <p style="font-size:28px;font-weight:700;margin:10px 0 2px" id="payAmt">${fcfa(amt())}</p>
+    <p class="muted" style="margin:0 0 16px" id="payDur">${cycle === 'yearly' ? 'Valable 1 an' : 'Valable 1 mois'} à compter de l'activation.</p>
     ${!PAY_ONLINE ? `<div class="card" style="background:var(--green-l);border-color:var(--green-l);margin:0 0 14px;padding:14px 16px"><strong>Paiement en ligne bientôt disponible</strong><p class="muted" style="margin:6px 0 0;font-size:14px">Wave, Orange Money, MTN, Moov et carte bancaire arrivent prochainement. En attendant, demandez l’activation : notre équipe vous contacte pour le règlement.</p></div>` : ''}
     ${S.providers.length ? `<div class="field"${PAY_ONLINE ? '' : ' hidden'}><label for="payMethod">Moyen de paiement</label><select id="payMethod">${opts}</select></div>
       
       <div class="row"><button class="primary" id="payGo">${PAY_ONLINE ? 'Payer' : 'Demander l’activation'}</button><button class="ghost" data-close>Annuler</button></div>`
       : `<p class="muted">Aucun moyen de paiement n'est disponible pour le moment.</p><button class="ghost" data-close>Fermer</button>`}`);
+  const pm = $('payMonths'); if (pm) pm.onchange = () => { months = +pm.value; $('payAmt').textContent = fcfa(amt()); $('payDur').textContent = 'Valable ' + months + ' mois à compter de l’activation.'; };
   const g = $('payGo'); if (!g) return;
   g.onclick = async () => {
     g.disabled = true;
     const method = $('payMethod').value;
-    const { data, error } = await sb.rpc('start_subscription_checkout', { p_org: S.org, p_plan_slug: slug, p_cycle: cycle, p_method: method });
+    const { data, error } = await sb.rpc('start_subscription_checkout', { p_org: S.org, p_plan_slug: slug, p_cycle: cycle, p_method: method, p_months: months });
     if (error) { g.disabled = false; return toast(errMsg(error), true); }
     const ref = String(data).slice(0, 8).toUpperCase();
     modal(`<h2 style="font-size:24px">Demande enregistrée</h2>
-      <p>Référence de paiement : <strong>${ref}</strong> — montant : <strong>${fcfa(amount)}</strong>.</p>
+      <p>Référence de paiement : <strong>${ref}</strong> — montant : <strong>${fcfa(amt())}</strong>.</p>
       <p class="muted">${PAY_ONLINE ? (method === 'bank_transfer' ? 'Effectuez le virement en indiquant cette référence.' : 'Réglez ce montant en espèces en indiquant cette référence.') : 'Notre équipe vous contacte rapidement pour le règlement.'} Votre abonnement sera activé dès la validation du paiement.</p>
       <button class="primary" data-close>Compris</button>`);
     await loadCommon(); if (S.view === 'abonnement') renderAbonnement();

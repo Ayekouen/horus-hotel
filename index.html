@@ -652,6 +652,30 @@ td .sr-only,th .sr-only{position:absolute;left:0;top:0}
 .kpi .v{overflow-wrap:anywhere}
 @media (max-width:720px){.kpi .v{font-size:clamp(19px,5.6vw,26px)!important;white-space:nowrap;letter-spacing:-.02em}.kpi{padding:14px 16px!important;min-width:0}.grid.g5{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
 @media (max-width:720px){.dashkpi{grid-template-columns:1fr 1fr!important;gap:10px!important}.dashkpi>.card:first-child,.dashkpi>#caCard{grid-column:1/-1}.dashkpi>.card{padding:14px}.dashkpi .kpi .v{font-size:30px}select.casel{min-height:34px!important;height:34px;padding:0 28px 0 12px!important;border-radius:999px!important;max-width:150px}}
+.k-top{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:14px;margin-bottom:14px}
+.k-hero{background:var(--green);color:#fff;border-radius:20px;padding:20px 22px;display:flex;flex-direction:column;justify-content:center}
+.k-hero .l{font-size:14px;opacity:.85;font-weight:600}.k-hero .v{font-family:var(--display);font-size:40px;font-weight:800;letter-spacing:-1px;margin:4px 0;white-space:nowrap}
+.k-hero .f{font-size:13px;opacity:.9;display:flex;gap:12px;flex-wrap:wrap}.k-hero .f b{font-weight:700}
+.k-side{display:flex;flex-direction:column;gap:10px}
+.k-cta{background:#E9B44C;color:#2A1E0E;border:0;border-radius:16px;min-height:58px;font-size:17px;font-weight:800;width:100%}
+.k-acts{display:grid;grid-template-columns:repeat(auto-fit,minmax(70px,1fr));gap:8px;flex:1}
+.k-act{background:var(--card);border:1px solid var(--line);border-radius:14px;min-height:66px;font-size:12.5px;font-weight:600;color:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:6px}
+.k-kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:16px}
+.k-k{margin:0;padding:14px 16px}.k-k .l{font-size:13px;color:var(--muted);font-weight:600}.k-k .v{font-family:var(--display);font-size:24px;font-weight:800;margin-top:2px;white-space:nowrap}.k-k .s{font-size:12px;color:var(--muted)}
+.k-pm{display:flex;flex-direction:column;gap:12px}.k-bar{height:8px;border-radius:9px;background:var(--line);overflow:hidden;margin-top:6px}.k-bar span{display:block;height:100%;border-radius:9px}
+.k-list{display:flex;flex-direction:column}
+.kj-row{display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--line)}.kj-row:last-child{border-bottom:0}
+.kj-rev{opacity:.55}.kj-rev .kj-a{text-decoration:line-through}
+.kj-ic{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;flex:none;color:var(--ink)}
+.kj-m{flex:1;min-width:0}.kj-t{font-weight:700;font-size:15px;overflow-wrap:anywhere}.kj-d{font-size:12.5px;color:var(--muted);margin-top:3px;display:flex;flex-wrap:wrap;gap:4px 6px;align-items:center}
+.kj-chip{font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px}
+.kj-r{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex:none}.kj-a{font-weight:800;font-size:16px;white-space:nowrap}.kj-btns{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.kj-b{flex:none;min-width:150px}
+button.k-danger,html[data-theme] button.k-danger{background:#B3261E!important;border-color:#B3261E!important;color:#fff!important}
+button.k-cta,html[data-theme] button.k-cta{background:#E9B44C!important;color:#2A1E0E!important;border:0!important;box-shadow:0 6px 18px rgba(233,180,76,.35)!important}
+.cl-notes{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-top:12px}
+.cl-n{display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--bg);border-radius:12px;padding:6px 6px 6px 12px;font-size:13px;font-weight:500;margin:0}.cl-n input{width:72px;min-height:40px;text-align:center;font-weight:700}
+@media (max-width:720px){.k-top{grid-template-columns:1fr}.k-hero .v{font-size:36px}.k-acts{grid-template-columns:repeat(4,1fr)}.k-kpis{grid-template-columns:1fr 1fr;gap:10px}.k-wide{grid-column:1/-1}.kj-b{width:100%;min-width:0;justify-content:flex-start;padding-left:52px;margin-top:-4px}.kj-r .kj-btns .small{min-height:32px;padding:0 10px;font-size:12px}}
 </style>
 </head>
 <body>
@@ -910,7 +934,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.10.27-02';
+const APP_VERSION = '2026.10.27-03';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -3044,42 +3068,56 @@ async function renderCaisse(){
   const st = S.caisseFilter || { kind:'all', by:'all' }; S.caisseFilter = st;
   const people = [...new Set(mv.map(m => m.created_by).filter(Boolean))];
   const rows = mv.filter(m => (st.kind === 'all' || (st.kind === 'in' ? ['payment','income'].includes(m.kind) : st.kind === 'out' ? ['expense','refund'].includes(m.kind) : m.kind === 'deposit')) && (st.by === 'all' || m.created_by === st.by));
-  const btn = (id, label, primary) => `<button class="${primary ? 'primary' : 'ghost'}" id="${id}">${label}</button>`;
-  const kpi = (l, v, sub, style='') => `<div class="card kpi ${style === 'dark' ? 'dark' : ''}" style="${style === 'dark' ? '' : style}"><div class="l">${l}</div><div class="v">${v}</div>${sub ? `<div class="muted" style="font-size:13px;margin-top:4px">${sub}</div>` : ''}</div>`;
-  el.innerHTML = head('Caisse', sess ? btn('kExp', 'Dépense') + btn('kInc', 'Entrée diverse') + (can(['owner','admin','manager']) ? btn('kDep', 'Versement banque') : '') + btn('kClose', 'Clôturer') + btn('kPay', '+ Encaisser / acompte', true) : btn('kPay', '+ Encaisser / acompte', true)) + readOnlyNote() +
-    (sess ? `<p class="muted" style="margin:-12px 0 16px">Session ouverte le ${new Date(sess.opened_at).toLocaleString('fr-FR', { dateStyle:'short', timeStyle:'short' })} par <strong>${esc(who(sess.opened_by))}</strong></p>`
-      : `<div class="card" style="margin-bottom:16px"><h3 style="font-size:20px;margin-bottom:8px">La caisse est fermée</h3><p class="muted" style="margin:0 0 12px">Ouvrez la caisse avec le fond initial pour enregistrer des espèces. Les paiements Mobile Money, carte et virement restent possibles.</p>
+  const mgr = can(['owner','admin','manager']);
+  const reversed = new Set(mv.filter(m => (m.reference || '').startsWith('ANN:')).map(m => m.reference.slice(4)));
+  const canRev = (m) => mgr && sess && ['payment','income','expense'].includes(m.kind) && !(m.reference || '').startsWith('ANN:') && !reversed.has(m.id) && (m.method !== 'cash' || m.session_id === sess.id);
+  const KICON = { payment:'<path d="M3 18V7M21 18v-6H3M7 12V9h5v3"></path>', income:'<path d="M12 5v14M5 12h14"></path>', expense:'<path d="M5 12h14"></path>', refund:'<path d="M9 14L4 9l5-5"></path><path d="M4 9h11a5 5 0 0 1 0 10h-3"></path>', deposit:'<path d="M3 21h18M5 21V10M19 21V10M12 3l9 6H3z"></path>' };
+  const KBG = { payment:'#E3F2EA', income:'#FFF4DE', expense:'#FCE8E6', refund:'#FCE8E6', deposit:'#EAEFF6' };
+  const ico = (k) => `<span class="kj-ic" style="background:${KBG[k]}"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${KICON[k] || ''}</svg></span>`;
+  const CHIPC = { cash:['#E3F2EA','#1F5C4A'], wave:['#DDF2FE','#0B6E8F'], orange_money:['#FDEBD8','#A2520F'], mtn_money:['#FFF3C4','#7A5F00'], moov_money:['#E3EEDC','#3E6A2E'], card:['#F7E2D8','#9A3F1C'], bank_transfer:['#ECE7E1','#5A4A3C'] };
+  const chip = (k) => { const c = CHIPC[k] || CHIPC.bank_transfer; return `<span class="kj-chip" style="background-color:${c[0]};color:${c[1]}">${PMETHOD[k] || ''}</span>`; };
+  const act = (id, label, path, show = true) => show ? `<button type="button" class="k-act" id="${id}"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${path}</svg>${label}</button>` : '';
+  const mvActions = (m) => `${m.kind === 'payment' ? `<button class="small ghost" data-rcpt="${m.payment_group || m.id}">Reçu</button>` : ''}${m.receipt_path ? `<button class="small ghost" data-just="${esc(m.receipt_path)}">Justificatif</button>` : ''}${canRev(m) ? `<button class="small ghost" data-rev="${m.id}" style="color:var(--red)">Annuler</button>` : ''}`;
+  const isRev = (m) => reversed.has(m.id);
+  const out = (m) => OUT_KINDS.includes(m.kind);
+  const pct = (v) => totalIn ? Math.round(v * 100 / totalIn) : 0;
+  el.innerHTML = `<div class="row between" style="margin-bottom:6px;align-items:flex-end"><h1 style="font-size:32px">Caisse</h1>${mgr ? '<button type="button" class="small ghost" id="kOpt">Options</button>' : ''}</div>` + readOnlyNote() +
+    (sess ? `<p class="muted" style="margin:0 0 14px;font-size:14px">Ouverte le ${new Date(sess.opened_at).toLocaleString('fr-FR', { dateStyle:'short', timeStyle:'short' })} par <strong>${esc(who(sess.opened_by))}</strong></p>`
+      : `<div class="card" style="margin:8px 0 16px"><h3 style="font-size:20px;margin-bottom:8px">La caisse est fermée</h3><p class="muted" style="margin:0 0 12px">Ouvrez la caisse avec le fond initial pour enregistrer des espèces. Les paiements Mobile Money, carte et virement restent possibles.</p>
       <form id="kOpen" class="row" style="align-items:flex-end"><div style="flex:0 1 200px"><label for="kFund">Fond de caisse (F)</label><input id="kFund" type="number" min="0" value="0"></div><button class="primary">Ouvrir la caisse</button></form></div>`) +
-    `<div class="grid g4" style="margin-bottom:16px">
-      ${kpi('Espèces attendues en caisse', money(expected), sess ? `Fond ${money(sess.opening_balance)} + ${money(cashIn)} − ${money(cashOut)}` : 'Caisse fermée', 'dark')}
-      ${kpi('Encaissé (toutes méthodes)', money(totalIn), `${plur(ins.length, 'opération', 'opérations')} ${sess ? 'dans la session' : "aujourd'hui"}`)}
-      ${kpi('Dépenses', money(sum(mv, ['expense'])), `${plur(mv.filter(m => m.kind === 'expense').length, 'dépense', 'dépenses')}`)}
-      ${kpi('Reste à encaisser', money(balTotal), `${plur(bal.filter(b => balGroup(b) !== 'avenir').length, 'client', 'clients')} présents ou partis${balAvenir ? ' · ' + money(balAvenir) + ' sur les arrivées à venir' : ''}`, 'background:#F6E1D3')}
+    `<div class="k-top">
+      <div class="k-hero"><div class="l">Espèces attendues dans le tiroir</div><div class="v">${money(expected)}</div>
+        <div class="f">${sess ? `<span>Fond <b>${money(sess.opening_balance)}</b></span><span>+ Entrées <b>${money(cashIn)}</b></span><span>− Sorties <b>${money(cashOut)}</b></span>` : '<span>Caisse fermée</span>'}</div></div>
+      <div class="k-side"><button type="button" class="k-cta" id="kPay">+ Encaisser un client</button>
+        ${sess ? `<div class="k-acts">${act('kExp', 'Dépense', '<path d="M5 12h14"></path>')}${act('kInc', 'Entrée', '<path d="M12 5v14M5 12h14"></path>')}${act('kDep', 'Versement', '<path d="M3 21h18M5 21V10M19 21V10M12 3l9 6H3z"></path>', mgr)}${act('kClose', 'Clôturer', '<rect x="4" y="11" width="16" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path>')}</div>` : ''}</div>
+    </div>
+    <div class="k-kpis">
+      <div class="card k-k"><div class="l">Encaissé</div><div class="v">${money(totalIn)}</div><div class="s">${plur(ins.length, 'opération', 'opérations')} ${sess ? 'dans la session' : "aujourd'hui"}</div></div>
+      <div class="card k-k"><div class="l">Dépenses</div><div class="v" style="color:var(--red)">${money(sum(mv, ['expense']))}</div><div class="s">${plur(mv.filter(m => m.kind === 'expense').length, 'dépense', 'dépenses')}</div></div>
+      <div class="card k-k k-wide"><div class="l">Reste à encaisser</div><div class="v">${money(balTotal)}</div><div class="s">${plur(bal.filter(b => balGroup(b) !== 'avenir').length, 'client', 'clients')} présents ou partis${balAvenir ? ' · ' + money(balAvenir) + ' sur les arrivées à venir' : ''}</div></div>
     </div>` +
-    (byMethod.length ? `<div class="card" style="margin-bottom:16px"><h3 style="font-size:20px;margin-bottom:12px">Par moyen de paiement</h3><div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px">${byMethod.map(([k, v]) => `<div style="border:1px solid #E2D5C1;border-radius:16px;padding:14px"><div class="muted" style="font-size:13px">${PMETHOD[k]}</div><div style="font-weight:700;font-size:20px;margin-top:4px">${money(v)}</div><div style="height:6px;border-radius:3px;background:#E9DCC8;margin-top:10px"><div style="width:${Math.max(3, Math.round(v * 100 / totalIn))}%;height:6px;border-radius:3px;background:${BARC[k]}"></div></div></div>`).join('')}</div></div>` : '') +
+    (byMethod.length ? `<div class="card" style="margin-bottom:16px"><h3 style="font-size:20px;margin-bottom:12px">Par moyen de paiement</h3><div class="k-pm">${byMethod.sort((x, y) => y[1] - x[1]).map(([k, v]) => `<div><div class="row between" style="flex-wrap:nowrap;font-weight:600;font-size:15px"><span>${PMETHOD[k]}</span><span>${money(v)} <span class="muted" style="font-weight:500">· ${pct(v)} %</span></span></div><div class="k-bar"><span style="width:${Math.max(3, pct(v))}%;background:${BARC[k]}"></span></div></div>`).join('')}</div></div>` : '') +
     `<div class="card" style="margin-bottom:16px"><div class="row between" style="gap:10px;margin-bottom:4px"><h3 style="font-size:20px">Soldes clients</h3><span class="muted" style="font-size:14px">Total dû : <strong style="color:var(--ink)">${money(sumBal(bal))}</strong></span></div>
       <p class="muted" style="font-size:13px;margin:0 0 12px">Qui doit combien : séjours non soldés, du plus urgent au plus lointain.</p>
       <div class="row" style="gap:6px;margin-bottom:12px">${[['tous', 'Tous'], ['sejour', 'En séjour'], ['arrivee', 'Arrivés'], ['avenir', 'À venir'], ['parti', 'Partis']].map(([k, l]) => { const n = k === 'tous' ? bal.length : bal.filter(b => balGroup(b) === k).length; return n || k === 'tous' ? `<button class="small ${sf === k ? 'primary' : 'ghost'}" data-sf="${k}">${l} · ${n}</button>` : ''; }).join('')}</div>
-      ${balRows.length ? `<div class="tablewrap"><table class="table"><thead><tr><th>Client</th><th>Séjour</th><th style="text-align:right">Total</th><th style="text-align:right">Payé</th><th style="text-align:right">Reste</th><th>État</th><th><span class="sr-only">Actions</span></th></tr></thead><tbody>
-        ${balRows.map(b0 => { const i = bal.indexOf(b0), ps = payState(b0), g = balGroup(b0), wa = relance(b0); return `<tr><td><strong>${esc(b0.guest_name)}</strong><div class="muted" style="font-size:12px">${esc(b0.guest_phone || '')}</div></td>
-          <td>Ch. ${esc(b0.room_number)} · ${dfr(b0.check_in)} → ${dfr(b0.check_out)}<div class="muted" style="font-size:12px">${BALG[g]}</div></td>
-          <td style="text-align:right;white-space:nowrap">${money(b0.total_amount)}</td><td style="text-align:right;white-space:nowrap">${money(b0.paid)}</td>
-          <td style="text-align:right;white-space:nowrap;font-weight:700;color:var(--red)">${money(b0.balance)}</td><td><span class="pill ${ps[1]}">${ps[0]}</span></td>
-          <td style="white-space:nowrap"><button class="small primary" data-bal="${i}">${g === 'avenir' ? 'Acompte' : 'Encaisser'}</button>${wa ? ` <a class="btn" style="min-height:36px;padding:0 12px;font-size:13px" href="${wa}" target="_blank" rel="noopener">Relancer</a>` : ''}</td></tr>`; }).join('')}
-        </tbody></table></div>` : '<p class="muted">Aucun solde en attente dans cette catégorie.</p>'}
+      ${balRows.length ? `<div class="k-list">${balRows.map(b0 => { const i = bal.indexOf(b0), ps = payState(b0), g = balGroup(b0), wa = relance(b0); return `<div class="kj-row">
+          <div class="kj-m"><div class="kj-t">${esc(b0.guest_name)} <span class="pill ${ps[1]}" style="font-size:11px">${ps[0]}</span></div><div class="kj-d">Ch. ${esc(b0.room_number)} · ${dfr(b0.check_in)} → ${dfr(b0.check_out)} · payé ${money(b0.paid)} / ${money(b0.total_amount)}</div><div class="kj-d">${BALG[g]}</div></div>
+          <div class="kj-r"><div class="kj-a" style="color:var(--red)">${money(b0.balance)}</div><div class="kj-btns"><button class="small primary" data-bal="${i}">${g === 'avenir' ? 'Acompte' : 'Encaisser'}</button>${wa ? `<a class="btn" style="min-height:34px;padding:0 10px;font-size:13px" href="${wa}" target="_blank" rel="noopener">Relancer</a>` : ''}</div></div></div>`; }).join('')}</div>` : '<p class="muted">Aucun solde en attente dans cette catégorie.</p>'}
     </div>
-    <div class="grid" style="grid-template-columns:minmax(0,1fr);gap:16px;margin-bottom:16px;align-items:start">
-      <div class="card" style="min-width:0"><div class="row between" style="margin-bottom:10px;gap:10px"><h3 style="font-size:20px">Journal</h3>
+    <div class="card" style="margin-bottom:16px;min-width:0"><div class="row between" style="margin-bottom:10px;gap:10px"><h3 style="font-size:20px">Journal</h3>
         <div class="row" style="gap:6px">${[['all','Tout'],['in','Paiements'],['out','Dépenses'],['dep','Versements']].map(([k, l]) => `<button class="small ${st.kind === k ? 'primary' : 'ghost'}" data-kf="${k}">${l}</button>`).join('')}
         ${people.length > 1 ? `<select id="kBy" aria-label="Caissier" style="width:auto;height:36px"><option value="all">Tous les caissiers</option>${people.map(p => `<option value="${p}" ${st.by === p ? 'selected' : ''}>${esc(who(p))}</option>`).join('')}</select>` : ''}</div></div>
-        ${rows.length === 0 ? '<p class="muted">Aucun mouvement.</p>' : `<div class="tablewrap"><table class="table"><thead><tr><th>Heure</th><th>Libellé</th><th>Moyen</th><th>Par</th><th style="text-align:right">Montant</th><th><span class="sr-only">Actions</span></th></tr></thead><tbody>
-        ${rows.map(m => { const out = OUT_KINDS.includes(m.kind); return `<tr><td>${hm(m.created_at)}</td><td><strong>${KIND[m.kind]}</strong> · ${esc(m.label)}${m.category ? ` <span class="muted">(${esc(m.category)})</span>` : ''}</td><td>${PMETHOD[m.method] || ''}${m.reference ? `<br><span class="muted" style="font-size:12px">réf. ${esc(m.reference)}</span>` : ''}</td><td>${esc(who(m.created_by))}</td><td style="text-align:right;font-weight:700;white-space:nowrap;color:${out ? 'var(--red)' : 'var(--ok)'}">${out ? '−' : '+'}${money(m.amount)}</td><td>${m.kind === 'payment' ? `<button class="small ghost" data-rcpt="${m.payment_group || m.id}">Reçu</button>` : ''}${m.receipt_path ? `<button class="small ghost" data-just="${esc(m.receipt_path)}">Justificatif</button>` : ''}</td></tr>`; }).join('')}
-        </tbody></table></div>`}
-      </div>
+      ${rows.length === 0 ? '<p class="muted">Aucun mouvement.</p>' : `<div class="k-list">${rows.map(m => `<div class="kj-row${isRev(m) ? ' kj-rev' : ''}">${ico(m.kind)}
+          <div class="kj-m"><div class="kj-t">${KIND[m.kind]} · ${esc(m.label)}${m.category ? ` <span class="muted" style="font-weight:500">(${esc(m.category)})</span>` : ''}</div>
+            <div class="kj-d">${hm(m.created_at)} ${chip(m.method)} ${esc(who(m.created_by))}${m.reference && !m.reference.startsWith('ANN:') ? ` · réf. ${esc(m.reference)}` : ''}${isRev(m) ? ' · <strong style="color:var(--red)">annulé</strong>' : ''}</div></div>
+          <div class="kj-r"><div class="kj-a" style="color:${out(m) ? 'var(--red)' : 'var(--ok)'}">${out(m) ? '−' : '+'}${money(m.amount)}</div></div>${mvActions(m) ? `<div class="kj-btns kj-b">${mvActions(m)}</div>` : ''}</div>`).join('')}</div>`}
     </div>` +
-    (hist.length ? `<div class="card"><h3 style="font-size:20px;margin-bottom:10px">Dernières clôtures</h3><div class="tablewrap"><table class="table"><thead><tr><th>Ouverte</th><th>Clôturée</th><th>Par</th><th style="text-align:right">Compté</th><th>Écart</th><th><span class="sr-only">Actions</span></th></tr></thead><tbody>
-      ${hist.map((h, i) => { const g = h.gap; return `<tr><td>${new Date(h.opened_at).toLocaleString('fr-FR', { dateStyle:'short', timeStyle:'short' })}</td><td>${h.closed_at ? new Date(h.closed_at).toLocaleString('fr-FR', { dateStyle:'short', timeStyle:'short' }) : ''}</td><td>${esc(who(h.closed_by))}</td><td style="text-align:right">${money(h.counted_balance)}</td><td>${h.gap_reason ? `<span class="pill st-pending">${esc(h.gap_reason)}</span>` : '<span class="pill st-active">Aucun</span>'}</td><td><button class="small ghost" data-hist="${i}">Rapport</button> <button class="small ghost" type="button" data-histz="${i}">Ticket Z</button></td></tr>`; }).join('')}
-      </tbody></table></div></div>` : '');
+    (hist.length ? `<div class="card"><h3 style="font-size:20px;margin-bottom:10px">Dernières clôtures</h3><div class="k-list">
+      ${hist.map((h, i) => `<div class="kj-row"><div class="kj-m"><div class="kj-t">${h.closed_at ? new Date(h.closed_at).toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'short' }) : ''}</div>
+        <div class="kj-d">Compté <strong>${money(h.counted_balance)}</strong> · par ${esc(who(h.closed_by))}${h.counted_detail && h.counted_detail.mode === 'billets' ? ' · par billets' : ''}</div>
+        <div class="kj-d">${h.gap_reason ? `<span class="pill st-pending">${esc(h.gap_reason)}</span>` : '<span class="pill st-active">Aucun écart</span>'}</div></div>
+        <div class="kj-r"><div class="kj-btns"><button class="small ghost" data-hist="${i}">Rapport</button><button class="small ghost" type="button" data-histz="${i}">Ticket Z</button></div></div></div>`).join('')}
+      </div></div>` : '');
 
   const o = $('kOpen'); if (o) o.onsubmit = async (e) => { e.preventDefault(); const { error } = await sb.from('cash_sessions').insert({ establishment_id: S.est, opening_balance: +$('kFund').value || 0 }); if (error) return toast(errMsg(error), true); toast('Caisse ouverte.'); renderCaisse(); };
   el.querySelectorAll('[data-kf]').forEach(b => b.onclick = () => { st.kind = b.dataset.kf; renderCaisse(); });
@@ -3106,6 +3144,37 @@ async function renderCaisse(){
   a('kInc', () => openSimpleMove('income', renderCaisse));
   a('kDep', () => openSimpleMove('deposit', renderCaisse));
   a('kClose', () => openClosure(sess, expected, renderCaisse));
+  a('kOpt', () => openCashOptions(renderCaisse));
+  el.querySelectorAll('[data-rev]').forEach(b => b.onclick = () => openReverse(mv.find(m => m.id === b.dataset.rev), renderCaisse));
+}
+
+function cashOpts(){ const est = (S.ests || []).find(x => x.id === S.est) || {}; return rcpt(est); }
+function openCashOptions(done){
+  const est = (S.ests || []).find(x => x.id === S.est); if (!est) return;
+  const r = rcpt(est);
+  modal(`<h2 style="font-size:22px;margin-bottom:6px">Options de la caisse</h2><p class="muted" style="margin:0 0 14px;font-size:14px">${esc(est.name || '')}</p>
+    <label style="display:flex;gap:12px;align-items:flex-start;font-weight:600;cursor:pointer"><input type="checkbox" id="coNotes" ${r.cash_notes ? 'checked' : ''} style="width:22px;height:22px;min-height:0;margin-top:2px">
+      <span>Comptage par billets à la clôture<span class="muted" style="display:block;font-weight:400;font-size:13px">Le caissier saisit le nombre de billets et de pièces ; la caisse calcule le total et l’écart. Sinon, il saisit seulement le montant total.</span></span></label>
+    <div class="row" style="margin-top:18px"><button class="primary" id="coSave" style="flex:1">Enregistrer</button><button class="ghost" data-close>Annuler</button></div>`);
+  $('coSave').onclick = async () => {
+    const val = { ...rcpt(est) }; if ($('coNotes').checked) val.cash_notes = true; else delete val.cash_notes;
+    const { error } = await sb.from('establishments').update({ receipt_settings: val }).eq('id', est.id);
+    if (error) return toast(errMsg(error), true);
+    est.receipt_settings = val; closeModal(); toast('Options enregistrées.'); done && done(); };
+}
+function openReverse(m, done){
+  if (!m) return;
+  const inv = { payment: 'refund', income: 'expense', expense: 'income' }[m.kind];
+  modal(`<h2 style="font-size:22px;margin-bottom:6px">Annuler une opération</h2>
+    <div class="card" style="margin:0 0 14px;padding:12px 14px;background:var(--bg)"><strong>${KIND[m.kind]} · ${esc(m.label)}</strong><div class="muted" style="font-size:13px">${hm(m.created_at)} · ${PMETHOD[m.method] || ''} · ${money(m.amount)}</div></div>
+    <p class="muted" style="font-size:13px;margin:0 0 10px">L’opération n’est pas effacée : une opération inverse de ${money(m.amount)} est enregistrée avec votre nom et le motif. ${m.kind === 'payment' ? 'Le solde du client est rétabli.' : ''}</p>
+    <form id="rvF"><div class="field"><label for="rvR">Motif de l’annulation</label><input id="rvR" required minlength="3" maxlength="200" placeholder="ex. Erreur de montant, client remboursé…"></div>
+    <div class="row"><button class="primary k-danger" style="flex:1">Confirmer l’annulation</button><button type="button" class="ghost" data-close>Retour</button></div></form>`);
+  setTimeout(() => $('rvR') && $('rvR').focus(), 50);
+  $('rvF').onsubmit = async (e) => { e.preventDefault(); e.submitter.disabled = true;
+    const { error } = await sb.from('cash_movements').insert({ establishment_id: m.establishment_id, reservation_id: m.reservation_id || null, kind: inv, method: m.method, amount: Number(m.amount), label: `Annulation · ${m.label} · ${$('rvR').value.trim()}`.slice(0, 200), reference: 'ANN:' + m.id });
+    if (error) { e.submitter.disabled = false; return toast(errMsg(error), true); }
+    closeModal(); toast('Opération annulée.'); done(); };
 }
 
 function openSimpleMove(kind, done){
@@ -3221,13 +3290,15 @@ async function printReceipt(key){
 }
 
 const GAP_REASONS = ['Erreur de monnaie rendue', 'Dépense non enregistrée', 'Erreur de saisie', 'Paiement noté en espèces par erreur', 'Billet manquant / perte'];
+const CASH_DENOMS = [[10000,'b'],[5000,'b'],[2000,'b'],[1000,'b'],[500,'b'],[500,'p'],[250,'p'],[200,'p'],[100,'p'],[50,'p'],[25,'p'],[10,'p'],[5,'p']];
 function openClosure(sess, expected, done){
-  const st = { reason: '', other: '' };
+  const st = { reason: '', other: '' }; const notes = !!cashOpts().cash_notes && (S.currency || 'XOF') === 'XOF';
   modal(`<h2 style="font-size:24px;margin-bottom:12px">Clôture de caisse</h2>
     <div class="row between card" style="background:var(--green-l);margin:0 0 14px;padding:14px 16px"><span style="font-weight:600">Attendu en espèces</span><strong style="font-family:var(--display);font-size:26px">${money(expected)}</strong></div>
-    <form id="clF"><label for="clAmt" style="font-weight:700">Espèces comptées dans le tiroir</label>
-      <div class="row" style="gap:8px;flex-wrap:nowrap;margin-top:6px"><input id="clAmt" inputmode="numeric" autocomplete="off" placeholder="Montant compté" style="flex:1;min-width:0;font-size:24px;font-weight:700;min-height:56px">
-        <button type="button" class="ghost" id="clExact" style="white-space:nowrap;min-height:56px">✓ Montant exact</button></div>
+    <form id="clF"><label for="clAmt" style="font-weight:700">${notes ? 'Comptez les billets et pièces du tiroir' : 'Espèces comptées dans le tiroir'}</label>
+      <div class="row" style="gap:8px;flex-wrap:nowrap;margin-top:6px"><input id="clAmt" inputmode="numeric" autocomplete="off" placeholder="${notes ? 'Total calculé' : 'Montant compté'}" ${notes ? 'readonly' : ''} style="flex:1;min-width:0;font-size:24px;font-weight:700;min-height:56px">
+        ${notes ? '' : '<button type="button" class="ghost" id="clExact" style="white-space:nowrap;min-height:56px">✓ Montant exact</button>'}</div>
+      ${notes ? `<div class="cl-notes">${CASH_DENOMS.map(([v, t], i) => `<label class="cl-n"><span>${t === 'p' ? 'Pièce' : 'Billet'} <b>${new Intl.NumberFormat('fr-FR').format(v).replace(/[\u202f\u00a0]/g, ' ')}</b></span><input type="number" min="0" inputmode="numeric" data-dn="${i}" placeholder="0" aria-label="Nombre de ${t === 'p' ? 'pièces' : 'billets'} de ${v}"></label>`).join('')}</div>` : ''}
       <div id="clRes" style="margin:14px 0"></div>
       <p class="muted" style="font-size:12px;margin:0 0 12px">En cas d’écart, le propriétaire est alerté et le retrouve dans Contrôle.</p>
       <div class="row"><button class="primary" id="clGo" style="flex:1;min-height:52px">Clôturer la caisse</button><button type="button" class="ghost" data-close>Annuler</button></div></form>`);
@@ -3246,14 +3317,16 @@ function openClosure(sess, expected, done){
     if ($('clOther')) $('clOther').oninput = () => { st.other = $('clOther').value; };
   };
   $('clAmt').oninput = () => { const v = val(); $('clAmt').value = v === null ? '' : new Intl.NumberFormat('fr-FR').format(v).replace(/[  ]/g, ' '); draw(); };
-  $('clExact').onclick = () => { $('clAmt').value = new Intl.NumberFormat('fr-FR').format(expected).replace(/[  ]/g, ' '); draw(); };
-  setTimeout(() => $('clAmt').focus(), 50);
+  if ($('clExact')) $('clExact').onclick = () => { $('clAmt').value = new Intl.NumberFormat('fr-FR').format(expected).replace(/[  ]/g, ' '); draw(); };
+  const detail = () => CASH_DENOMS.map(([v, t], i) => ({ v, t, n: +(document.querySelector(`[data-dn="${i}"]`) || {}).value || 0 })).filter(x => x.n > 0);
+  document.querySelectorAll('[data-dn]').forEach(x => x.oninput = () => { const d = detail(); const tot = d.reduce((a, x) => a + x.v * x.n, 0); $('clAmt').value = d.length ? new Intl.NumberFormat('fr-FR').format(tot).replace(/[\u202f\u00a0]/g, ' ') : ''; draw(); });
+  setTimeout(() => (notes ? document.querySelector('[data-dn="0"]') : $('clAmt')).focus(), 50);
   $('clF').onsubmit = async (e) => { e.preventDefault();
     const t = val(); if (t === null) return toast('Saisissez le montant compté, ou touchez « Montant exact ».', true);
     let reason = null;
     if (t !== expected) { reason = st.reason === 'Autre…' ? st.other.trim() : st.reason; if (!reason) return toast('Choisissez le motif de l’écart.', true); }
     $('clGo').disabled = true;
-    const { data, error } = await sb.from('cash_sessions').update({ status: 'closed', counted_balance: t, counted_detail: { mode: 'montant' }, gap_reason: reason }).eq('id', sess.id).select('*').single();
+    const { data, error } = await sb.from('cash_sessions').update({ status: 'closed', counted_balance: t, counted_detail: notes ? { mode: 'billets', detail: detail() } : { mode: 'montant' }, gap_reason: reason }).eq('id', sess.id).select('*').single();
     if (error) { $('clGo').disabled = false; return toast(errMsg(error), true); }
     const g = t - expected;
     modal(`<div style="text-align:center"><div style="width:64px;height:64px;border-radius:50%;background:${g === 0 ? '#E3F4E8' : '#FFF4E0'};display:grid;place-items:center;margin:0 auto 10px;font-size:30px">${g === 0 ? '✓' : '!'}</div>
@@ -3313,7 +3386,7 @@ async function printClosure(s){
     <tr><td>Dépenses en espèces</td><td class="r">−${money(sum(cash, ['expense']))}</td></tr><tr><td>Remboursements</td><td class="r">−${money(sum(cash, ['refund']))}</td></tr><tr><td>Versements banque</td><td class="r">−${money(sum(cash, ['deposit']))}</td></tr>
     <tr class="tot"><td>Attendu</td><td class="r">${money(expected)}</td></tr><tr><td><strong>Compté</strong></td><td class="r"><strong>${money(s.counted_balance)}</strong></td></tr>
     <tr><td><strong>Écart</strong></td><td class="r"><strong>${money(Number(s.counted_balance || 0) - expected)}</strong></td></tr>${s.gap_reason ? `<tr><td colspan="2">Motif : ${esc(s.gap_reason)}</td></tr>` : ''}</table>
-    ${Object.keys(det).length ? `<h2>Comptage</h2><table>${DENOMS.map(d => `<tr><td>${money(d)} × ${det[d] || 0}</td><td class="r">${money(d * (det[d] || 0))}</td></tr>`).join('')}<tr><td>Pièces</td><td class="r">${money(det.pieces || 0)}</td></tr></table>` : ''}
+    ${s.counted_detail && s.counted_detail.mode === 'billets' && (s.counted_detail.detail || []).length ? `<h2>Comptage par billets et pièces</h2><table>${s.counted_detail.detail.map(d => `<tr><td>${d.t === 'p' ? 'Pièce' : 'Billet'} ${money(d.v)} × ${d.n}</td><td class="r">${money(d.v * d.n)}</td></tr>`).join('')}</table>` : Object.keys(det).filter(k => DENOMS.includes(+k) || k === 'pieces').length ? `<h2>Comptage</h2><table>${DENOMS.map(d => `<tr><td>${money(d)} × ${det[d] || 0}</td><td class="r">${money(d * (det[d] || 0))}</td></tr>`).join('')}<tr><td>Pièces</td><td class="r">${money(det.pieces || 0)}</td></tr></table>` : ''}
     <h2>Encaissements par moyen</h2><table>${byM.map(([k, v]) => `<tr><td>${PMETHOD[k]}</td><td class="r">${money(v)}</td></tr>`).join('') || '<tr><td>Aucun</td><td></td></tr>'}</table>
     <h2>Détail des opérations</h2><table><tr><th>Heure</th><th>Opération</th><th>Moyen</th><th>Par</th><th class="r">Montant</th></tr>${rows.map(m => `<tr><td>${hm(m.created_at)}</td><td>${KIND[m.kind]} · ${esc(m.label)}</td><td>${PMETHOD[m.method]}</td><td>${esc(who(m.created_by))}</td><td class="r">${OUT_KINDS.includes(m.kind) ? '−' : ''}${money(m.amount)}</td></tr>`).join('')}</table>
     <div class="sig"><div>Caissier</div><div>Propriétaire / gérant</div></div>
@@ -3950,7 +4023,7 @@ function openReceiptEditor(){
       <div class="m">Payé par Wave${e2.receipt_settings.show_server !== false ? ' · Servi par ' + esc(myName() || 'Awa') : ''}</div>` + rcptFoot(e2, 'Merci de votre visite !'); };
   $('rcForm').oninput = prev; $('rcForm').onchange = prev; prev();
   $('rcForm').onsubmit = async (e) => { e.preventDefault(); const b = $('rcSave'); b.disabled = true;
-    const val = clean(read()); const { error } = await sb.from('establishments').update({ receipt_settings: val }).eq('id', est.id);
+    const val = { ...(rcpt(est).cash_notes ? { cash_notes: true } : {}), ...clean(read()) }; const { error } = await sb.from('establishments').update({ receipt_settings: val }).eq('id', est.id);
     if (error) { b.disabled = false; return toast(errMsg(error), true); }
     est.receipt_settings = val; closeModal(); toast('Reçu personnalisé enregistré.'); };
 }

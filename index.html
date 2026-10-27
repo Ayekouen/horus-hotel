@@ -684,6 +684,14 @@ nav.side .brand::before,.mtop .brand::before,html[data-theme] nav.side .brand::b
 .authlogo{display:flex;align-items:center;gap:10px;margin-bottom:18px}.authlogo span{font-weight:800;font-size:20px;letter-spacing:-.02em;color:var(--ink)}.authlogo b{font-weight:500;color:var(--muted);margin-left:6px;font-size:16px}
 .brand .bm{font-weight:500;color:var(--muted);margin-left:5px;font-size:.82em;letter-spacing:0}
 html[data-theme="foret"] body{font-family:"Inter",system-ui,sans-serif}
+.st-g{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin:18px 4px 8px}
+.st-l{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+button.st-it,html[data-theme] button.st-it{display:flex;width:100%;align-items:center;gap:12px;padding:12px 14px;border:0!important;border-top:1px solid var(--line)!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;text-align:left;min-height:56px;font-weight:500;font-size:15px;color:var(--ink)}
+.st-l button.st-it:first-child{border-top:0!important}button.st-it:hover{background:var(--bg)!important}
+.st-ic{width:30px;height:30px;border-radius:8px;background:var(--green-l);display:grid;place-items:center;flex:none}.st-ic svg{width:16px;height:16px;stroke:var(--green);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.st-t{flex:1;min-width:0}.st-d{display:block;font-size:12.5px;color:var(--muted);font-weight:400;margin-top:1px}.st-v{color:var(--muted);font-size:13px}.st-ch{color:var(--muted);font-size:20px;line-height:1}
+button.st-out,html[data-theme] button.st-out{width:100%;margin-top:18px;min-height:48px;border:1px solid var(--line)!important;background:var(--card)!important;color:#B42318!important;font-weight:600;border-radius:12px!important;box-shadow:none!important}
+#navMore .menu > button:not(.keep){display:none!important}
 </style>
 </head>
 <body>
@@ -693,9 +701,9 @@ html[data-theme="foret"] body{font-family:"Inter",system-ui,sans-serif}
 <main id="auth" class="auth hidden">
   <div class="card">
     <div class="authlogo"><svg width="36" height="36" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="16" fill="#3F9ED8"/><path d="M19 47V17h7l13 17V17h7v30h-7L26 30v17z" fill="#fff"/></svg><span>Nuittea<b>Manager</b></span></div>
-    <h1 id="authTitle" style="font-size:30px;margin:6px 0 14px">Connexion</h1>
+    <h1 id="authTitle" style="font-size:28px;margin:6px 0 4px">Connexion</h1><p class="muted" id="authSub" style="margin:0 0 22px;font-size:14px">Gérez vos réservations et votre caisse.</p>
     <div id="savedProfiles"></div>
-    <div class="row" id="authTabs" role="tablist" style="gap:6px;margin-bottom:16px;background:var(--line);padding:4px;border-radius:999px;flex-wrap:nowrap">
+    <div class="row hidden" id="authTabs" role="tablist" style="gap:6px;margin-bottom:16px;background:var(--line);padding:4px;border-radius:999px;flex-wrap:nowrap">
       <button type="button" role="tab" data-amode="mail" class="small" style="flex:1;border:0">Propriétaire (e-mail)</button>
       <button type="button" role="tab" data-amode="staff" class="small ghost" style="flex:1;border:0">Personnel</button>
     </div>
@@ -703,30 +711,30 @@ html[data-theme="foret"] body{font-family:"Inter",system-ui,sans-serif}
       <div class="field"><label for="sCode">Code hôtel ou résidence</label><input id="sCode" required autocomplete="organization" autocapitalize="none" spellcheck="false" placeholder="ex. lespalmiers" pattern="[a-zA-Z0-9]{3,20}"></div>
       <div class="field"><label for="sUser">Identifiant</label><input id="sUser" name="username" required autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="ex. awa" pattern="[a-zA-Z0-9]{2,20}"></div>
       <div class="field"><label for="sPin">Code (4 chiffres)</label><input id="sPin" name="password" type="password" required inputmode="numeric" pattern="\d{4}" maxlength="4" autocomplete="current-password" style="letter-spacing:10px;font-size:22px;text-align:center"></div>
-      <label class="row" style="gap:8px;margin:-4px 0 14px;font-weight:600;color:var(--ink);flex-wrap:nowrap"><input type="checkbox" id="sRemember" checked style="width:20px;min-height:20px"> Rester connecté sur cet appareil</label>
+      <label class="row hidden" style="gap:8px;margin:-4px 0 14px;font-weight:600;color:var(--ink);flex-wrap:nowrap"><input type="checkbox" id="sRemember" checked style="width:20px;min-height:20px"> Rester connecté sur cet appareil</label>
       <button class="primary" style="width:100%" id="staffBtn">Se connecter</button>
-      <p class="muted" style="margin:12px 0 0;font-size:13px">Code oublié ? Demandez au responsable de l’établissement de le réinitialiser.</p>
+      <p class="muted" style="margin:12px 0 0;font-size:13px">Code oublié ? Demandez au responsable de l’établissement.</p><p style="margin:14px 0 0;font-size:14px"><a href="#" data-amode-link="mail">← Je suis le propriétaire</a></p>
     </form>
     <div id="mailBox">
     <form id="authForm" method="post" action="#" name="login">
       <div class="field"><label for="email">Adresse e-mail</label><input id="email" name="username" type="email" required autocomplete="username" inputmode="email" autocapitalize="none" spellcheck="false"></div>
       <div class="field"><label for="password">Mot de passe</label><div style="position:relative"><input id="password" name="password" type="password" required minlength="8" autocomplete="current-password" style="padding-right:96px"><button type="button" id="pwToggle" class="small ghost" style="position:absolute;right:4px;top:4px;min-height:36px;border:0" aria-label="Afficher le mot de passe">Afficher</button></div></div>
-      <label class="row" style="gap:8px;margin:-4px 0 14px;font-weight:600;color:var(--ink);flex-wrap:nowrap"><input type="checkbox" id="remember" checked style="width:20px;min-height:20px"> Rester connecté sur cet appareil</label>
+      <label class="row hidden" style="gap:8px;margin:-4px 0 14px;font-weight:600;color:var(--ink);flex-wrap:nowrap"><input type="checkbox" id="remember" checked style="width:20px;min-height:20px"> Rester connecté sur cet appareil</label>
       <label class="row hidden" id="cguRow" style="gap:8px;margin:-4px 0 14px;font-weight:600;color:var(--ink);flex-wrap:nowrap;align-items:flex-start"><input type="checkbox" id="cguOk" style="width:20px;min-height:20px;margin-top:2px"> <span>J’accepte les <a href="#" data-legal="cgu">CGU</a>, les <a href="#" data-legal="cgv">CGV</a> et la <a href="#" data-legal="confidentialite">politique de confidentialité</a>.</span></label>
       <button class="primary" style="width:100%" id="authBtn">Se connecter</button>
     </form>
-    <div class="row" style="margin-top:12px"><button type="button" class="ghost" id="magicBtn" style="flex:1 1 200px">Recevoir un lien de connexion par e-mail</button></div>
-    <p style="margin:10px 0 0;font-size:14px" class="row between"><a href="#" id="forgotLink">Mot de passe oublié ?</a><a href="#" onclick="event.preventDefault();refreshApp()" class="muted"> Actualiser l’application</a></p>
-    <p style="margin:12px 0 0;font-size:13px;text-align:center"><a href="#" onclick="event.preventDefault();openLang()">Français · English</a> · <a href="?annuaire=1">Chercher un hôtel ou une résidence →</a></p>
-    <p class="muted" id="authLegal" style="margin:14px 0 0;font-size:12px;text-align:center"></p>
-    <p class="muted" style="margin:16px 0 0;font-size:14px"><span id="authSwitchTxt">Pas encore de compte ?</span> <a href="#" id="authSwitch">Créer un compte – 30 jours gratuits</a></p>
+    <div class="row hidden" style="margin-top:12px"><button type="button" class="ghost" id="magicBtn" style="flex:1 1 200px">Recevoir un lien de connexion par e-mail</button></div>
+    <p style="margin:14px 0 0;font-size:14px;font-weight:600" class="row between"><a href="#" id="forgotLink">Mot de passe oublié ?</a><a href="#" data-amode-link="staff">Je suis employé</a></p>
+    <div style="height:1px;background:var(--line);margin:24px 0 18px"></div>
+    <p style="margin:0;font-size:14px;text-align:center"><span id="authSwitchTxt">Pas encore de compte ?</span> <a href="#" id="authSwitch" style="font-weight:600">Créer un compte – 7 jours gratuits</a></p>
     </div>
+    <p class="muted" id="authLegal" style="margin:22px 0 0;font-size:12px;text-align:center"></p>
   </div>
 </main>
 
 <div id="onboard" class="auth hidden">
   <div class="card">
-    <div class="eyebrow">Essai gratuit de 30 jours</div>
+    <div class="eyebrow">Essai gratuit de 7 jours</div>
     <h1 style="font-size:28px;margin:6px 0 8px">Créez votre établissement</h1>
     <div id="myInvites"></div>
     <p class="muted" style="margin:0 0 18px">Votre période d'essai démarre dès la création.</p>
@@ -769,11 +777,12 @@ html[data-theme="foret"] body{font-family:"Inter",system-ui,sans-serif}
       <button data-view="rapports">Rapports</button>
       <button data-view="controle">Contrôle <span id="alertBadge" class="hidden" style="display:inline-block;min-width:20px;padding:0 6px;border-radius:999px;background:var(--green);color:#fff;font-size:12px;line-height:20px"></span></button>
       <button data-view="pointage">Pointage</button>
-      <button data-view="mapage">Ma page de présentation</button></div>
+      <button data-view="mapage">Ma fiche Nuittea</button></div>
     <button type="button" id="navEssToggle" class="navmore-btn" aria-expanded="false">Plus de fonctionnalités</button>
     <details class="more" id="navMore">
       <summary>Réglages</summary>
       <div class="menu">
+        <button type="button" id="navAll" class="keep">Tous les réglages</button>
         <button type="button" id="navEsts">Mes établissements</button>
         <button type="button" id="navLang">Langue / Language</button>
         <button type="button" id="navMods">Fonctionnalités utilisées</button>
@@ -787,11 +796,11 @@ html[data-theme="foret"] body{font-family:"Inter",system-ui,sans-serif}
         <button type="button" id="navPrint">Impression &amp; reçus</button>
         <button type="button" id="navPrn">Imprimantes thermiques</button>
         <button data-view="equipe">Équipe</button>
-        <button data-view="abonnement">Mon abonnement</button>
+        <button data-view="abonnement" class="keep">Mon abonnement</button>
         <button data-view="tarifs">Tarifs</button>
-        <button data-view="admin" id="navAdmin" class="hidden">Administration</button>
+        <button data-view="admin" id="navAdmin" class="hidden keep">Administration</button>
         <button type="button" id="navPwd">Changer mon mot de passe</button>
-        <button data-logout>Se déconnecter</button>
+        <button data-logout class="keep">Se déconnecter</button>
       </div>
     </details>
   </nav>
@@ -892,6 +901,9 @@ async function clearDataCache(){ try { await caches.delete(DATA_CACHE); } catch 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { global: { fetch: hhFetch }, auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, storage: authStore } });
 
 const S = { session:null, member:null, org:null, overview:null, plans:[], providers:[], isAdmin:false, cycle:'monthly', view:(() => { try { return localStorage.getItem('hh_last_view') || 'dashboard'; } catch (_) { return 'dashboard'; } })(), signup:false, est:null, ests:[], rooms:[] };
+/* Restaurant & Bar retiré de l'offre (code conservé, réactivable en passant RESTO_ACTIF à true). */
+const RESTO_ACTIF = false;
+if (!RESTO_ACTIF) document.querySelectorAll('nav.side [data-group="resto"], #tabbar [data-tab="resto"]').forEach(e => e.remove());
 const VIEWS = ['naya','passes','inventaire','pointage','resto','rapports','controle','equipe','mapage','dashboard','reservations','planning','clients','caisse','depenses','factures','tarifs','abonnement','chambres','admin'];
 const $ = (id) => document.getElementById(id);
 const esc = (v) => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -942,7 +954,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.10.27-05';
+const APP_VERSION = '2026.10.27-08';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -1039,11 +1051,11 @@ async function openNotifs(){
 function renderAuth(){
   $('authTitle').textContent = S.signup ? 'Créer un compte' : 'Connexion';
   $('authBtn').textContent = S.signup ? 'Créer mon compte' : 'Se connecter';
-  $('authSwitchTxt').textContent = S.signup ? 'Déjà inscrit ?' : 'Pas encore de compte ?';
+  $('authSwitchTxt').textContent = S.signup ? 'Déjà inscrit ?' : 'Nouveau sur Nuittea ?'; if ($('authSub')) $('authSub').textContent = S.signup ? '7 jours gratuits, sans engagement.' : 'Gérez vos réservations et votre caisse.';
   renderProfiles();
   $('cguRow').classList.toggle('hidden', !S.signup); $('cguOk').required = !!S.signup;
-  $('authLegal').innerHTML = 'En vous connectant, vous acceptez nos conditions. ' + legalLinks();
-  $('authSwitch').textContent = S.signup ? 'Se connecter' : 'Créer un compte – 30 jours gratuits';
+  $('authLegal').innerHTML = '<a href="#" data-legal="cgu">CGU</a> · <a href="#" data-legal="confidentialite">Confidentialité</a> · <a href="#" onclick="event.preventDefault();openLang()">Français / English</a>';
+  $('authSwitch').textContent = S.signup ? 'Se connecter' : 'Créer un compte – 7 jours gratuits';
   $('password').autocomplete = S.signup ? 'new-password' : 'current-password';
   try { const last = localStorage.getItem('hh_last_email'); if (last && !$('email').value) { $('email').value = last; } $('remember').checked = authStore.remember(); } catch (_) {}
 }
@@ -1176,6 +1188,7 @@ function setAuthMode(m){
   if (m === 'staff') { S.signup = false; renderAuth(); try { const c = localStorage.getItem('hh_staff_code'); if (c && !$('sCode').value) $('sCode').value = c; } catch (_) {} setTimeout(() => ($('sCode').value ? ($('sUser').value ? $('sPin') : $('sUser')) : $('sCode')).focus(), 30); }
 }
 document.querySelectorAll('[data-amode]').forEach(b => b.addEventListener('click', () => setAuthMode(b.dataset.amode)));
+document.querySelectorAll('[data-amode-link]').forEach(a => a.addEventListener('click', (e) => { e.preventDefault(); setAuthMode(a.dataset.amodeLink); }));
 $('sPin').addEventListener('input', () => { $('sPin').value = $('sPin').value.replace(/\D/g, '').slice(0, 4); });
 $('staffForm').addEventListener('submit', async e => {
   e.preventDefault();
@@ -1316,7 +1329,7 @@ $('onboardForm').addEventListener('submit', async e => {
   const { error } = await sb.rpc('create_organization', { p_org_name: $('orgName').value.trim(), p_establishment_name: $('estName').value.trim(), p_city: $('estCity').value.trim() || null });
   if (b) b.disabled = false;
   if (error) return toast(errMsg(error), true);
-  toast('Votre essai gratuit de 30 jours a démarré.');
+  toast('Votre essai gratuit de 7 jours a démarré.');
   await boot();
 });
 
@@ -1326,8 +1339,9 @@ async function boot(){
   applyLang();
   const QP = new URLSearchParams(location.search); const LEGAL_Q = QP.get('legal'); if (LEGAL_Q) return renderLegalPage(LEGAL_Q);
   if (QP.get('avis')) return renderReviewPage(QP.get('avis'));
-  if (QP.has('annuaire')) return renderDirectory();
-  if (PUBLIC_SLUG) return renderPublicPage(PUBLIC_SLUG);
+  /* Les établissements n'ont plus de page publique propre : tout passe par Nuittea.com (pages conservées dans le code). */
+  if (QP.has('annuaire')) return location.replace('https://naya-ci.netlify.app/#/sejours');
+  if (PUBLIC_SLUG) return location.replace('https://naya-ci.netlify.app/#/hotel/' + encodeURIComponent(PUBLIC_SLUG));
   const { data: { session } } = await sb.auth.getSession();
   S.session = session;
   if (!session) { renderAuth(); renderProfiles(); show('auth'); setTimeout(() => { const f = $('email').value ? $('password') : $('email'); if (f) f.focus(); }, 50); return; }
@@ -1454,7 +1468,7 @@ $('navSearch').onclick = () => openPalette();
 $('mSearch').onclick = () => openPalette();
 $('mNotif').onclick = () => openNotifs();
 const GROUPS = { heberg: ['reservations','planning','chambres','clients','inventaire'], argent: ['caisse','depenses','factures'], resto: ['resto'], pilot: ['controle','rapports','pointage','mapage'] };
-const VIEW_LABEL = { inventaire:'Inventaire', pointage:'Pointage', reservations:'Réservations', planning:'Planning', chambres:'Chambres', clients:'Clients', caisse:'Caisse', depenses:'Dépenses', factures:'Factures', resto:'Restaurant & Bar', controle:'Contrôle', rapports:'Rapports', mapage:'Ma page' };
+const VIEW_LABEL = { inventaire:'Inventaire', pointage:'Pointage', reservations:'Réservations', planning:'Planning', chambres:'Chambres', clients:'Clients', caisse:'Caisse', depenses:'Dépenses', factures:'Factures', resto:'Restaurant & Bar', controle:'Contrôle', rapports:'Rapports', mapage:'Ma fiche Nuittea' };
 const groupOf = (v) => Object.keys(GROUPS).find(g => GROUPS[g].includes(v));
 const groupViews = (g) => GROUPS[g].filter(allowed);
 const canAna = () => can(['owner','admin','manager','accountant']);
@@ -1525,13 +1539,48 @@ $('navDir').onclick = async () => {
   const { data: e } = await sb.from('establishments').select('id,name,slug,public_enabled,directory_listed').eq('id', S.est).single();
   const url = location.origin + location.pathname + '?annuaire=1';
   modal(`<h2 style="font-size:22px;margin-bottom:6px">Annuaire public</h2><p class="muted" style="margin:0 0 12px">Les voyageurs trouvent les établissements Nuittea Manager par ville et par budget, puis réservent directement sur votre page, sans commission.</p>
-    ${e && e.public_enabled ? '' : '<p class="card" style="background:#FFF4E0;margin:0 0 12px">Votre page de présentation n’est pas encore publiée : publiez-la dans « Ma page de présentation » pour apparaître dans l’annuaire.</p>'}
+    ${e && e.public_enabled ? '' : '<p class="card" style="background:#FFF4E0;margin:0 0 12px">Votre page de présentation n’est pas encore publiée : publiez-la dans « Ma fiche Nuittea » pour apparaître dans l’annuaire.</p>'}
     <label class="row between" style="flex-wrap:nowrap;font-weight:600;margin-bottom:12px"><span>Afficher ${esc((e && e.name) || 'mon établissement')} dans l’annuaire</span><input type="checkbox" id="dirOn" ${e && e.directory_listed ? 'checked' : ''} ${can(['owner', 'admin']) ? '' : 'disabled'} style="width:22px;min-height:22px"></label>
     <div class="row"><a class="btn" href="${url}" target="_blank" rel="noopener" style="flex:1;justify-content:center">Voir l’annuaire</a><button class="primary" data-close style="flex:1">Fermer</button></div>`);
   $('dirOn').onchange = async () => { const { error } = await sb.from('establishments').update({ directory_listed: $('dirOn').checked }).eq('id', S.est); if (error) return toast(errMsg(error), true); toast($('dirOn').checked ? 'Votre établissement apparaît dans l’annuaire.' : 'Retiré de l’annuaire.'); };
 };
 document.addEventListener('click', (e) => { if (e.target.closest('#rateRulesBtn')) openRateRules(); });
 $('navMods').onclick = () => openModules();
+/* Page « Réglages » regroupée : 4 rubriques au lieu de 18 entrées. Les anciens boutons restent dans le code et sont appelés d'ici. */
+function openSettings(){
+  const nb = $('navMore'); if (nb) nb.open = false;
+  const ic = (p) => `<span class="st-ic"><svg viewBox="0 0 24 24" aria-hidden="true">${p}</svg></span>`;
+  const I = { est:'<path d="M3 21h18M5 21V7l7-4 7 4v14"/>', team:'<circle cx="9" cy="8" r="3"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5M17 11a3 3 0 1 0 0-6"/>', mods:'<path d="M4 6h16M4 12h16M4 18h10"/>', web:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18"/>', prn:'<path d="M6 9V3h12v6M6 18H4v-7h16v7h-2M8 14h8v7H8z"/>', cur:'<rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/>', sub:'<path d="M12 2l3 6 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z"/>', pwd:'<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>', look:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2"/>', adm:'<path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z"/>' };
+  const own = can(['owner','admin']), mgr = can(['owner','admin','manager']);
+  const row = (k, icn, t, d, v) => `<button type="button" class="st-it" data-st="${k}">${ic(I[icn])}<span class="st-t">${t}${d ? `<span class="st-d">${d}</span>` : ''}</span>${v ? `<span class="st-v">${v}</span>` : ''}<span class="st-ch" aria-hidden="true">›</span></button>`;
+  const grp = (t, rows) => rows.filter(Boolean).length ? `<div class="st-g">${t}</div><div class="st-l">${rows.filter(Boolean).join('')}</div>` : '';
+  const plan = S.overview && S.overview.plan;
+  modal(`<h2 style="font-size:24px;margin:0 0 4px">Réglages</h2>
+    ${S.isAdmin ? grp('Plateforme', [row('admin', 'adm', 'Administration', 'Clients, paiements, Nuittea')]) : ''}
+    ${grp('Mon établissement', [own && row('ests', 'est', 'Établissements', 'Nom, adresse, chambres'), mgr && row('equipe', 'team', 'Équipe', 'Employés et accès'), own && row('mods', 'mods', 'Fonctionnalités', 'Activer ou masquer des menus'), mgr && row('web', 'web', 'Visibilité en ligne', 'Nuittea.com, ma fiche, tarifs automatiques')])}
+    ${grp('Caisse et documents', [row('prn', 'prn', 'Reçus et imprimantes'), own && row('cur', 'cur', 'Devise', '', esc(S.currency || 'XOF'))])}
+    ${own ? grp('Abonnement', [row('sub', 'sub', 'Mon abonnement', plan ? esc(plan.name || '') : 'Formules et paiement')]) : ''}
+    ${grp('Mon compte', [row('pwd', 'pwd', 'Mot de passe'), row('look', 'look', 'Apparence et langue')])}
+    <button type="button" class="st-out" data-st="out">Se déconnecter</button>
+    <p class="muted" style="text-align:center;font-size:12.5px;margin:14px 0 0"><a href="#" data-st="guide">Guide de démarrage</a> · <a href="#" data-st="legal">Documents légaux</a> · <a href="#" data-st="refresh">Actualiser</a></p>`);
+  $('modalBody').style.maxWidth = '520px';
+  const sub = (title, items) => { modal(`<button type="button" class="small ghost" id="stBack" style="border:0;padding-left:0">‹ Réglages</button><h2 style="font-size:22px;margin:4px 0 12px">${title}</h2><div class="st-l">${items.map(([k, icn, t, d]) => row(k, icn, t, d)).join('')}</div>`); $('modalBody').style.maxWidth = '520px'; $('stBack').onclick = openSettings; bind(); };
+  const A = {
+    admin: () => { closeModal(); go('admin'); }, ests: () => $('navEsts').click(), equipe: () => { closeModal(); go('equipe'); }, mods: () => $('navMods').click(),
+    web: () => sub('Visibilité en ligne', [['naya', 'web', 'Nuittea.com', 'Mise en ligne, réservations, commission'], ['fiche', 'est', 'Ma fiche Nuittea', 'Photos, description, conditions'], ['rates', 'cur', 'Tarifs automatiques', 'Week-end, saisons, jours fériés']]),
+    naya: () => { closeModal(); go('naya'); }, fiche: () => { closeModal(); go('mapage'); }, rates: () => $('navRates').click(),
+    prn: () => sub('Reçus et imprimantes', [['print', 'prn', 'Personnaliser le reçu', 'En-tête, mentions, message de fin'], ['thermal', 'prn', 'Imprimantes thermiques', 'Connexion et format du papier']]),
+    print: () => $('navPrint').click(), thermal: () => $('navPrn').click(), cur: () => $('navCur').click(),
+    sub: () => { closeModal(); go('abonnement'); }, pwd: () => $('navPwd').click(),
+    look: () => sub('Apparence et langue', [['theme', 'look', 'Thème de l’application'], ['lang', 'web', 'Langue / Language']]),
+    theme: () => $('navTheme').click(), lang: () => openLang(),
+    out: () => { closeModal(); document.querySelector('[data-logout]').click(); }, guide: () => { closeModal(); $('navGuide').click(); }, legal: () => $('navLegal').click(), refresh: () => refreshApp()
+  };
+  function bind(){ document.querySelectorAll('#modalBody [data-st]').forEach(b => b.onclick = (e) => { e.preventDefault(); const f = A[b.dataset.st]; if (f) f(); }); }
+  bind();
+}
+$('navAll').onclick = openSettings;
+{ const sm = document.querySelector('#navMore > summary'); if (sm) sm.addEventListener('click', (e) => { e.preventDefault(); openSettings(); }); }
 $('navCur').onclick = () => { modal(`<h2 style="font-size:22px;margin-bottom:10px">Devise d’affichage</h2><p class="muted" style="font-size:14px;margin:0 0 10px">Les montants s’affichent dans cette devise (aucune conversion n’est faite).</p><div style="display:grid;gap:6px">${Object.entries(CURRENCIES).map(([k, v]) => `<button type="button" class="${k === S.currency ? '' : 'ghost'}" data-cur="${k}" style="justify-content:space-between;display:flex"><span>${v[0]}</span><strong>${k} · ${v[1]}</strong></button>`).join('')}</div>`); document.querySelectorAll('[data-cur]').forEach(b => b.onclick = () => { closeModal(); setCurrency(b.dataset.cur); }); };
 $('navPrint').onclick = () => openPrintSettings();
 $('navPrn').onclick = () => openPrinterSetup('caisse');
@@ -1546,7 +1595,7 @@ const ROLE_VIEWS = {
 };
 const ROLE_LABEL = { owner:'Propriétaire', admin:'Administrateur', manager:'Gérant', receptionist:'Réceptionniste', housekeeping:'Ménage', accountant:'Comptable', staff:'Serveur / Barman' };
 const allowed = (v) => v === 'admin' ? S.isAdmin : (moduleOn(v) && (!S.member || !ROLE_VIEWS[S.member.role] || ROLE_VIEWS[S.member.role].includes(v)));
-function applyRoleNav(){ [['navAna', 'rapports'], ['navReviews', 'rapports'], ['navRates', 'mapage'], ['navDir', 'mapage'], ['navPrn', 'resto']].forEach(([id, m]) => { const e = $(id); if (e) e.classList.toggle('hidden', !moduleOn(m)); }); document.querySelectorAll('nav.side [data-view]').forEach(b => { if (b.dataset.view !== 'admin') b.classList.toggle('hidden', !allowed(b.dataset.view)); b.classList.toggle('locked', !!lockedView(b.dataset.view)); }); renderEstSwitch(); applyNavExtras(); }
+function applyRoleNav(){ [['navAna', 'rapports'], ['navReviews', 'rapports'], ['navRates', 'mapage'], ['navDir', 'mapage'], ['navPrn', 'caisse']].forEach(([id, m]) => { const e = $(id); if (e) e.classList.toggle('hidden', !moduleOn(m)); }); document.querySelectorAll('nav.side [data-view]').forEach(b => { if (b.dataset.view !== 'admin') b.classList.toggle('hidden', !allowed(b.dataset.view)); b.classList.toggle('locked', !!lockedView(b.dataset.view)); }); renderEstSwitch(); applyNavExtras(); }
 
 const VIEW_FEATURE = { resto: ['restaurant', 'Le module Restaurant & Bar', 'Vos plats et boissons en photo, une caisse tactile, le stock qui se décompte à chaque vente, les marges et les alertes de réapprovisionnement.'],
   mapage: ['online_booking', 'La page de présentation et la réservation en ligne', 'Une belle page avec votre logo, vos photos et un formulaire de réservation : vos clients réservent directement, sans commission.'],
@@ -2350,7 +2399,7 @@ const ACTIONS = [
   ['Rapports financiers', 'Rapports', () => go('rapports'), ['rapport', 'chiffre', 'ca', 'statistique']],
   ['Alertes du propriétaire', 'Contrôle', () => go('controle'), ['alerte', 'controle', 'journal']],
   ['Inviter un membre de l’équipe', 'Équipe', () => go('equipe'), ['equipe', 'inviter', 'gerant', 'personnel']],
-  ['Ma page de présentation (logo, couverture, photos)', 'Réglages', () => go('mapage'), ['page', 'publique', 'site', 'lien']]
+  ['Ma fiche Nuittea (logo, couverture, photos)', 'Réglages', () => go('mapage'), ['page', 'publique', 'site', 'lien']]
 ];
 const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
 async function openPalette(){
@@ -2509,7 +2558,7 @@ async function renderNaya(){
   const [{ data: lst }, { data: e2 }] = await Promise.all([
     sb.from('marketplace_listings').select('*').eq('establishment_id', S.est).maybeSingle(),
     sb.from('establishments').select('slug').eq('id', S.est).maybeSingle()]);
-  let L = lst || { listed: false, commission_pct: 10, auto_confirm: false }, slug = e2 && e2.slug;
+  let L = lst || { listed: false, commission_pct: 8, auto_confirm: false }, slug = e2 && e2.slug;
   const draw = async () => {
     const end = addDays(st.month, 40).slice(0, 8) + '01';
     const { data: rs } = await sb.from('reservation_balances').select('id,guest_name,room_number,check_in,check_out,status,total_amount,paid,balance,created_at')
@@ -3842,12 +3891,12 @@ async function renderEquipe(){
 
 /* ================= Modules à cocher, devise, résultat & analyse ================= */
 const CURRENCIES = { XOF: ['Franc CFA (UEMOA)', 'F', 0], XAF: ['Franc CFA (CEMAC)', 'F', 0], GNF: ['Franc guinéen', 'FG', 0], CDF: ['Franc congolais', 'FC', 0], MGA: ['Ariary', 'Ar', 0], MAD: ['Dirham marocain', 'DH', 2], NGN: ['Naira', '₦', 0], GHS: ['Cedi', 'GH₵', 2], EUR: ['Euro', '€', 2], USD: ['Dollar US', '$', 2] };
-const MODULES = { passes: 'Passes (séjours de quelques heures)', planning: 'Planning', clients: 'Clients', inventaire: 'Inventaire (linge, produits)', menage: 'Ménage (état des chambres)', pointage: 'Pointage du personnel', resto: 'Restaurant & Bar', depenses: 'Dépenses', factures: 'Factures', rapports: 'Rapports', mapage: 'Ma page de présentation', controle: 'Contrôle propriétaire', notifs: 'Notifications', multi: 'Plusieurs établissements', equipe: 'Équipe' };
-const MODULE_GROUPS = [['Hébergement', ['planning','clients','inventaire','menage']], ['Argent', ['depenses','factures']], ['Restaurant & Bar', ['resto']], ['Pilotage', ['rapports','controle','mapage']], ['Organisation', ['pointage','notifs','multi','equipe']]];
+const MODULES = { passes: 'Passes (séjours de quelques heures)', planning: 'Planning', clients: 'Clients', inventaire: 'Inventaire (linge, produits)', menage: 'Ménage (état des chambres)', pointage: 'Pointage du personnel', resto: 'Restaurant & Bar', depenses: 'Dépenses', factures: 'Factures', rapports: 'Rapports', mapage: 'Ma fiche Nuittea (photos, description)', controle: 'Contrôle propriétaire', notifs: 'Notifications', multi: 'Plusieurs établissements', equipe: 'Équipe' };
+const MODULE_GROUPS = [['Hébergement', ['planning','clients','inventaire','menage']], ['Argent', ['depenses','factures']], ...(RESTO_ACTIF ? [['Restaurant & Bar', ['resto']]] : []), ['Pilotage', ['rapports','controle','mapage']], ['Organisation', ['pointage','notifs','multi','equipe']]];
 const MODULE_HELP = { planning: 'Vue calendrier des chambres', clients: 'Fichier clients et historique', resto: 'Caisse restaurant/bar, produits et stock', depenses: 'Charges fixes, opérationnelles, budget', factures: 'Factures numérotées', rapports: 'Rapports financiers et exports', mapage: 'Page publique et réservation en ligne', controle: 'Alertes et journal des actions', inventaire: 'Draps, serviettes, savons, entretien, minibar', pointage: 'Arrivées et départs du personnel, heures du mois', menage: 'Statuts « à nettoyer » et rappels de ménage', notifs: 'La cloche et les alertes en direct', multi: 'Sélecteur d’établissement (si vous en avez plusieurs)', equipe: 'Comptes du personnel et invitations' };
 /* Mode « réservations » : par défaut, seul le cœur de la gestion des réservations est affiché. Le propriétaire peut réactiver les autres volets dans Réglages → Fonctionnalités. */
 const CORE_MODULES = ['planning', 'clients', 'menage', 'factures', 'notifs', 'multi', 'equipe'];
-const moduleOn = (v) => !MODULES[v] || (S.modules ? S.modules.includes(v) : CORE_MODULES.includes(v));
+const moduleOn = (v) => (v === 'resto' && !RESTO_ACTIF) ? false : !MODULES[v] || (S.modules ? S.modules.includes(v) : CORE_MODULES.includes(v));
 async function loadOrgPrefs(){
   const { data } = await sb.from('organizations').select('display_currency,enabled_modules').eq('id', S.org).maybeSingle();
   S.currency = (data && data.display_currency) || 'XOF'; S.modules = data && data.enabled_modules ? data.enabled_modules : null;
@@ -4002,7 +4051,7 @@ function rcptHead(est){
 }
 function rcptFoot(est, def){
   const r = rcpt(est);
-  const url = est.slug && est.public_enabled ? location.origin + location.pathname + '?h=' + encodeURIComponent(est.slug) : '';
+  const url = est.slug ? publicUrl(est.slug) : '';
   return `<p style="text-align:center;margin:10px 0 4px;white-space:pre-line">${esc(r.footer || def)}</p>${r.show_qr && url ? `<div style="text-align:center"><img src="https://api.qrserver.com/v1/create-qr-code/?size=140x140&margin=0&data=${encodeURIComponent(url)}" alt="" style="width:28mm;height:28mm"><div class="m">Réservez en ligne</div></div>` : ''}`;
 }
 function openReceiptEditor(){
@@ -4018,7 +4067,7 @@ function openReceiptEditor(){
       ${f('rcTax', 'Mentions légales (RCCM, NCC…)', r.tax_id, 'ex. RCCM CI-ABJ-2024-B-1234 · NCC 1234567A')}
       <div class="field"><label for="rcFoot">Message de fin</label><textarea id="rcFoot" maxlength="200" rows="2" style="width:100%;min-height:64px;padding:10px 12px;border-radius:12px;border:1px solid var(--line);font:inherit" placeholder="ex. Merci de votre visite ! Wi-Fi : Palmiers2026">${esc(r.footer || '')}</textarea></div>
       ${[['rcLogo', 'show_logo', 'Afficher le logo', r.show_logo !== false], ['rcServer', 'show_server', 'Afficher le nom du serveur / caissier', r.show_server !== false], ['rcQr', 'show_qr', 'QR code vers ma page de réservation', !!r.show_qr]].map(([id, , l, on]) => `<label class="row" style="gap:8px;font-weight:600;flex-wrap:nowrap;margin-bottom:8px"><input type="checkbox" id="${id}" ${on ? 'checked' : ''} style="width:20px;min-height:20px"> ${l}</label>`).join('')}
-      ${!est.public_logo_url ? '<p class="muted" style="font-size:12px;margin:0 0 8px">Ajoutez votre logo dans « Ma page de présentation ».</p>' : ''}
+      ${!est.public_logo_url ? '<p class="muted" style="font-size:12px;margin:0 0 8px">Ajoutez votre logo dans « Ma fiche Nuittea ».</p>' : ''}
       <button class="primary" style="width:100%" id="rcSave">Enregistrer</button>
     </form>
     <div><div class="muted" style="font-size:12px;margin-bottom:4px">Aperçu</div><div id="rcPrev" style="background:#fff;color:#000;border:1px solid var(--line);border-radius:6px;padding:10px;font:11px/1.4 ui-monospace,Menlo,monospace;box-shadow:0 6px 20px rgba(0,0,0,.08)"></div></div></div>`);
@@ -4048,7 +4097,7 @@ function openPrintSettings(){
 }
 /* ================= Langue : français / anglais ================= */
 const EN = {
-'Fermer':'Close','Chargement…':'Loading…','Enregistrer':'Save','Annuler':'Cancel','Montant':'Amount','Moyen':'Method','Total':'Total','Poste':'Role','Retirer':'Remove','Inventaire':'Inventory','Dépenses':'Expenses','Client':'Guest','Encaisser':'Take payment','Libellé':'Description','Par':'By','Tarifs automatiques':'Dynamic pricing','Ajouter':'Add','Nom':'Name','Date':'Date','Formule':'Plan','Statut':'Status','Modifier':'Edit','Reste':'Remaining','Compté':'Counted','Ville':'City','Notifications':'Notifications','Chambres':'Rooms','Caisse':'Cash desk','Stock':'Stock','Rapports':'Reports','Ma page de présentation':'My public page','Équipe':'Team','Hébergement':'Accommodation','Refuser':'Decline','Séjour':'Stay','Arrivée':'Arrival','Départ':'Departure','Nom complet':'Full name','Chambre':'Room','Téléphone':'Phone','Heure':'Time','Écart':'Difference','Aucun':'None','Envoyer par WhatsApp':'Send via WhatsApp','Catégorie':'Category','Nuits':'Nights','Retour':'Back','Réserver':'Book','Supprimer':'Delete','Identifiant':'Username','Se connecter':'Sign in','Adresse e-mail':'Email address','Afficher':'Show','Masquer':'Hide','Se déconnecter':'Sign out','Actualiser':'Refresh','Que voulez-vous faire ?':'What do you want to do?','Assistant':'Assistant','Accueil':'Home','Réservations':'Bookings','Planning':'Calendar','Clients':'Guests','Factures':'Invoices','Ventes':'Sales','Avis clients':'Guest reviews','Contrôle':'Owner control','Pointage':'Time clock','Mes établissements':'My properties','Fonctionnalités utilisées':'Features in use','Devise':'Currency','Thème de l’application':'App theme','Annuaire public':'Public directory','Mon abonnement':'My subscription','Plus':'More','Imprimer':'Print','Voir les formules':'See plans','Valider':'Confirm','Réglé':'Paid','Nouvelle réservation':'New booking','Occupation':'Occupancy','Check-in':'Check-in','Check-out':'Check-out','Ouvrir':'Open','E-mail':'Email','Clôture de caisse':'Cash closing','Espèces':'Cash','Fond de caisse':'Opening float','Remboursements':'Refunds','Attendu':'Expected','Motif':'Reason','Du':'From','Au':'To','Impayés':'Unpaid','Code hôtel':'Hotel code','Copier':'Copy','Établissement':'Property','Copier le message':'Copy message','Aperçu':'Preview','Imprimer un test':'Print a test','Mouvements récents':'Recent movements','Unité':'Unit','Alerte quand il reste':'Alert when below','Rechercher':'Search','Valeur':'Value','Rupture':'Out of stock','Prix d’achat':'Purchase price','Fournisseur':'Supplier','Stock disponible':'Stock on hand','Restaurant & Bar':'Restaurant & Bar','Connexion':'Sign in','Personnel':'Staff','Code hôtel ou résidence':'Hotel code','Mot de passe':'Password','Mot de passe oublié ?':'Forgot password?','Recevoir un lien de connexion par e-mail':'Email me a sign-in link','Pas encore de compte ?':'No account yet?','Créer un compte – 30 jours gratuits':'Create an account – 30 days free','Créer un compte':'Create an account','Créer mon compte':'Create my account','Déjà inscrit ?':'Already registered?','Rester connecté sur cet appareil':'Stay signed in on this device','Caisse resto':'POS','Produits':'Products','Réglages':'Settings','Documents légaux':'Legal documents','Imprimantes thermiques':'Thermal printers','Tarifs':'Pricing','Argent':'Money','Resto':'Restaurant','Pilotage':'Management','Organisation':'Organisation','Résultat & analyse':'Results & analysis','Impression & reçus':'Printing & receipts','Actualiser l’application':'Refresh the app','Installer l’application':'Install the app','Chambres en direct':'Live rooms','Arrivées du jour':'Today’s arrivals','Départs du jour':'Today’s departures','Aucune arrivée prévue.':'No arrivals expected.','Aucun départ prévu.':'No departures expected.','Occupation des 7 prochains jours':'Occupancy, next 7 days','Demandes en ligne':'Online requests','Traiter':'Handle','Aucune demande en attente.':'No pending requests.','Démarrage':'Getting started','À faire aujourd’hui':'To do today','Walk-in':'Walk-in','Bonjour':'Good morning','Bon après-midi':'Good afternoon','Bonsoir':'Good evening','Encaissé aujourd’hui':'Collected today','Arrivées':'Arrivals','Départs':'Departures','toutes méthodes':'all methods','Prolonger':'Extend','Appeler':'Call','Paiement':'Payment','En séjour':'In house','Adultes':'Adults','Notes':'Notes','Récapitulatif':'Summary','Remise':'Discount','Acompte':'Deposit','Payé':'Paid','Solde':'Balance','Référence':'Reference','Annuler la réservation':'Cancel booking','Reste à payer':'Balance due','Aujourd\'hui':'Today','Aujourd’hui':'Today','Nouveau client':'New guest','Aucun client.':'No guests.','Pièce d\'identité':'ID document','La caisse est fermée':'The cash desk is closed','Ouvrir la caisse':'Open the cash desk','Par moyen de paiement':'By payment method','À encaisser':'To collect','Aucun solde en attente.':'No outstanding balance.','Journal':'Log','Tous les caissiers':'All cashiers','Reçu':'Receipt','Justificatif':'Receipt photo','Dernières clôtures':'Recent closings','Ouverte':'Open','Clôturée':'Closed','Rapport':'Report','Ticket Z':'Z report','Encaisser un client':'Charge a guest','Continuer':'Continue','Dépense':'Expense','Entrée diverse':'Other income','Versement banque':'Bank deposit','Clôturer':'Close','+ Encaisser un client':'+ Charge a guest','Attendu en espèces':'Expected cash','Espèces comptées dans le tiroir':'Cash counted in the drawer','✓ Montant exact':'✓ Exact amount','Clôturer la caisse':'Close the cash desk','Caisse clôturée':'Cash desk closed','Rapport détaillé':'Detailed report','Imprimer le ticket Z':'Print Z report','Tout':'All','Paiements':'Payments','Versements':'Deposits','Mettre en attente':'Hold order','En attente':'On hold','Historique':'History','Imprimante':'Printer','Tiroir':'Drawer','Panier':'Cart','Imprimer l’addition':'Print bill','Encaisser · ':'Charge · ','Total':'Total','Restaurant':'Restaurant','Bar':'Bar','Nouvelle commande':'New order','Imprimer le ticket':'Print receipt','+ Produit':'+ Product','Créer le produit':'Create product','Ajouter un produit':'Add a product','Informations de base':'Basic information','Nom du produit':'Product name','Prix et promotions':'Prices & promotions','Prix normal *':'Regular price *','Prix promotionnel':'Promotional price','Gérer le stock':'Track stock','Code-barres':'Barcode','Description':'Description','Variantes du produit':'Product variants','+ Ajouter une variante':'+ Add a variant','Publication':'Publishing','Produit actif (visible en caisse)':'Active product (shown at POS)','Retirer de la carte':'Remove from menu','+ Entrée de stock':'+ Stock in','Perte / casse':'Loss / breakage','Entrée de stock':'Stock in','Imprimantes':'Printers','Largeur du papier':'Paper width','Exemplaires':'Copies','Connecter l’imprimante':'Connect printer','Ouvrir le tiroir':'Open drawer','Équipe':'Team','+ Ajouter un employé':'+ Add employee','Ajouter un employé':'Add employee','Nouveau code':'New code','Suspendre':'Suspend','Réactiver':'Reactivate','Actif':'Active','Suspendu':'Suspended','Code provisoire':'Temporary code','Jamais connecté':'Never signed in','Créer le compte':'Create account','Résultat':'Result','Revenus':'Revenue','Analyse du chiffre d’affaires':'Revenue analysis','D’où viennent les revenus':'Where revenue comes from','Où part l’argent':'Where money goes','Meilleurs produits du mois':'Top products this month','Points d’attention':'Things to watch','Avis clients':'Guest reviews','Demander un avis':'Ask for a review','Répondre':'Reply','Annuaire public':'Public directory','Voir l’annuaire':'See the directory','Accepter et continuer':'Accept and continue','Refuser et se déconnecter':'Decline and sign out','Conditions d’utilisation':'Terms of use','Lire →':'Read →','Mentions légales':'Legal notice','Confidentialité':'Privacy','Inventaire':'Inventory','+ Article':'+ Item','Articles suivis':'Items tracked','À racheter':'To restock','Valeur en stock':'Stock value','Pointer mon arrivée':'Clock in','Pointer mon départ':'Clock out','Heures du mois':'Hours this month','Détail':'Details','Corriger':'Correct','Employé':'Employee','Jours':'Days','Heures':'Hours','Moyenne / jour':'Average / day','Demander':'Ask','Langue':'Language','Profils enregistrés':'Saved profiles','PROFILS ENREGISTRÉS':'SAVED PROFILES','Ou connectez-vous avec un autre compte :':'Or sign in with another account:','Propriétaire (e-mail)':'Owner (email)','Code (4 chiffres)':'Code (4 digits)','Chercher un hôtel ou une résidence →':'Find a hotel or residence →','Nouvelle règle':'New rule','+ Règle personnalisée':'+ Custom rule','Week-end +20 %':'Weekend +20%','Haute saison +15 %':'High season +15%','Jour de fête':'Holiday','Basse saison −10 %':'Low season −10%','Envoyer la demande':'Send request','Hébergements':'Rooms','Avis des clients':'Guest reviews','Bienvenue':'Welcome','Mon établissement':'My property','Ajouter un établissement':'Add a property','Formule actuelle':'Current plan','Renouveler':'Renew','Changer de formule':'Change plan','Tarifs':'Pricing','Gratuit':'Free','Mensuel':'Monthly','Demander un devis':'Request a quote','Choisir une formule':'Choose a plan','Utilisateurs':'Users','Historique des paiements':'Payment history','Planning':'Calendar','Aujourd’hui':'Today','Tous':'All','Propriétaire':'Owner','Administrateur':'Administrator','Gérant':'Manager','Réceptionniste':'Receptionist','Ménage':'Housekeeping','Comptable':'Accountant','Serveur / Barman':'Waiter / Bartender','Libre':'Available','Occupée':'Occupied','Arrivée prévue':'Arrival due','Départ du jour':'Departing today','À nettoyer':'To clean','Hors service':'Out of service','Prête':'Ready','Sale':'Dirty','Confirmée':'Confirmed','En attente':'Pending','Partie':'Checked out','Annulée':'Cancelled'
+'Fermer':'Close','Chargement…':'Loading…','Enregistrer':'Save','Annuler':'Cancel','Montant':'Amount','Moyen':'Method','Total':'Total','Poste':'Role','Retirer':'Remove','Inventaire':'Inventory','Dépenses':'Expenses','Client':'Guest','Encaisser':'Take payment','Libellé':'Description','Par':'By','Tarifs automatiques':'Dynamic pricing','Ajouter':'Add','Nom':'Name','Date':'Date','Formule':'Plan','Statut':'Status','Modifier':'Edit','Reste':'Remaining','Compté':'Counted','Ville':'City','Notifications':'Notifications','Chambres':'Rooms','Caisse':'Cash desk','Stock':'Stock','Rapports':'Reports','Ma page de présentation':'My public page','Équipe':'Team','Hébergement':'Accommodation','Refuser':'Decline','Séjour':'Stay','Arrivée':'Arrival','Départ':'Departure','Nom complet':'Full name','Chambre':'Room','Téléphone':'Phone','Heure':'Time','Écart':'Difference','Aucun':'None','Envoyer par WhatsApp':'Send via WhatsApp','Catégorie':'Category','Nuits':'Nights','Retour':'Back','Réserver':'Book','Supprimer':'Delete','Identifiant':'Username','Se connecter':'Sign in','Adresse e-mail':'Email address','Afficher':'Show','Masquer':'Hide','Se déconnecter':'Sign out','Actualiser':'Refresh','Que voulez-vous faire ?':'What do you want to do?','Assistant':'Assistant','Accueil':'Home','Réservations':'Bookings','Planning':'Calendar','Clients':'Guests','Factures':'Invoices','Ventes':'Sales','Avis clients':'Guest reviews','Contrôle':'Owner control','Pointage':'Time clock','Mes établissements':'My properties','Fonctionnalités utilisées':'Features in use','Devise':'Currency','Thème de l’application':'App theme','Annuaire public':'Public directory','Mon abonnement':'My subscription','Plus':'More','Imprimer':'Print','Voir les formules':'See plans','Valider':'Confirm','Réglé':'Paid','Nouvelle réservation':'New booking','Occupation':'Occupancy','Check-in':'Check-in','Check-out':'Check-out','Ouvrir':'Open','E-mail':'Email','Clôture de caisse':'Cash closing','Espèces':'Cash','Fond de caisse':'Opening float','Remboursements':'Refunds','Attendu':'Expected','Motif':'Reason','Du':'From','Au':'To','Impayés':'Unpaid','Code hôtel':'Hotel code','Copier':'Copy','Établissement':'Property','Copier le message':'Copy message','Aperçu':'Preview','Imprimer un test':'Print a test','Mouvements récents':'Recent movements','Unité':'Unit','Alerte quand il reste':'Alert when below','Rechercher':'Search','Valeur':'Value','Rupture':'Out of stock','Prix d’achat':'Purchase price','Fournisseur':'Supplier','Stock disponible':'Stock on hand','Restaurant & Bar':'Restaurant & Bar','Connexion':'Sign in','Personnel':'Staff','Code hôtel ou résidence':'Hotel code','Mot de passe':'Password','Mot de passe oublié ?':'Forgot password?','Recevoir un lien de connexion par e-mail':'Email me a sign-in link','Pas encore de compte ?':'No account yet?','Créer un compte – 7 jours gratuits':'Create an account – 7 days free','Créer un compte':'Create an account','Créer mon compte':'Create my account','Déjà inscrit ?':'Already registered?','Rester connecté sur cet appareil':'Stay signed in on this device','Caisse resto':'POS','Produits':'Products','Réglages':'Settings','Documents légaux':'Legal documents','Imprimantes thermiques':'Thermal printers','Tarifs':'Pricing','Argent':'Money','Resto':'Restaurant','Pilotage':'Management','Organisation':'Organisation','Résultat & analyse':'Results & analysis','Impression & reçus':'Printing & receipts','Actualiser l’application':'Refresh the app','Installer l’application':'Install the app','Chambres en direct':'Live rooms','Arrivées du jour':'Today’s arrivals','Départs du jour':'Today’s departures','Aucune arrivée prévue.':'No arrivals expected.','Aucun départ prévu.':'No departures expected.','Occupation des 7 prochains jours':'Occupancy, next 7 days','Demandes en ligne':'Online requests','Traiter':'Handle','Aucune demande en attente.':'No pending requests.','Démarrage':'Getting started','À faire aujourd’hui':'To do today','Walk-in':'Walk-in','Bonjour':'Good morning','Bon après-midi':'Good afternoon','Bonsoir':'Good evening','Encaissé aujourd’hui':'Collected today','Arrivées':'Arrivals','Départs':'Departures','toutes méthodes':'all methods','Prolonger':'Extend','Appeler':'Call','Paiement':'Payment','En séjour':'In house','Adultes':'Adults','Notes':'Notes','Récapitulatif':'Summary','Remise':'Discount','Acompte':'Deposit','Payé':'Paid','Solde':'Balance','Référence':'Reference','Annuler la réservation':'Cancel booking','Reste à payer':'Balance due','Aujourd\'hui':'Today','Aujourd’hui':'Today','Nouveau client':'New guest','Aucun client.':'No guests.','Pièce d\'identité':'ID document','La caisse est fermée':'The cash desk is closed','Ouvrir la caisse':'Open the cash desk','Par moyen de paiement':'By payment method','À encaisser':'To collect','Aucun solde en attente.':'No outstanding balance.','Journal':'Log','Tous les caissiers':'All cashiers','Reçu':'Receipt','Justificatif':'Receipt photo','Dernières clôtures':'Recent closings','Ouverte':'Open','Clôturée':'Closed','Rapport':'Report','Ticket Z':'Z report','Encaisser un client':'Charge a guest','Continuer':'Continue','Dépense':'Expense','Entrée diverse':'Other income','Versement banque':'Bank deposit','Clôturer':'Close','+ Encaisser un client':'+ Charge a guest','Attendu en espèces':'Expected cash','Espèces comptées dans le tiroir':'Cash counted in the drawer','✓ Montant exact':'✓ Exact amount','Clôturer la caisse':'Close the cash desk','Caisse clôturée':'Cash desk closed','Rapport détaillé':'Detailed report','Imprimer le ticket Z':'Print Z report','Tout':'All','Paiements':'Payments','Versements':'Deposits','Mettre en attente':'Hold order','En attente':'On hold','Historique':'History','Imprimante':'Printer','Tiroir':'Drawer','Panier':'Cart','Imprimer l’addition':'Print bill','Encaisser · ':'Charge · ','Total':'Total','Restaurant':'Restaurant','Bar':'Bar','Nouvelle commande':'New order','Imprimer le ticket':'Print receipt','+ Produit':'+ Product','Créer le produit':'Create product','Ajouter un produit':'Add a product','Informations de base':'Basic information','Nom du produit':'Product name','Prix et promotions':'Prices & promotions','Prix normal *':'Regular price *','Prix promotionnel':'Promotional price','Gérer le stock':'Track stock','Code-barres':'Barcode','Description':'Description','Variantes du produit':'Product variants','+ Ajouter une variante':'+ Add a variant','Publication':'Publishing','Produit actif (visible en caisse)':'Active product (shown at POS)','Retirer de la carte':'Remove from menu','+ Entrée de stock':'+ Stock in','Perte / casse':'Loss / breakage','Entrée de stock':'Stock in','Imprimantes':'Printers','Largeur du papier':'Paper width','Exemplaires':'Copies','Connecter l’imprimante':'Connect printer','Ouvrir le tiroir':'Open drawer','Équipe':'Team','+ Ajouter un employé':'+ Add employee','Ajouter un employé':'Add employee','Nouveau code':'New code','Suspendre':'Suspend','Réactiver':'Reactivate','Actif':'Active','Suspendu':'Suspended','Code provisoire':'Temporary code','Jamais connecté':'Never signed in','Créer le compte':'Create account','Résultat':'Result','Revenus':'Revenue','Analyse du chiffre d’affaires':'Revenue analysis','D’où viennent les revenus':'Where revenue comes from','Où part l’argent':'Where money goes','Meilleurs produits du mois':'Top products this month','Points d’attention':'Things to watch','Avis clients':'Guest reviews','Demander un avis':'Ask for a review','Répondre':'Reply','Annuaire public':'Public directory','Voir l’annuaire':'See the directory','Accepter et continuer':'Accept and continue','Refuser et se déconnecter':'Decline and sign out','Conditions d’utilisation':'Terms of use','Lire →':'Read →','Mentions légales':'Legal notice','Confidentialité':'Privacy','Inventaire':'Inventory','+ Article':'+ Item','Articles suivis':'Items tracked','À racheter':'To restock','Valeur en stock':'Stock value','Pointer mon arrivée':'Clock in','Pointer mon départ':'Clock out','Heures du mois':'Hours this month','Détail':'Details','Corriger':'Correct','Employé':'Employee','Jours':'Days','Heures':'Hours','Moyenne / jour':'Average / day','Demander':'Ask','Langue':'Language','Profils enregistrés':'Saved profiles','PROFILS ENREGISTRÉS':'SAVED PROFILES','Ou connectez-vous avec un autre compte :':'Or sign in with another account:','Propriétaire (e-mail)':'Owner (email)','Code (4 chiffres)':'Code (4 digits)','Chercher un hôtel ou une résidence →':'Find a hotel or residence →','Nouvelle règle':'New rule','+ Règle personnalisée':'+ Custom rule','Week-end +20 %':'Weekend +20%','Haute saison +15 %':'High season +15%','Jour de fête':'Holiday','Basse saison −10 %':'Low season −10%','Envoyer la demande':'Send request','Hébergements':'Rooms','Avis des clients':'Guest reviews','Bienvenue':'Welcome','Mon établissement':'My property','Ajouter un établissement':'Add a property','Formule actuelle':'Current plan','Renouveler':'Renew','Changer de formule':'Change plan','Tarifs':'Pricing','Gratuit':'Free','Mensuel':'Monthly','Demander un devis':'Request a quote','Choisir une formule':'Choose a plan','Utilisateurs':'Users','Historique des paiements':'Payment history','Planning':'Calendar','Aujourd’hui':'Today','Tous':'All','Propriétaire':'Owner','Administrateur':'Administrator','Gérant':'Manager','Réceptionniste':'Receptionist','Ménage':'Housekeeping','Comptable':'Accountant','Serveur / Barman':'Waiter / Bartender','Libre':'Available','Occupée':'Occupied','Arrivée prévue':'Arrival due','Départ du jour':'Departing today','À nettoyer':'To clean','Hors service':'Out of service','Prête':'Ready','Sale':'Dirty','Confirmée':'Confirmed','En attente':'Pending','Partie':'Checked out','Annulée':'Cancelled'
 };
 const EN_RX = [[/^Encaisser · (.+)$/, 'Charge · $1'], [/^Valider · (.+)$/, 'Confirm · $1'], [/^Résultat de (.+)$/, 'Result for $1'], [/^Présent depuis (.+)$/, 'Clocked in since $1'], [/^Ticket n° (.+) encaissé$/, 'Receipt no. $1 paid'], [/^(\d+) articles?$/, '$1 item(s)'], [/^Envoyer en (cuisine|préparation \(bar\))(.*)$/, 'Send to kitchen$2']];
 let LANG = (() => { try { return localStorage.getItem('hh_lang') || 'fr'; } catch (_) { return 'fr'; } })();
@@ -5187,7 +5236,7 @@ async function drawSales(){
 }
 
 /* ================= Ma page publique (espace propriétaire) ================= */
-const publicUrl = (slug) => location.origin + location.pathname + '?h=' + encodeURIComponent(slug);
+const publicUrl = (slug) => 'https://naya-ci.netlify.app/#/hotel/' + encodeURIComponent(slug);
 const slugify = (t) => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 48);
 
 const THEMES = {
@@ -5204,7 +5253,7 @@ async function renderMaPage(){
   const el = $('v-mapage'); el.innerHTML = skeletonView();
   await loadEst();
   const { data: e, error } = await sb.from('establishments').select('*').eq('id', S.est).single();
-  if (error || !e) { el.innerHTML = head('Ma page de présentation') + `<p class="muted">${esc(errMsg(error))}</p>`; return; }
+  if (error || !e) { el.innerHTML = head('Ma fiche Nuittea') + `<p class="muted">${esc(errMsg(error))}</p>`; return; }
   const canEdit = can(['owner','admin']);
   const priced = S.rooms.filter(r => Number(r.base_rate) > 0).length;
   const live = e.public_enabled && e.slug && S.overview && S.overview.can_write;
@@ -5215,7 +5264,7 @@ async function renderMaPage(){
   const score = Math.round(steps.filter(s => s[0]).length * 100 / steps.length);
   const ta = 'width:100%;border:1px solid #D9C8AE;border-radius:12px;padding:10px 12px;font:inherit;background:#fff';
   const sec = (title, sub, body) => `<section class="card" style="margin-bottom:16px"><h3 style="font-size:20px">${title}</h3>${sub ? `<p class="muted" style="font-size:13px;margin:2px 0 12px">${sub}</p>` : '<div style="height:10px"></div>'}${body}</section>`;
-  el.innerHTML = head('Ma page de présentation', e.slug ? `<a class="btn" href="${esc(publicUrl(e.slug))}" target="_blank" rel="noopener">Voir ma page ↗</a>` : '') + readOnlyNote() + `
+  el.innerHTML = head('Ma fiche Nuittea', e.slug ? `<a class="btn" href="${esc(publicUrl(e.slug))}" target="_blank" rel="noopener">Voir sur Nuittea ↗</a>` : '') + readOnlyNote() + `
   <div class="grid" style="grid-template-columns:minmax(0,1fr) minmax(0,380px);gap:20px;align-items:start" id="mpGrid">
     <form id="pubForm" ${canEdit ? '' : 'inert'}>
       ${sec('Identité visuelle', 'Votre logo et votre photo de couverture sont la première chose que voient vos clients.', `

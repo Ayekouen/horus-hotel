@@ -697,6 +697,24 @@ button.st-out,html[data-theme] button.st-out{width:100%;margin-top:18px;min-heig
 .loc-sug button,html[data-theme] .loc-sug button{display:grid;grid-template-columns:1fr auto;width:100%;text-align:left;border:0!important;border-bottom:1px solid var(--line)!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;padding:9px 12px;min-height:0;gap:0 8px}
 .loc-sug button span{grid-column:1;font-size:12px;color:var(--muted);font-weight:400}.loc-sug button em{grid-row:1/3;grid-column:2;align-self:center;font-style:normal;font-size:11px;color:var(--muted);text-transform:capitalize}
 .loc-sug button:hover{background:var(--bg)!important}
+
+/* ---- Finitions (audit UI 2026-11-03) ---- */
+#orgLabel:empty{display:none}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,[tabindex]:focus-visible{outline:3px solid var(--green)!important;outline-offset:2px}
+.gstep,html[data-theme] .gstep{display:flex;align-items:center;gap:10px;min-height:44px;padding:4px 6px;margin:0;border:0!important;background:transparent!important;box-shadow:none!important;color:inherit!important;font:inherit;font-size:14px;text-align:left;text-decoration:none;border-radius:10px;cursor:pointer;justify-content:flex-start;width:100%}
+.gstep:hover{background:rgba(127,127,127,.08)!important}.gstep.done{cursor:default;opacity:.7}
+.gbox{flex:none;width:20px;height:20px;border-radius:6px;border:2px solid currentColor;display:inline-flex;align-items:center;justify-content:center;opacity:.8}
+.gstep.done .gbox{background:var(--green);border-color:var(--green);color:#fff;opacity:1}
+.nw,.v,.kpi .v,td.r,.r,.money{font-variant-numeric:tabular-nums}
+.nw{white-space:nowrap}
+@media (max-width:760px){
+  button,.btn,select{min-height:44px}
+  button.small,.small{min-height:40px}
+  .subnav,.tabs,[role=tablist]{overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;flex-wrap:nowrap!important;-webkit-mask-image:linear-gradient(90deg,#000 88%,transparent);mask-image:linear-gradient(90deg,#000 88%,transparent)}
+  .subnav::-webkit-scrollbar,.tabs::-webkit-scrollbar,[role=tablist]::-webkit-scrollbar{display:none}
+  .subnav>*,.tabs>*,[role=tablist]>*{flex:none}
+}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
 </style>
 </head>
 <body>
@@ -959,7 +977,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.10.27-13';
+const APP_VERSION = '2026.11.03-1';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -2048,7 +2066,7 @@ async function renderAdmin(){
     body = partners + `<div class="card" style="margin-bottom:16px"><div class="row between" style="margin-bottom:10px;flex-wrap:wrap;gap:8px"><h3 style="font-size:20px">Commissions Nuittea — ${new Date(m + 'T00:00:00').toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}</h3>
       <label class="row" style="gap:6px">Mois <input type="month" id="admMonth" value="${m.slice(0, 7)}" style="max-width:170px"></label></div>
       <p class="muted" style="margin-bottom:10px">Séjours Nuittea dont l’arrivée tombe dans le mois. Les demandes en attente et les annulations ne génèrent pas de commission.</p>
-      <div class="tablewrap"><table class="table"><thead><tr><th>Établissement</th><th class="r">Réservations</th><th class="r">En attente</th><th class="r">Annulées</th><th class="r">Chiffre d’affaires</th><th class="r">Commission due</th></tr></thead><tbody>
+      <div class="tablewrap"><table class="table"><thead><tr><th>Établissement</th><th class="r">Réservations</th><th class="r">En attente</th><th class="r">Annulées</th><th class="r">Chiffre d’affaires</th><th class="r">Commission</th></tr></thead><tbody>
       ${(N.rows || []).map(r => `<tr><td><strong>${esc(r.establishment)}</strong><div class="muted" style="font-size:12px">${esc(r.organization)}</div></td><td class="r">${r.bookings}</td><td class="r">${r.pending}</td><td class="r">${r.cancelled}</td><td class="r">${fcfa(r.revenue)}</td><td class="r"><strong>${fcfa(r.commission)}</strong></td></tr>`).join('') || '<tr><td colspan="6" class="muted">Aucune réservation Nuittea ce mois.</td></tr>'}
       ${(N.rows || []).length ? `<tr><td colspan="5" class="r"><strong>Total dû</strong></td><td class="r"><strong>${fcfa(nayaDue)}</strong></td></tr>` : ''}</tbody></table></div></div>
       <div class="card"><h3 style="font-size:20px;margin-bottom:10px">Établissements inscrits sur Nuittea</h3>
@@ -2216,7 +2234,7 @@ const SOURCE = { direct:'Direct', telephone:'Téléphone', walk_in:'Walk-in', wh
 const srcOpts = (cur) => cur === 'naya' ? opt({ naya: 'Nuittea' }, 'naya') : opt(Object.fromEntries(Object.entries(SOURCE).filter(([k]) => k !== 'naya')), cur);
 const PMETHOD = { cash:'Espèces', orange_money:'Orange Money', mtn_money:'MTN MoMo', moov_money:'Moov Money', wave:'Wave', card:'Carte', bank_transfer:'Virement' };
 const HKS = { clean:'Propre', dirty:'Sale', cleaning:'En nettoyage', ready:'Prête', out_of_service:'Hors service' };
-const money = (n) => { const c = (typeof CURRENCIES !== 'undefined' && CURRENCIES[S.currency]) || [0, 'F', 0]; const v = Number(n || 0); const t = new Intl.NumberFormat('fr-FR', { minimumFractionDigits: c[2] && v % 1 ? 2 : 0, maximumFractionDigits: c[2] }).format(c[2] ? v : Math.round(v)).replace(/[\u202f\u00a0]/g, ' '); return c[1] === '$' ? '$' + t : t + ' ' + c[1]; };
+const money = (n) => { const c = (typeof CURRENCIES !== 'undefined' && CURRENCIES[S.currency]) || [0, 'F', 0]; const v = Number(n || 0); const t = new Intl.NumberFormat('fr-FR', { minimumFractionDigits: c[2] && v % 1 ? 2 : 0, maximumFractionDigits: c[2] }).format(c[2] ? v : Math.round(v)).replace(/[\u202f\u00a0 ]/g, '\u00a0'); return c[1] === '$' ? '$' + t : t + '\u00a0' + c[1]; };
 const iso = (d) => { const x = new Date(d); x.setMinutes(x.getMinutes() - x.getTimezoneOffset()); return x.toISOString().slice(0,10); };
 const today = () => iso(new Date());
 const addDays = (s, n) => { const d = new Date(s + 'T00:00:00'); d.setDate(d.getDate() + n); return iso(d); };
@@ -2277,7 +2295,7 @@ function caRange(k){ const t = today();
 async function drawCA(k){
   const box = $('caCard'); if (!box) return; S._caP = k = k || S._caP || 'today'; try { localStorage.setItem('hh_ca_p', k); } catch (_) {}
   const [a, b] = caRange(k);
-  box.innerHTML = `<div class="row between" style="flex-wrap:nowrap;gap:8px"><div style="font-size:13px;font-weight:600;opacity:.8">Chiffre d’affaires encaissé</div>
+  box.innerHTML = `<div style="display:flex;flex-direction:column;align-items:flex-start;gap:6px"><div style="font-size:13px;font-weight:600;opacity:.8">Chiffre d’affaires encaissé</div>
     <label class="sr-only" for="caSel">Période</label><select id="caSel" class="casel" style="min-height:32px;width:auto;padding:2px 26px 2px 10px;font-size:13px;background-color:rgba(255,255,255,.12);color:inherit;border-color:rgba(255,255,255,.25)">${CA_PERIODS.map(([v, l]) => `<option value="${v}" ${v === k ? 'selected' : ''} style="color:#111">${l}</option>`).join('')}</select></div>
     <div style="font-family:var(--display);font-weight:800;font-size:34px;letter-spacing:-.02em" id="caVal">…</div><div style="font-size:13px;opacity:.75" id="caSub">&nbsp;</div>`;
   $('caSel').onchange = (e) => drawCA(e.target.value);
@@ -2351,7 +2369,7 @@ async function renderDashboardCore(){
     ${guide.checklist}
     ${alertCount ? `<div class="banner b-danger"><span>${plur(alertCount, 'alerte de contrôle non lue', 'alertes de contrôle non lues')}.</span><button class="small primary" data-go="controle">Voir</button></div>` : ''}
     <div class="grid dashkpi" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:16px">
-      <div class="card row" style="gap:14px;flex-wrap:nowrap">${donut(occPct)}<div><div style="font-size:13px;font-weight:600;color:var(--muted)">Occupation</div><div style="font-weight:700">${inHouse.length} / ${total} chambres</div></div></div>
+      <div class="card row" style="gap:14px;flex-wrap:nowrap">${donut(occPct)}<div><div style="font-size:13px;font-weight:600;color:var(--muted)">Occupation</div><div style="font-weight:700" class="nw">${inHouse.length} / ${total} chambres</div></div></div>
       ${kpi('Arrivées', arrivals.length, arrivals.length ? 'à accueillir aujourd’hui' : 'aucune aujourd’hui')}
       ${kpi('Départs', departures.length, departures.length ? 'à libérer aujourd’hui' : 'aucun aujourd’hui')}
       ${can(['owner','admin','manager','accountant']) ? `<div class="card" id="caCard" style="background:var(--ink);color:var(--card);border-color:var(--ink);display:flex;flex-direction:column;gap:6px"></div>` : kpi('Encaissé aujourd’hui', money(cashIn), 'toutes méthodes', true)}
@@ -2403,19 +2421,19 @@ async function dashGuide(R){
     ['Première réservation', (nres.count || 0) > 0 || (R || []).length > 0, 'reservations'],
     ['Ouvrir la caisse du jour', !cashRole || !!(sess.data), 'caisse'],
     ...(can(['owner','admin']) ? [['Inviter votre gérant ou réceptionniste', (team.data || []).length > 1, 'equipe']] : []),
-    ...(isMgr && hasF('online_booking') && moduleOn('mapage') ? [['Publier votre page de réservation', !!(est.data && est.data.public_enabled), 'mapage']] : [])
+    ...(isMgr && hasF('online_booking') && moduleOn('mapage') ? [['Compléter ma fiche Nuittea', !!(est.data && est.data.public_enabled), 'mapage']] : [])
   ];
   const done = steps.filter(s => s[1]).length, pct = Math.round(done * 100 / steps.length);
   let hide = false; try { hide = localStorage.getItem('hh_guide_hidden_' + S.org) === '1'; } catch (e) {}
   const nextS = steps.find(s => !s[1]);
   const checklist = (!hide && done < steps.length) ? `<section class="card" style="background:var(--ink);color:#FBF6EE;border-color:var(--ink);margin-bottom:16px">
-    <div class="row between" style="align-items:flex-start"><div><div style="font-size:13px;color:#E9DCC8;font-weight:600">Démarrage</div><h3 style="font-size:24px;margin:4px 0 0">Votre hôtel est prêt à ${pct}&nbsp;%</h3></div><button type="button" class="small" id="gHide" style="color:#E9DCC8;border-color:#6E5A4A">Masquer</button></div>
+    <div class="row between" style="align-items:flex-start;flex-wrap:nowrap;gap:12px"><div style="min-width:0"><div style="font-size:13px;color:#E9DCC8;font-weight:600">Démarrage</div><h3 style="font-size:24px;margin:4px 0 0">Votre hôtel est prêt à ${pct}&nbsp;%</h3></div><button type="button" class="small" id="gHide" style="color:#E9DCC8;border-color:#6E5A4A">Masquer</button></div>
     <div style="height:10px;border-radius:5px;background:rgba(255,255,255,.15);margin:12px 0"><div style="width:${pct}%;height:10px;border-radius:5px;background:var(--prog,#E9A27A)"></div></div>
-    <div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:6px 18px;font-size:14px">${steps.map(s => s[1] ? `<span style="color:#CFE0C0">✓ ${s[0]}</span>` : `<a href="#" data-go="${s[2]}" style="color:#F2C7A8">○ ${s[0]}</a>`).join('')}</div>
+    <div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:6px 18px;font-size:14px">${steps.map(s => s[1] ? `<span class="gstep done"><span class="gbox" aria-hidden="true"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5 9-10"/></svg></span>${s[0]}</span>` : `<button type="button" class="gstep" data-go="${s[2]}"><span class="gbox" aria-hidden="true"></span>${s[0]}</button>`).join('')}</div>
     ${nextS ? `<button class="primary" data-go="${nextS[2]}" style="margin-top:14px">Étape suivante : ${nextS[0]} →</button>` : ''}</section>` : '';
   const rem = [];
   const pend = (R || []).filter(r => r.status === 'pending');
-  if (pend.length) { const h = Math.round((Date.now() - new Date(pend[0].created_at)) / 36e5); rem.push(['#B4532A', `${plur(pend.length, 'demande', 'demandes')} en ligne en attente${h >= 1 ? ' depuis ' + h + ' h' : ''}`, 'Traiter', 'reservations', 'requests']); }
+  if (pend.length) { const h = Math.round((Date.now() - new Date(pend[0].created_at)) / 36e5); rem.push(['var(--green)', `${plur(pend.length, 'demande', 'demandes')} en ligne en attente${h >= 1 ? ' depuis ' + h + ' h' : ''}`, 'Traiter', 'reservations', 'requests']); }
   if (cashRole && !sess.data) rem.push(['#C9A227', 'La caisse n’est pas encore ouverte aujourd’hui', 'Ouvrir', 'caisse']);
   const arrRooms = new Set((R || []).filter(r => r.check_in === t && ['pending','confirmed'].includes(r.status)).map(r => r.room_id));
   S.rooms.filter(r => moduleOn('menage') && arrRooms.has(r.id) && ['dirty','cleaning'].includes(r.housekeeping_status)).forEach(r => rem.push(['#6E5A4A', `Chambre ${esc(r.number)} à nettoyer avant l’arrivée du jour`, 'Chambres', 'chambres']));
@@ -2475,7 +2493,7 @@ const initials = (n) => esc((n || '?').split(/\s+/).filter(Boolean).map(w => w[0
 const telLink = (p) => { const d = String(p || '').replace(/[^\d+]/g, ''); return d ? 'tel:' + d : ''; };
 function emptyState(icon, title, text, actions){
   const ICONS = { cal:'<rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M3 10h18M8 3v4M16 3v4"></path>', bed:'<path d="M3 18V7M21 18v-6H3M7 12V9h5v3"></path>', user:'<circle cx="12" cy="8" r="4"></circle><path d="M4 21c1-4 4-6 8-6s7 2 8 6"></path>', cash:'<rect x="2" y="6" width="20" height="12" rx="2"></rect><circle cx="12" cy="12" r="3"></circle>' };
-  return `<div style="border:1.5px dashed #C9B596;border-radius:18px;padding:28px 20px;text-align:center"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#B4532A" stroke-width="1.6" aria-hidden="true">${ICONS[icon] || ICONS.cal}</svg>
+  return `<div style="border:1.5px dashed var(--line);border-radius:18px;padding:28px 20px;text-align:center"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="1.6" aria-hidden="true">${ICONS[icon] || ICONS.cal}</svg>
     <h3 style="font-size:20px;margin:8px 0 4px">${title}</h3><p class="muted" style="margin:0 auto 14px;max-width:460px">${text}</p><div class="row" style="justify-content:center">${actions || ''}</div></div>`;
 }
 function nextStep(title, text, buttons){
@@ -2536,7 +2554,7 @@ async function renderReservations(){
     </tbody></table></div>` : `<p class="muted">${empty}</p>`;
   const unp = (rows) => f.unpaid ? rows.filter(r => r.balance > 0) : rows;
   let body = '';
-  if (!all.length && !f.q) body = `<div class="card">${emptyState('cal', 'Aucune réservation pour l’instant', 'Enregistrez votre premier client en moins d’une minute, ou partagez votre page de réservation pour recevoir des demandes en ligne.', `<button class="primary" data-newresa>Créer une réservation</button><button class="ghost" data-go="mapage">Partager ma page</button>`)}</div>`;
+  if (!all.length && !f.q) body = `<div class="card">${emptyState('cal', 'Aucune réservation pour l’instant', 'Enregistrez votre premier client en moins d’une minute. Les réservations faites sur Nuittea.com arrivent aussi ici.', `<button class="primary" data-newresa>Créer une réservation</button><button class="ghost" data-go="mapage">Ma fiche Nuittea</button>`)}</div>`;
   else if (f.tab === 'today') body = `<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:16px;margin-bottom:16px;align-items:start">
       ${col('Arrivées', arrivals.length + ' à accueillir', 'background:#F2DCA8;color:#5E4510', arrivals, 'arr', 'Aucune arrivée prévue aujourd’hui.')}
       <div>${col('Départs', departures.length + ' aujourd’hui', 'background:var(--ink);color:var(--card)', departures, 'dep', 'Aucun départ aujourd’hui.')}
@@ -2548,7 +2566,7 @@ async function renderReservations(){
   else { const rows = unp(f.tab === 'inhouse' ? inhouse : f.tab === 'upcoming' ? upcoming : history);
     body = `<div class="card"><div class="row between" style="margin-bottom:10px"><h3 style="font-size:20px">${TABS.find(x => x[0] === f.tab)[1]}</h3><label class="row" style="gap:6px;margin:0;font-weight:500"><input type="checkbox" id="rfUnp" style="width:22px;height:22px;min-height:0" ${f.unpaid ? 'checked' : ''}> Solde impayé</label></div>${table(rows, f.q ? 'Aucun résultat pour cette recherche.' : 'Rien à afficher ici.')}</div>`; }
 
-  el.innerHTML = head('Réservations', `<input id="rfQ" value="${esc(f.q)}" placeholder="Nom, chambre, téléphone, n° de réservation" style="width:min(300px,100%)" aria-label="Rechercher"><button data-walkin>Walk-in</button><button class="primary" data-newresa>+ Nouvelle réservation</button>`) + readOnlyNote() +
+  el.innerHTML = head('Réservations', `<input id="rfQ" value="${esc(f.q)}" placeholder="Nom, chambre, téléphone…" aria-label="Rechercher une réservation (nom, chambre, téléphone, numéro)" style="width:min(300px,100%)" aria-label="Rechercher"><button data-walkin>Walk-in</button><button class="primary" data-newresa>Nouvelle réservation</button>`) + readOnlyNote() +
     `<div class="row" role="tablist" style="gap:6px;background:#E9DCC8;padding:5px;border-radius:26px;width:fit-content;max-width:100%;overflow-x:auto;margin-bottom:16px;flex-wrap:nowrap">${TABS.map(([k, l, n]) => `<button role="tab" aria-selected="${k === f.tab}" class="small ${k === f.tab ? 'primary' : 'ghost'}" style="white-space:nowrap;border:0" data-rtab="${k}">${l}${n ? ' · ' + n : ''}</button>`).join('')}</div>` + body;
   el.querySelectorAll('[data-rtab]').forEach(b => b.onclick = () => { f.tab = b.dataset.rtab; renderReservations(); });
   let qt; $('rfQ').oninput = () => { clearTimeout(qt); qt = setTimeout(() => { f.q = $('rfQ').value; renderReservations().then(() => { const i = $('rfQ'); i.focus(); i.setSelectionRange(i.value.length, i.value.length); }); }, 350); };
@@ -2627,7 +2645,7 @@ async function renderNaya(){
       <div class="grid" style="grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:12px">
         <div class="card" style="padding:12px"><div class="muted" style="font-size:12px">Réservations</div><div style="font-weight:800;font-size:20px">${R.length}</div></div>
         <div class="card" style="padding:12px"><div class="muted" style="font-size:12px">Chiffre d’affaires</div><div style="font-weight:800;font-size:20px">${money(ca)}</div></div>
-        <div class="card" style="padding:12px"><div class="muted" style="font-size:12px">Commission due</div><div style="font-weight:800;font-size:20px">${money(com)}</div></div></div>
+        <div class="card" style="padding:12px"><div class="muted" style="font-size:12px">Commission Nuittea</div><div style="font-weight:800;font-size:20px">${money(com)}</div></div></div>
       ${R.length ? `<div class="tablewrap"><table class="table"><thead><tr><th>Client</th><th>Séjour</th><th>Statut</th><th style="text-align:right">Total</th><th style="text-align:right">Commission</th></tr></thead><tbody>
         ${R.map(r => { const c = ['cancelled','no_show','pending'].includes(r.status) ? 0 : Math.round(Number(r.total_amount) * (P[r.id] || 0) / 100); return `<tr><td><strong>${esc(r.guest_name)}</strong></td><td>Ch. ${esc(r.room_number)} · ${dfr(r.check_in)} → ${dfr(r.check_out)}</td><td>${esc(RSTATUS[r.status] || r.status)}</td><td style="text-align:right;white-space:nowrap">${money(r.total_amount)}</td><td style="text-align:right;white-space:nowrap">${c ? money(c) : '<span class="muted">—</span>'}</td></tr>`; }).join('')}
       </tbody></table></div><p class="muted" style="font-size:12px;margin:8px 0 0">La commission ne compte pas les demandes en attente, les annulations ni les absences.</p>` : '<p class="muted">Aucune réservation Nuittea ce mois-ci.</p>'}`);
@@ -2975,11 +2993,11 @@ async function renderPlanning(){
     <div class="card" style="padding:0;overflow-x:auto"><div style="min-width:${110 + days * cell}px">
       <div style="display:grid;grid-template-columns:110px repeat(${days},${cell}px);position:sticky;top:0;background:#fff;border-bottom:1px solid var(--line)">
         <div style="padding:10px;font-size:12px;font-weight:700;color:var(--muted)">Chambre</div>
-        ${dates.map(d => `<div style="padding:8px 0;text-align:center;font-size:11px;${d === today() ? 'background:var(--green-l);font-weight:700' : ''}">${new Date(d + 'T00:00:00').toLocaleDateString('fr-FR', { weekday:'short' })}<br><strong>${d.slice(8)}</strong></div>`).join('')}
+        ${dates.map(d => `<div style="padding:8px 0;text-align:center;font-size:12px;${d === today() ? 'background:var(--green-l);font-weight:700' : ''}">${new Date(d + 'T00:00:00').toLocaleDateString('fr-FR', { weekday:'short' })}<br><strong>${d.slice(8)}</strong></div>`).join('')}
       </div>
       ${S.rooms.map(rm => { const rs = (data || []).filter(x => x.room_id === rm.id);
         return `<div data-prow="${rm.id}" style="display:grid;grid-template-columns:110px repeat(${days},${cell}px);position:relative;border-bottom:1px solid var(--line);height:46px">
-          <div style="padding:12px 10px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(rm.number)} <span class="muted" style="font-weight:400;font-size:11px">${HKS[rm.housekeeping_status] === 'Propre' ? '' : esc(HKS[rm.housekeeping_status])}</span></div>
+          <div style="padding:12px 10px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(rm.number)} <span class="muted" style="font-weight:400;font-size:12px">${HKS[rm.housekeeping_status] === 'Propre' ? '' : esc(HKS[rm.housekeeping_status])}</span></div>
           ${dates.map(d => `<button aria-label="Réserver ${esc(rm.number)} le ${d}" data-slot="${rm.id}|${d}" style="min-height:46px;border:none;border-left:1px solid #F4F1EA;border-radius:0;background:transparent;padding:0"></button>`).join('')}
           ${rs.map(x => { const a = Math.max(0, (new Date(x.check_in) - new Date(start)) / 864e5), b = Math.min(days, (new Date(x.check_out) - new Date(start)) / 864e5);
             const movable = x.status !== 'checked_out' && canMove;
@@ -3935,8 +3953,8 @@ async function renderEquipe(){
 
 /* ================= Modules à cocher, devise, résultat & analyse ================= */
 const CURRENCIES = { XOF: ['Franc CFA (UEMOA)', 'F', 0], XAF: ['Franc CFA (CEMAC)', 'F', 0], GNF: ['Franc guinéen', 'FG', 0], CDF: ['Franc congolais', 'FC', 0], MGA: ['Ariary', 'Ar', 0], MAD: ['Dirham marocain', 'DH', 2], NGN: ['Naira', '₦', 0], GHS: ['Cedi', 'GH₵', 2], EUR: ['Euro', '€', 2], USD: ['Dollar US', '$', 2] };
-const MODULES = { passes: 'Passes (séjours de quelques heures)', planning: 'Planning', clients: 'Clients', inventaire: 'Inventaire (linge, produits)', menage: 'Ménage (état des chambres)', pointage: 'Pointage du personnel', resto: 'Restaurant & Bar', depenses: 'Dépenses', factures: 'Factures', rapports: 'Rapports', mapage: 'Ma fiche Nuittea (photos, description)', controle: 'Contrôle propriétaire', notifs: 'Notifications', multi: 'Plusieurs établissements', equipe: 'Équipe' };
-const MODULE_GROUPS = [['Hébergement', ['planning','clients','inventaire','menage']], ['Argent', ['depenses','factures']], ...(RESTO_ACTIF ? [['Restaurant & Bar', ['resto']]] : []), ['Pilotage', ['rapports','controle','mapage']], ['Organisation', ['pointage','notifs','multi','equipe']]];
+const MODULES = { passes: 'Passes (séjours de quelques heures)', planning: 'Planning', clients: 'Clients', inventaire: 'Inventaire (linge, produits)', menage: 'Ménage (état des chambres)', pointage: 'Pointage du personnel', resto: 'Restaurant & Bar', depenses: 'Dépenses', factures: 'Factures', rapports: 'Rapports', controle: 'Contrôle propriétaire', notifs: 'Notifications', multi: 'Plusieurs établissements', equipe: 'Équipe' };
+const MODULE_GROUPS = [['Hébergement', ['planning','clients','inventaire','menage']], ['Argent', ['depenses','factures']], ...(RESTO_ACTIF ? [['Restaurant & Bar', ['resto']]] : []), ['Pilotage', ['rapports','controle']], ['Organisation', ['pointage','notifs','multi','equipe']]];
 const MODULE_HELP = { planning: 'Vue calendrier des chambres', clients: 'Fichier clients et historique', resto: 'Caisse restaurant/bar, produits et stock', depenses: 'Charges fixes, opérationnelles, budget', factures: 'Factures numérotées', rapports: 'Rapports financiers et exports', mapage: 'Page publique et réservation en ligne', controle: 'Alertes et journal des actions', inventaire: 'Draps, serviettes, savons, entretien, minibar', pointage: 'Arrivées et départs du personnel, heures du mois', menage: 'Statuts « à nettoyer » et rappels de ménage', notifs: 'La cloche et les alertes en direct', multi: 'Sélecteur d’établissement (si vous en avez plusieurs)', equipe: 'Comptes du personnel et invitations' };
 /* Mode « réservations » : par défaut, seul le cœur de la gestion des réservations est affiché. Le propriétaire peut réactiver les autres volets dans Réglages → Fonctionnalités. */
 const CORE_MODULES = ['planning', 'clients', 'menage', 'factures', 'notifs', 'multi', 'equipe'];

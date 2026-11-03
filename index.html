@@ -715,6 +715,45 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
   .subnav>*,.tabs>*,[role=tablist]>*{flex:none}
 }
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
+
+/* ---- Direction B « Net et professionnel » (boutons, onglets, retours) ---- */
+:root{--b-r:10px;--b-ink:#111827;--b-line:#D0D5DD}
+:is(section[id^="v-"],#modal,.dtop,#onboard,#auth) :is(button,.btn):not(.gstep):not(.loc-sug button):not([role=tab]):not(.toggle button):not(.ghead):not(.leaflet-control *){
+  border-radius:var(--b-r)!important;font-weight:600!important;letter-spacing:0!important;transition:background-color .12s,border-color .12s,box-shadow .12s,transform .06s!important;
+  background:#fff!important;color:var(--b-ink)!important;border:1px solid var(--b-line)!important;box-shadow:0 1px 2px rgba(16,24,40,.05)!important}
+:is(section[id^="v-"],#modal,.dtop,#onboard,#auth) :is(button,.btn):not(.gstep):not([role=tab]):not(.toggle button):hover{background:#F9FAFB!important;border-color:#98A2B3!important}
+:is(section[id^="v-"],#modal,.dtop,#onboard,#auth) button.primary:not(#_a):not(#_b){background:var(--b-ink)!important;color:#fff!important;border-color:var(--b-ink)!important;box-shadow:0 1px 2px rgba(16,24,40,.12)!important}
+:is(section[id^="v-"],#modal,.dtop,#onboard,#auth) button.primary:not(#_a):not(#_b):hover{background:#1F2937!important;border-color:#1F2937!important}
+:is(section[id^="v-"],#modal,.dtop,#onboard,#auth) button.primary:not(#_a):not(#_b) *{color:#fff!important}
+:is(section[id^="v-"],#modal) :is(button.danger:not(#_a):not(#_b),button.k-danger,button[data-danger],button[data-del],button[data-delete]){background:#fff!important;color:#B42318!important;border-color:#FDA29B!important}
+:is(section[id^="v-"],#modal) :is(button.danger:not(#_a):not(#_b),button.k-danger,button[data-danger],button[data-del],button[data-delete]):hover{background:#FEF3F2!important}
+:is(section[id^="v-"],#modal,.dtop) :is(button,.btn):not([role=tab]):not(.toggle button):active{transform:translateY(1px)}
+:is(section[id^="v-"],#modal,.dtop) button:disabled{opacity:.5!important;cursor:not-allowed}
+button.is-busy:not(#_a):not(#_b):not(#_c){position:relative;color:transparent!important;pointer-events:none}button.is-busy:not(#_a):not(#_b):not(#_c) *{color:transparent!important}
+button.is-busy *{visibility:hidden}
+button.is-busy::after{content:"";position:absolute;left:50%;top:50%;width:16px;height:16px;margin:-8px 0 0 -8px;border-radius:50%;border:2px solid currentColor;border-color:#fff #fff transparent transparent;animation:bspin .7s linear infinite}
+button.is-busy:not(.primary)::after{border-color:var(--b-ink) var(--b-ink) transparent transparent}
+@keyframes bspin{to{transform:rotate(360deg)}}
+.kb{display:inline-block;margin-left:8px;font:600 11px/1 Inter,system-ui,sans-serif;padding:3px 5px;border:1px solid rgba(255,255,255,.35);border-radius:4px;color:rgba(255,255,255,.75)}
+@media (max-width:899px),(hover:none){.kb{display:none}}
+/* Onglets : soulignés, sans fond */
+:is(section[id^="v-"],#modal) [role=tablist],:is(section[id^="v-"],#modal) .toggle{background:transparent!important;padding:0!important;border-radius:0!important;gap:20px!important;border-bottom:1px solid #E3E8EE;width:100%!important;max-width:100%}
+:is(section[id^="v-"],#modal) [role=tablist] > button,:is(section[id^="v-"],#modal) .toggle > button{background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important;padding:10px 0!important;min-height:44px;color:#5A6574!important;font-weight:600!important}
+:is(section[id^="v-"],#modal) [role=tablist] > button:hover,:is(section[id^="v-"],#modal) .toggle > button:hover{color:var(--b-ink)!important;background:transparent!important}
+:is(section[id^="v-"],#modal) [role=tablist] > button:is([aria-selected=true],.on,.primary),:is(section[id^="v-"],#modal) .toggle > button.on{color:var(--b-ink)!important;box-shadow:inset 0 -2px 0 #1F7AB8!important}
+:is(section[id^="v-"],#modal) [role=tablist] > button *{color:inherit!important}
+/* Sous-navigation mobile */
+.subnav button{border-radius:var(--b-r)!important;border:1px solid var(--b-line)!important;background:#fff!important;box-shadow:none!important}
+.subnav button.active,.subnav button.on{background:var(--b-ink)!important;color:#fff!important;border-color:var(--b-ink)!important}
+/* Champs */
+:is(section[id^="v-"],#modal) :is(input:not([type=checkbox]):not([type=radio]),select,textarea){border-radius:var(--b-r)!important;border:1px solid var(--b-line)!important;box-shadow:0 1px 2px rgba(16,24,40,.05)}
+:is(section[id^="v-"],#modal) :is(input,select,textarea):focus{border-color:#1F7AB8!important;box-shadow:0 0 0 3px rgba(31,122,184,.15)!important;outline:none}
+/* Cartes */
+section[id^="v-"] .card{border-radius:12px}
+/* Message de retour */
+.toast{border-radius:var(--b-r)!important;background:#fff!important;color:var(--b-ink)!important;border:1px solid #E3E8EE!important;border-left:3px solid #16794C!important;box-shadow:0 8px 24px rgba(16,24,40,.12)!important;font-weight:500}
+.toast.err{border-left-color:#B42318!important}
+.toast{min-width:min(340px,92vw)}
 </style>
 </head>
 <body>
@@ -938,7 +977,7 @@ const CYCLE = { trial:'Essai', monthly:'Mensuel', yearly:'Annuel' };
 const METHOD = { orange_money:'Orange Money', mtn_money:'MTN MoMo', moov_money:'Moov Money', wave:'Wave', card:'Carte bancaire', bank_transfer:'Virement bancaire', cash:'Espèces' };
 const FEAT = { notifications:'Notifications', daily_summary:'Résumé quotidien au propriétaire (bientôt)', whatsapp_auto:'Messages WhatsApp automatiques (bientôt)', seasonal_rates:'Tarifs automatiques (week-end, saisons)', extra_services:'Services en plus : petit-déjeuner, linge… (bientôt)', online_booking:'Visibilité sur Nuittea.com', owner_control:'Contrôle propriétaire & alertes', multi_property:'Plusieurs établissements', priority_support:'Support prioritaire', training:'Installation & formation', reception:'Réception & planning', reservations:'Réservations', clients:'Fiches clients', billing:'Facturation', payments:'Encaissements', cash:'Caisse', housekeeping:'Ménage et état des chambres', expenses:'Dépenses', basic_reports:'Rapports de base', users:'Utilisateurs', pdf_export:'Export PDF', advanced_reservations:'Réservations avancées', rates:'Tarifs', promotions:'Promotions', services:'Services', advanced_housekeeping:'Housekeeping avancé', maintenance:'Maintenance', financial_reports:'Rapports financiers', occupancy_stats:"Statistiques d'occupation", full_history:'Historique complet', excel_export:'Export Excel', user_permissions:'Permissions utilisateurs', notifications:'Notifications', restaurant:'Restaurant', bar:'Bar', orders:'Commandes', room_charge_transfer:'Transfert sur chambre', inventory:'Stocks', suppliers:'Fournisseurs', staff:'Personnel', groups:'Groupes', accounting:'Comptabilité simplifiée', advanced_dashboard:'Dashboard avancé', adr_revpar:'ADR & RevPAR', revenue_by_service:'CA par service', online_booking:'Réservation en ligne', online_payment:'Paiement en ligne', whatsapp_sms:'WhatsApp / SMS', api:'API', channel_manager:'Channel Manager', ota:'Connexion OTA', dynamic_pricing:'Tarification dynamique', revenue_management:'Revenue Management', advanced_crm:'CRM avancé', loyalty:'Fidélité', advanced_promotions:'Promotions avancées', whatsapp_automation:'Automatisation WhatsApp', custom_reports:'Rapports personnalisables', ai_assistant:'Assistant IA', smart_alerts:'Alertes intelligentes', advanced_api:'API avancée', full_audit:'Audit complet', multi_property:'Multi-établissements', multi_city:'Multi-villes', central_admin:'Administration centralisée', hotel_groups:'Groupes hôteliers', financial_consolidation:'Consolidation financière', national_dashboard:'Dashboard national', advanced_permissions:'Permissions avancées', custom_api:'API personnalisée', custom_integrations:'Intégrations spécifiques', data_migration:'Migration des données', training:'Formation', priority_support:'Support prioritaire' };
 
-function toast(msg, err=false){ const t=$('toast'); t.textContent=msg; t.className='toast'+(err?' err':''); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.add('hidden'), 5000); }
+function toast(msg, err=false){ document.querySelectorAll('.is-busy').forEach(b => { b.classList.remove('is-busy'); b.removeAttribute('aria-busy'); }); const t=$('toast'); t.textContent=msg; t.className='toast'+(err?' err':''); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.add('hidden'), 5000); }
 function errMsg(e){ const m = (e && (e.message || e.error_description)) || 'Une erreur est survenue.'; if (typeof isNetErr === 'function' && isNetErr(e)) return 'Hors connexion : cette action sera possible dès le retour du réseau. Vous pouvez continuer à consulter vos données.'; return /momo_ref/.test(m) ? 'Saisissez le numéro de transaction Mobile Money (4 caractères minimum).' : m; }
 function modal(html){ $('modalBody').style.maxWidth = ''; $('modalBody').innerHTML = html; $('modal').classList.remove('hidden'); $('modalBody').scrollTop = 0; document.body.classList.add('modal-open'); }
 function closeModal(){ if ($('modal').dataset.locked) return; $('modal').classList.add('hidden'); document.body.classList.remove('modal-open'); }
@@ -977,7 +1016,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.11.03-1';
+const APP_VERSION = '2026.11.03-2';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -2363,7 +2402,7 @@ async function renderDashboardCore(){
   el.innerHTML = `
     <div class="row between" style="margin-bottom:20px;align-items:flex-end">
       <div><div class="muted" style="font-size:14px">${hello} · ${new Date().toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long' })}</div><h1 style="font-size:clamp(28px,4vw,40px)">Aujourd’hui</h1></div>
-      <div class="row">${upgradeBtn()}<button data-walkin>Walk-in</button><button class="primary" data-newresa>Nouvelle réservation</button></div>
+      <div class="row">${upgradeBtn()}<button data-walkin>Walk-in</button><button class="primary" data-newresa aria-keyshortcuts="N">Nouvelle réservation<kbd class="kb" aria-hidden="true">N</kbd></button></div>
     </div>
     ${readOnlyNote()}
     ${guide.checklist}
@@ -2486,7 +2525,17 @@ async function openPalette(){
 document.addEventListener('keydown', e => {
   if (e.key === '/' && !e.ctrlKey && !e.metaKey && !/^(INPUT|TEXTAREA|SELECT)$/.test((e.target.tagName || '')) && !e.target.isContentEditable && !$('app').classList.contains('hidden') && $('modal').classList.contains('hidden')) { e.preventDefault(); openPalette(); }
   if (e.key === 'Escape' && !$('modal').classList.contains('hidden')) closeModal();
+  if ((e.key === 'n' || e.key === 'N') && !e.ctrlKey && !e.metaKey && !e.altKey && !/^(INPUT|TEXTAREA|SELECT)$/.test((e.target.tagName || '')) && !e.target.isContentEditable && !$('app').classList.contains('hidden') && $('modal').classList.contains('hidden')) {
+    const b = [...document.querySelectorAll('[data-newresa]')].find(x => x.offsetParent);
+    if (b) { e.preventDefault(); b.click(); } else if (S.org && allowed('reservations')) { e.preventDefault(); go('reservations'); setTimeout(() => { const c = [...document.querySelectorAll('[data-newresa]')].find(x => x.offsetParent); if (c) c.click(); }, 900); }
+  }
 });
+/* Bouton principal : état « en cours » le temps de l'enregistrement (retiré au message de confirmation ou après 8 s) */
+document.addEventListener('click', (e) => {
+  const b = e.target.closest('button.primary'); if (!b || b.disabled || b.closest('nav')) return;
+  if (!(b.type === 'submit' || b.closest('#modal') || /enregistr|valider|confirmer|encaisser|ouvrir la caisse|clôturer|check|réserver|publier|envoyer/i.test(b.textContent))) return;
+  b.classList.add('is-busy'); b.setAttribute('aria-busy', 'true'); clearTimeout(b._busy); b._busy = setTimeout(() => { b.classList.remove('is-busy'); b.removeAttribute('aria-busy'); }, 8000);
+}, true);
 
 /* ---------- Réservations ---------- */
 const initials = (n) => esc((n || '?').split(/\s+/).filter(Boolean).map(w => w[0]).slice(0, 2).join('').toUpperCase());

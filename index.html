@@ -767,6 +767,14 @@ section[id^="v-"] .card{border-radius:12px}
 .ca-dr span:nth-child(2),.ca-dr span:nth-child(3){text-align:right}
 .ca-dh{font-size:12px;font-weight:600;opacity:.7}
 .ca-dt{font-weight:700;border-bottom:0}
+
+/* Tableau de bord : caisse fermée dans la carte CA */
+.ca-open{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:8px;font-size:13px;padding-top:8px;border-top:1px solid rgba(127,127,127,.25)}
+@media (max-width:899px){#v-dashboard{padding-bottom:24px}}
+
+@media (min-width:900px){.dashkpi:has(#caCard){grid-template-columns:minmax(0,1.25fr) repeat(2,minmax(0,1fr))!important}.dashkpi #caCard{grid-row:span 2}}
+@media (max-width:899px){.dashkpi:has(#caCard){grid-template-columns:repeat(2,minmax(0,1fr))!important}.dashkpi #caCard{grid-column:1/-1}}
+@media (max-width:600px){.rescard{grid-template-columns:1fr!important}}
 </style>
 </head>
 <body>
@@ -1029,7 +1037,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.11.04-1';
+const APP_VERSION = '2026.11.04-2';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -2352,6 +2360,12 @@ async function drawCA(k){
     <label class="sr-only" for="caSel">Période</label><select id="caSel" class="casel" style="min-height:32px;width:auto;padding:2px 26px 2px 10px;font-size:13px;background-color:rgba(255,255,255,.12);color:inherit;border-color:rgba(255,255,255,.25)">${CA_PERIODS.map(([v, l]) => `<option value="${v}" ${v === k ? 'selected' : ''} style="color:#111">${l}</option>`).join('')}</select></div>
     <div style="font-family:var(--display);font-weight:800;font-size:34px;letter-spacing:-.02em" id="caVal">…</div><div style="font-size:13px;opacity:.75" id="caSub">&nbsp;</div><div id="caDays"></div>`;
   $('caSel').onchange = (e) => drawCA(e.target.value);
+  if (k === 'today' && can(['owner','admin','manager','receptionist','accountant'])) sb.from('cash_sessions').select('id').eq('establishment_id', S.est).eq('status', 'open').maybeSingle().then(({ data: cs, error: ce }) => {
+    if (ce || cs || S._caP !== 'today' || !$('caSub')) return;
+    const w = document.createElement('div'); w.className = 'ca-open';
+    w.innerHTML = `<span>La caisse est fermée.</span><button type="button" class="small" data-go="caisse">Ouvrir la caisse</button>`;
+    $('caSub').after(w);
+  });
   /* Lecture par pages de 1000 lignes (limite du serveur), pour que le total et le détail couvrent toute la période */
   const L = [];
   for (let from = 0; from < 50000; from += 1000) {
@@ -2437,10 +2451,11 @@ async function renderDashboardCore(){
     ${guide.checklist}
     ${alertCount ? `<div class="banner b-danger"><span>${plur(alertCount, 'alerte de contrôle non lue', 'alertes de contrôle non lues')}.</span><button class="small primary" data-go="controle">Voir</button></div>` : ''}
     <div class="grid dashkpi" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:16px">
+      ${can(['owner','admin','manager','accountant']) ? `<div class="card" id="caCard" style="background:var(--ink);color:var(--card);border-color:var(--ink);display:flex;flex-direction:column;gap:6px"></div>` : kpi('Encaissé aujourd’hui', money(cashIn), 'toutes méthodes', true)}
       <div class="card row" style="gap:14px;flex-wrap:nowrap">${donut(occPct)}<div><div style="font-size:13px;font-weight:600;color:var(--muted)">Occupation</div><div style="font-weight:700" class="nw">${inHouse.length} / ${total} chambres</div></div></div>
       ${kpi('Arrivées', arrivals.length, arrivals.length ? 'à accueillir aujourd’hui' : 'aucune aujourd’hui')}
       ${kpi('Départs', departures.length, departures.length ? 'à libérer aujourd’hui' : 'aucun aujourd’hui')}
-      ${can(['owner','admin','manager','accountant']) ? `<div class="card" id="caCard" style="background:var(--ink);color:var(--card);border-color:var(--ink);display:flex;flex-direction:column;gap:6px"></div>` : kpi('Encaissé aujourd’hui', money(cashIn), 'toutes méthodes', true)}
+      ${can(['owner','admin','manager','accountant']) ? `<div class="card" id="adrCard" style="display:flex;flex-direction:column;gap:2px"><div style="font-size:13px;font-weight:600;opacity:.75">Prix moyen / nuit</div><div style="font-family:var(--display);font-weight:800;font-size:34px;letter-spacing:-.02em" class="nw" id="adrVal">…</div><div class="muted" style="font-size:13px" id="adrSub">ce mois-ci</div></div>` : ''}
     </div>
     <div class="grid g2" style="margin-bottom:16px;align-items:start">
       <div class="card"><h3 style="font-size:20px;margin-bottom:4px">Arrivées du jour</h3>${arrivals.length ? arrivals.map(r => person(r, 'checkin', 'Check-in')).join('') : '<p class="muted">Aucune arrivée prévue.</p>'}</div>
@@ -4067,17 +4082,24 @@ async function loadDashResult(){
   const { data, error } = await sb.rpc('business_analytics', { p_org: S.org, p_months: 6 });
   if (error || !data) { box.remove(); return; }
   S.ana = data; const s = data.series, cur = s[s.length - 1], prev = s[s.length - 2] || {};
+  { const av = $('adrVal'), as = $('adrSub'); if (av) { av.textContent = cur.sold ? money(cur.adr) : '—'; as.textContent = cur.sold ? `ce mois-ci · ${plur(cur.sold, 'nuitée', 'nuitées')}` : 'aucune nuitée ce mois-ci'; } }
   const ch = pctChg(cur.result, prev.result), max = Math.max(1, ...s.map(x => Math.max(x.revenue, x.expenses)));
-  box.innerHTML = `<button type="button" id="resCard" class="card" style="width:100%;text-align:left;display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:16px;align-items:center;margin-bottom:16px;cursor:pointer;min-height:0;padding:18px 20px">
+  box.innerHTML = `<button type="button" id="resCard" class="card rescard" style="width:100%;text-align:left;display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:16px;align-items:center;margin-bottom:16px;cursor:pointer;min-height:0;padding:18px 20px">
     <div><div class="row between" style="flex-wrap:nowrap"><span style="font-size:13px;font-weight:700;color:var(--muted)">Résultat de ${new Date().toLocaleDateString('fr-FR', { month: 'long' })}</span>
       <select id="curSel" aria-label="Devise" onclick="event.stopPropagation()" style="max-width:150px;min-height:32px;font-size:13px;padding:2px 8px">${Object.entries(CURRENCIES).map(([k, v]) => `<option value="${k}" ${k === S.currency ? 'selected' : ''}>${k} · ${v[1]}</option>`).join('')}</select></div>
       <div style="font-family:var(--display);font-size:clamp(28px,4vw,38px);font-weight:800;color:${cur.result < 0 ? 'var(--red)' : 'var(--green)'}">${cur.result < 0 ? '−' : ''}${money(Math.abs(cur.result))}</div>
-      <div style="font-size:14px">Revenus <strong>${money(cur.revenue)}</strong> · Dépenses <strong>${money(cur.expenses)}</strong></div>
+      <div style="font-size:14px">Revenus <strong>${money(cur.revenue)}</strong> · ${cur.expenses ? `Dépenses <strong>${money(cur.expenses)}</strong>` : '<span class="muted">Aucune dépense saisie ce mois-ci</span>'}</div>
+      ${cur.revenue ? '' : '<div class="muted" style="font-size:13px">Pas encore d’encaissement ce mois-ci.</div>'}
+      <div class="muted" style="font-size:12px;margin-top:2px" id="resDays">&nbsp;</div>
       <div class="muted" style="font-size:12px;margin-top:2px">${ch === null ? '' : (ch >= 0 ? '▲ ' : '▼ ') + Math.abs(ch) + ' % vs mois dernier · '}Touchez pour l’analyse détaillée →</div></div>
-    <div aria-hidden="true" style="display:flex;gap:6px;align-items:flex-end;height:84px">${s.map(x => `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px"><div style="width:100%;display:flex;gap:2px;align-items:flex-end;height:66px"><div style="flex:1;background:var(--green);border-radius:3px 3px 0 0;height:${Math.max(2, x.revenue / max * 66)}px"></div><div style="flex:1;background:var(--gold-l);border-radius:3px 3px 0 0;height:${Math.max(2, x.expenses / max * 66)}px"></div></div><span class="muted" style="font-size:10px">${moisFr(x.m)}</span></div>`).join('')}</div>
+    <div aria-hidden="true" style="display:flex;gap:6px;align-items:flex-end;height:84px">${s.map(x => `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px"><div style="width:100%;display:flex;gap:2px;align-items:flex-end;height:66px"><div style="flex:1;background:var(--green);border-radius:3px 3px 0 0;height:${Math.max(2, x.revenue / max * 66)}px"></div><div style="flex:1;background:var(--gold-l);border-radius:3px 3px 0 0;height:${Math.max(2, x.expenses / max * 66)}px"></div></div><span class="muted" style="font-size:12px">${moisFr(x.m)}</span></div>`).join('')}</div>
   </button>`;
   $('curSel').onchange = (e) => setCurrency(e.target.value);
   $('resCard').onclick = (e) => { if (e.target.closest('#curSel')) return; openAnalysis(6); };
+  /* Régularité, en une ligne factuelle : jours du mois en cours avec au moins un encaissement */
+  { const t = today(), a = t.slice(0, 8) + '01', nd = Number(t.slice(8, 10)), seen = new Set();
+    for (let f = 0; f < 50000; f += 1000) { const { data: m, error: er } = await sb.from('cash_movements').select('id,created_at').eq('establishment_id', S.est).in('kind', ['payment', 'income']).gte('created_at', a + 'T00:00:00').lt('created_at', addDays(t, 1) + 'T00:00:00').order('id').range(f, f + 999); if (er) return; (m || []).forEach(x => seen.add(String(x.created_at).slice(0, 10))); if (!m || m.length < 1000) break; }
+    const rd = $('resDays'); if (rd) rd.textContent = `${plur(seen.size, 'jour', 'jours')} avec encaissement sur ${nd} ce mois-ci`; }
 }
 async function openAnalysis(months){
   modal('<p class="muted">Analyse en cours…</p>'); $('modalBody').style.maxWidth = '860px';

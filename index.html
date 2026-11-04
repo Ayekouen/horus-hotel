@@ -775,6 +775,16 @@ section[id^="v-"] .card{border-radius:12px}
 @media (min-width:900px){.dashkpi:has(#caCard){grid-template-columns:minmax(0,1.25fr) repeat(2,minmax(0,1fr))!important}.dashkpi #caCard{grid-row:span 2}}
 @media (max-width:899px){.dashkpi:has(#caCard){grid-template-columns:repeat(2,minmax(0,1fr))!important}.dashkpi #caCard{grid-column:1/-1}}
 @media (max-width:600px){.rescard{grid-template-columns:1fr!important}}
+
+/* Photo de la pièce d'identité */
+.idph-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+@media (max-width:480px){.idph-row{grid-template-columns:1fr}}
+.idph{border:1px solid var(--line);border-radius:10px;overflow:hidden;min-height:96px;display:flex;flex-direction:column;background:var(--bg)}
+.idph img{width:100%;height:120px;object-fit:cover;display:block}
+.idph-bar{display:flex;justify-content:space-between;align-items:center;gap:6px;padding:6px 8px;font-size:12px;font-weight:600;flex-wrap:wrap}
+.idph-bar>span:last-child{display:flex;gap:6px;flex-wrap:wrap}
+.idph-add,html[data-theme] .idph-add{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:96px;width:100%;border:1.5px dashed var(--line)!important;background:transparent!important;box-shadow:none!important;border-radius:10px!important;font-size:13px;color:var(--muted)!important}
+.idph-none{padding:14px;font-size:13px;color:var(--muted)}
 </style>
 </head>
 <body>
@@ -1037,7 +1047,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.11.04-2';
+const APP_VERSION = '2026.11.04-3';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -2404,7 +2414,7 @@ function nayaBalanceCard(B, compact){
       ${compact ? '<button class="small primary" data-go="naya">Voir le détail</button>' : `<div style="font-size:13px;color:#3B4D46;text-align:right">Dû au total : ${money(B.earned)}<br>Déjà réglé : ${money(B.paid)}${B.last_payment ? '<br>Dernier règlement : ' + dfr(String(B.last_payment).slice(0, 10)) : ''}</div>`}</div>
     ${compact ? '' : `<div style="margin-top:10px;padding-top:10px;border-top:1px dashed rgba(0,0,0,.15)"><strong style="font-size:14px">Comment régler</strong>${ins}<div class="muted" style="font-size:12px;margin-top:6px">Indiquez le nom de votre établissement en référence. Le solde se met à jour dès que l’équipe Nuittea enregistre votre paiement.</div></div>`}</div>`;
 }
-async function renderDashboard(){ await renderDashboardCore(); if (S.view !== 'dashboard') return; drawCA(S._caP || (() => { try { return localStorage.getItem('hh_ca_p'); } catch (_) { return null; } })() || 'today');
+async function renderDashboard(){ if (!S._idPurged && S.org) { S._idPurged = true; setTimeout(idPurge, 4000); } await renderDashboardCore(); if (S.view !== 'dashboard') return; drawCA(S._caP || (() => { try { return localStorage.getItem('hh_ca_p'); } catch (_) { return null; } })() || 'today');
   if (SHOW_COMMISSION_DUE && can(['owner','admin','manager']) && S.org) { const { data: B } = await sb.rpc('naya_commission_balance', { p_org: S.org }); const nb = $('nayaDueBanner'); if (nb) { nb.innerHTML = nayaBalanceCard(B, true); nb.querySelectorAll('[data-go]').forEach(x => x.onclick = () => go(x.dataset.go)); } }
 }
 async function renderDashboardCore(){
@@ -3189,11 +3199,70 @@ async function guestForm(g){
     <div class="field"><label for="gN">Nom complet</label><input id="gN" required minlength="2" value="${esc(g.full_name || '')}"></div>
     <div class="row"><div class="field" style="flex:1 1 140px"><label for="gP">Téléphone</label><input id="gP" value="${esc(g.phone || '')}"></div><div class="field" style="flex:1 1 180px"><label for="gE">E-mail</label><input id="gE" type="email" value="${esc(g.email || '')}"></div></div>
     <div class="row"><div class="field" style="flex:1 1 130px"><label for="gT">Pièce</label><select id="gT"><option value="">—</option>${opt(ID, g.id_type)}</select></div><div class="field" style="flex:1 1 150px"><label for="gI">N° de pièce</label><input id="gI" value="${esc(g.id_number || '')}"></div><div class="field" style="flex:1 1 130px"><label for="gNat">Nationalité</label><input id="gNat" value="${esc(g.nationality || '')}"></div></div>
+    ${ID_VIEW() ? `<div class="field"><div style="font-weight:600;font-size:14px;margin-bottom:6px">Photo de la pièce <span class="muted" style="font-weight:400">(facultatif)</span></div><div class="idph-row"><div id="idphF" class="idph"></div><div id="idphB" class="idph"></div></div>
+      <p class="muted" style="font-size:12px;margin:6px 0 0">La photo de la pièce est conservée de façon sécurisée pour le registre de l’établissement, puis supprimée automatiquement après 3 mois.</p></div>` : ''}
     <div class="row"><button class="primary">Enregistrer</button><button type="button" class="ghost" data-close>Fermer</button></div></form>${hist}`);
+  const ph = { front: null, back: null };
+  if (ID_VIEW()) { idSlot($('idphF'), g, 'front', ph); idSlot($('idphB'), g, 'back', ph); }
   $('gForm').onsubmit = async (e) => { e.preventDefault();
     const row = { full_name: $('gN').value.trim(), phone: $('gP').value.trim() || null, email: $('gE').value.trim() || null, id_type: $('gT').value || null, id_number: $('gI').value.trim() || null, nationality: $('gNat').value.trim() || null };
-    const { error } = g.id ? await sb.from('guests').update(row).eq('id', g.id) : await sb.from('guests').insert({ ...row, organization_id: S.org });
-    if (error) return toast(errMsg(error), true); closeModal(); toast('Client enregistré.'); renderClients(); };
+    const { data: sv, error } = g.id ? await sb.from('guests').update(row).eq('id', g.id).select('id').single() : await sb.from('guests').insert({ ...row, organization_id: S.org }).select('id').single();
+    if (error) return toast(errMsg(error), true);
+    if (ph.front || ph.back) { const r = await idUpload(sv.id, g, ph); if (!r) return; }
+    closeModal(); toast('Client enregistré.'); renderClients(); };
+}
+
+/* ---------- Photo de la pièce d'identité (espace privé « id-docs », 3 mois) ---------- */
+const ID_VIEW = () => can(['owner','admin','manager','receptionist','accountant']);
+const ID_EDIT = () => can(['owner','admin','manager','receptionist']);
+const ID_TTL = 90 * 864e5;
+const idExpired = (g) => g.id_photo_at && (Date.now() - new Date(g.id_photo_at).getTime()) > ID_TTL;
+function idCompress(file){
+  return new Promise((res, rej) => { const img = new Image(), u = URL.createObjectURL(file);
+    img.onload = () => { const k = Math.min(1, 1600 / Math.max(img.width, img.height)), c = document.createElement('canvas'); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(u); c.toBlob(b => b ? res(b) : rej(new Error('Image illisible')), 'image/jpeg', 0.8); };
+    img.onerror = () => { URL.revokeObjectURL(u); rej(new Error('Image illisible')); }; img.src = u; });
+}
+async function idSlot(box, g, side, ph){
+  const label = side === 'front' ? 'Recto' : 'Verso', path = g[side === 'front' ? 'id_front_path' : 'id_back_path'];
+  const pick = () => { const i = document.createElement('input'); i.type = 'file'; i.accept = 'image/*'; i.setAttribute('capture', 'environment');
+    i.onchange = async () => { const f = i.files && i.files[0]; if (!f) return; try { ph[side] = await idCompress(f); draw(URL.createObjectURL(ph[side]), true); } catch (x) { toast('Photo illisible, réessayez.', true); } }; i.click(); };
+  const draw = (url, pending) => {
+    box.innerHTML = url ? `<img src="${url}" alt="${label} de la pièce"><div class="idph-bar"><span>${label}${pending ? ' · à enregistrer' : ''}</span><span>${!pending ? `<button type="button" class="small" data-v>Voir</button>` : ''}${ID_EDIT() ? `<button type="button" class="small" data-r>Reprendre</button>${!pending ? `<button type="button" class="small danger" data-d>Supprimer</button>` : ''}` : ''}</span></div>`
+      : ID_EDIT() ? `<button type="button" class="idph-add" data-r><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>Photographier le ${label.toLowerCase()}</button>` : `<div class="idph-none">${label} : aucune photo</div>`;
+    const v = box.querySelector('[data-v]'), r = box.querySelector('[data-r]'), d = box.querySelector('[data-d]');
+    if (r) r.onclick = pick;
+    if (v) v.onclick = () => { window.open(url, '_blank', 'noopener'); sb.rpc('id_doc_log', { p_guest: g.id, p_action: 'view' }); };
+    if (d) d.onclick = async () => { if (!confirm(`Supprimer la photo (${label.toLowerCase()}) de la pièce ?`)) return;
+      const { error: e1 } = await sb.storage.from('id-docs').remove([path]); if (e1) return toast(errMsg(e1), true);
+      const patch = side === 'front' ? { id_front_path: null } : { id_back_path: null };
+      const { error: e2 } = await sb.from('guests').update(patch).eq('id', g.id); if (e2) return toast(errMsg(e2), true);
+      g[side === 'front' ? 'id_front_path' : 'id_back_path'] = null; sb.rpc('id_doc_log', { p_guest: g.id, p_action: 'delete' }); toast('Photo supprimée.'); draw(null); };
+  };
+  if (path && !idExpired(g)) { box.innerHTML = `<div class="idph-none">${label} : chargement…</div>`;
+    const { data, error } = await sb.storage.from('id-docs').createSignedUrl(path, 60);
+    if (error || !data) box.innerHTML = `<div class="idph-none">${label} : photo indisponible</div>`; else draw(data.signedUrl, false);
+  } else if (path) box.innerHTML = `<div class="idph-none">${label} : photo expirée (plus de 3 mois)</div>`;
+  else draw(null);
+}
+async function idUpload(id, g, ph){
+  const patch = { id_photo_at: new Date().toISOString() }, old = [];
+  for (const side of ['front', 'back']) { if (!ph[side]) continue;
+    const key = `${S.org}/${id}/${side === 'front' ? 'recto' : 'verso'}-${Date.now()}.jpg`;
+    const { error } = await sb.storage.from('id-docs').upload(key, ph[side], { contentType: 'image/jpeg', upsert: false });
+    if (error) { toast('Client enregistré, mais la photo n’a pas pu être envoyée : ' + errMsg(error), true); return false; }
+    const col = side === 'front' ? 'id_front_path' : 'id_back_path'; if (g[col]) old.push(g[col]); patch[col] = key; }
+  const { error } = await sb.from('guests').update(patch).eq('id', id); if (error) { toast(errMsg(error), true); return false; }
+  if (old.length) sb.storage.from('id-docs').remove(old);
+  sb.rpc('id_doc_log', { p_guest: id, p_action: 'capture' });
+  return true;
+}
+/* Suppression des photos arrivées à expiration (3 mois), au démarrage, par l'équipe autorisée */
+async function idPurge(){
+  if (!S.org || !ID_EDIT()) return;
+  try { const { data } = await sb.rpc('id_docs_expired', { p_org: S.org });
+    for (const x of (data || [])) { if (x.paths && x.paths.length) { const { error } = await sb.storage.from('id-docs').remove(x.paths); if (error) continue; } await sb.rpc('id_docs_clear', { p_guest: x.id }); }
+  } catch (_) {}
 }
 
 /* ---------- Caisse ---------- */

@@ -754,6 +754,19 @@ section[id^="v-"] .card{border-radius:12px}
 .toast{border-radius:var(--b-r)!important;background:#fff!important;color:var(--b-ink)!important;border:1px solid #E3E8EE!important;border-left:3px solid #16794C!important;box-shadow:0 8px 24px rgba(16,24,40,.12)!important;font-weight:500}
 .toast.err{border-left-color:#B42318!important}
 .toast{min-width:min(340px,92vw)}
+
+/* Détail du chiffre d'affaires par jour (carte du tableau de bord) */
+.ca-days{margin-top:10px;width:100%}
+.ca-days summary{cursor:pointer;font-size:13px;font-weight:600;list-style:none;display:flex;justify-content:space-between;align-items:center;min-height:36px;border-top:1px solid rgba(127,127,127,.25);padding-top:6px}
+.ca-days summary::-webkit-details-marker{display:none}
+.ca-days summary::after{content:"";width:8px;height:8px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg);margin:0 4px 4px 8px;opacity:.6}
+.ca-days[open] summary::after{transform:rotate(-135deg);margin-bottom:-2px}
+.ca-days summary span{margin-left:auto;font-weight:500;opacity:.7}
+.ca-dl{max-height:260px;overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;font-size:13px;font-variant-numeric:tabular-nums;margin-top:4px}
+.ca-dr{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px;padding:6px 4px 6px 0;border-bottom:1px solid rgba(127,127,127,.15)}
+.ca-dr span:nth-child(2),.ca-dr span:nth-child(3){text-align:right}
+.ca-dh{font-size:12px;font-weight:600;opacity:.7}
+.ca-dt{font-weight:700;border-bottom:0}
 </style>
 </head>
 <body>
@@ -1016,7 +1029,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.11.03-2';
+const APP_VERSION = '2026.11.04-1';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -2325,10 +2338,11 @@ function upgradeBtn(){
   return `<button data-go="tarifs" style="background:linear-gradient(135deg,#E9A27A,var(--green));border:0;color:#fff;display:inline-flex;align-items:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"></path></svg>${trial ? 'Choisir ma formule' : 'Passer à ' + esc(next.name)}</button>`;
 }
 /* Chiffre d'affaires encaissé par période (accueil) */
-const CA_PERIODS = [['today', 'Aujourd’hui'], ['yesterday', 'Hier'], ['before', 'Avant-hier'], ['7d', '7 jours'], ['1m', '1 mois'], ['3m', '3 mois'], ['6m', '6 mois']];
+const CA_PERIODS = [['today', 'Aujourd’hui'], ['yesterday', 'Hier'], ['before', 'Avant-hier'], ['7d', '7 jours'], ['mtd', 'Mois en cours'], ['1m', '1 mois'], ['3m', '3 mois'], ['6m', '6 mois']];
 function caRange(k){ const t = today();
   if (k === 'yesterday') return [addDays(t, -1), t]; if (k === 'before') return [addDays(t, -2), addDays(t, -1)];
   if (k === '7d') return [addDays(t, -6), addDays(t, 1)];
+  if (k === 'mtd') return [t.slice(0, 8) + '01', addDays(t, 1)];
   const m = { '1m': 1, '3m': 3, '6m': 6 }[k]; if (m) { const d = new Date(t + 'T00:00:00'); d.setMonth(d.getMonth() - m); return [iso(d), addDays(t, 1)]; }
   return [t, addDays(t, 1)]; }
 async function drawCA(k){
@@ -2336,14 +2350,29 @@ async function drawCA(k){
   const [a, b] = caRange(k);
   box.innerHTML = `<div style="display:flex;flex-direction:column;align-items:flex-start;gap:6px"><div style="font-size:13px;font-weight:600;opacity:.8">Chiffre d’affaires encaissé</div>
     <label class="sr-only" for="caSel">Période</label><select id="caSel" class="casel" style="min-height:32px;width:auto;padding:2px 26px 2px 10px;font-size:13px;background-color:rgba(255,255,255,.12);color:inherit;border-color:rgba(255,255,255,.25)">${CA_PERIODS.map(([v, l]) => `<option value="${v}" ${v === k ? 'selected' : ''} style="color:#111">${l}</option>`).join('')}</select></div>
-    <div style="font-family:var(--display);font-weight:800;font-size:34px;letter-spacing:-.02em" id="caVal">…</div><div style="font-size:13px;opacity:.75" id="caSub">&nbsp;</div>`;
+    <div style="font-family:var(--display);font-weight:800;font-size:34px;letter-spacing:-.02em" id="caVal">…</div><div style="font-size:13px;opacity:.75" id="caSub">&nbsp;</div><div id="caDays"></div>`;
   $('caSel').onchange = (e) => drawCA(e.target.value);
-  const { data } = await sb.from('cash_movements').select('amount,kind,method').eq('establishment_id', S.est).in('kind', ['payment', 'income', 'refund']).gte('created_at', a + 'T00:00:00').lt('created_at', b + 'T00:00:00').limit(20000);
+  /* Lecture par pages de 1000 lignes (limite du serveur), pour que le total et le détail couvrent toute la période */
+  const L = [];
+  for (let from = 0; from < 50000; from += 1000) {
+    const { data, error } = await sb.from('cash_movements').select('id,amount,kind,method,created_at').eq('establishment_id', S.est).in('kind', ['payment', 'income', 'refund']).gte('created_at', a + 'T00:00:00').lt('created_at', b + 'T00:00:00').order('created_at', { ascending: false }).order('id').range(from, from + 999);
+    if (error) { if ($('caVal') && S._caP === k) { $('caVal').textContent = '—'; $('caSub').textContent = 'Chiffre d’affaires indisponible pour le moment. Réessayez.'; } return; }
+    L.push(...(data || [])); if (!data || data.length < 1000) break;
+  }
   if (!$('caVal') || S._caP !== k) return;
-  const L = data || [], inc = L.filter(m => m.kind !== 'refund').reduce((x, m) => x + Number(m.amount), 0), ref = L.filter(m => m.kind === 'refund').reduce((x, m) => x + Number(m.amount), 0);
+  const inc = L.filter(m => m.kind !== 'refund').reduce((x, m) => x + Number(m.amount), 0), ref = L.filter(m => m.kind === 'refund').reduce((x, m) => x + Number(m.amount), 0);
   const byM = {}; L.filter(m => m.kind !== 'refund').forEach(m => { byM[m.method] = (byM[m.method] || 0) + Number(m.amount); });
   const top = Object.entries(byM).sort((x, y) => y[1] - x[1]).slice(0, 2).map(([m, v]) => `${PMETHOD[m] || m} ${money(v)}`).join(' · ');
   $('caVal').textContent = money(inc - ref);
+  /* Détail par jour : date (jour civil de created_at), nombre d'encaissements, montant net (encaissements − remboursements) */
+  const days = {};
+  L.forEach(m => { const d = String(m.created_at).slice(0, 10), x = days[d] || (days[d] = { n: 0, net: 0 }); if (m.kind === 'refund') x.net -= Number(m.amount); else { x.n++; x.net += Number(m.amount); } });
+  const keys = Object.keys(days).sort().reverse(), dd = $('caDays');
+  if (dd) dd.innerHTML = keys.length ? `<details class="ca-days" ${keys.length <= 3 || S._caOpen ? 'open' : ''}><summary>Détail par jour <span>${plur(keys.length, 'jour', 'jours')}</span></summary>
+    <div class="ca-dl" role="table" aria-label="Chiffre d’affaires par jour"><div class="ca-dr ca-dh" role="row"><span role="columnheader">Date</span><span role="columnheader">Encaiss.</span><span role="columnheader">Net</span></div>
+    ${keys.map(d => `<div class="ca-dr" role="row"><span role="cell">${esc(dfr(d))}</span><span role="cell">${days[d].n}</span><span role="cell" class="nw">${money(days[d].net)}</span></div>`).join('')}
+    <div class="ca-dr ca-dt" role="row"><span role="cell">Total</span><span role="cell">${L.filter(m => m.kind !== 'refund').length}</span><span role="cell" class="nw">${money(keys.reduce((x, d) => x + days[d].net, 0))}</span></div></div></details>` : '';
+  const dt = dd && dd.querySelector('details'); if (dt) dt.ontoggle = () => { S._caOpen = dt.open; };
   $('caSub').textContent = (k === 'today' || k === 'yesterday' || k === 'before' ? dfr(a) : `du ${dfr(a)} au ${dfr(addDays(b, -1))}`) + ' · ' + plur(L.filter(m => m.kind !== 'refund').length, 'encaissement', 'encaissements') + (top ? ' · ' + top : '') + (ref ? ` · remboursé ${money(ref)}` : '');
 }
 /* Commission Nuittea due : rappel au partenaire */

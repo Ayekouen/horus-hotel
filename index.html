@@ -785,6 +785,11 @@ section[id^="v-"] .card{border-radius:12px}
 .idph-bar>span:last-child{display:flex;gap:6px;flex-wrap:wrap}
 .idph-add,html[data-theme] .idph-add{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:96px;width:100%;border:1.5px dashed var(--line)!important;background:transparent!important;box-shadow:none!important;border-radius:10px!important;font-size:13px;color:var(--muted)!important}
 .idph-none{padding:14px;font-size:13px;color:var(--muted)}
+
+.am-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px}
+.am-it{display:flex;align-items:center;gap:10px;min-height:44px;padding:6px 12px;border:1px solid var(--line);border-radius:10px;font-weight:500;cursor:pointer;margin:0}
+.am-it input{width:20px;height:20px;min-height:0;margin:0;flex:none}
+.am-it:has(input:checked){border-color:#1F7AB8;background:#EAF4FB}
 </style>
 </head>
 <body>
@@ -1047,7 +1052,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.11.04-3';
+const APP_VERSION = '2026.11.04-4';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -5607,6 +5612,21 @@ function openLocalityMerge(x){
     if (error) { $('lxGo').disabled = false; return toast(errMsg(error), true); } closeModal(); toast('Lieux fusionnés.'); renderAdmin(); };
 }
 
+const PROP_TYPES = [['hotel', 'Hôtel'], ['residence', 'Résidence meublée'], ['appartement', 'Appartement'], ['maison_hotes', 'Maison d’hôtes']];
+const EST_AMENITIES = [['wifi', 'Wi-Fi'], ['clim', 'Climatisation'], ['eau_chaude', 'Eau chaude'], ['groupe_electrogene', 'Groupe électrogène'], ['parking', 'Parking'], ['piscine', 'Piscine'], ['petit_dejeuner', 'Petit-déjeuner'], ['restaurant', 'Restaurant'], ['tv', 'Télévision'], ['cuisine', 'Cuisine équipée'], ['securite', 'Gardiennage 24 h/24'], ['navette', 'Navette aéroport']];
+function amWidget(box, e, canEdit){
+  const cur = new Set(e.amenities || []);
+  box.innerHTML = `<div class="field"><label for="amType">Type d’établissement</label><select id="amType" ${canEdit ? '' : 'disabled'}><option value="">— Choisir —</option>${PROP_TYPES.map(([k, l]) => `<option value="${k}" ${e.property_type === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+    <div style="font-weight:600;font-size:14px;margin:4px 0 8px">Équipements</div>
+    <div class="am-grid">${EST_AMENITIES.map(([k, l]) => `<label class="am-it"><input type="checkbox" value="${k}" ${cur.has(k) ? 'checked' : ''} ${canEdit ? '' : 'disabled'}><span>${l}</span></label>`).join('')}</div>
+    ${canEdit ? '<div class="row" style="margin-top:12px"><button type="button" class="primary" id="amSave">Enregistrer le type et les équipements</button></div>' : ''}`;
+  const sv = $('amSave'); if (!sv) return;
+  sv.onclick = async () => {
+    const am = [...box.querySelectorAll('.am-it input:checked')].map(x => x.value), pt = $('amType').value || null;
+    const { error } = await sb.from('establishments').update({ amenities: am, property_type: pt }).eq('id', e.id);
+    if (error) return toast(errMsg(error), true); e.amenities = am; e.property_type = pt; toast('Type et équipements enregistrés.'); };
+}
+
 async function renderMaPage(){
   const el = $('v-mapage'); el.innerHTML = skeletonView();
   await loadEst();
@@ -5646,6 +5666,7 @@ async function renderMaPage(){
         <div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px">${photos.map((u, i) => `<div style="position:relative"><img src="${esc(u)}" alt="Photo ${i + 1}" style="width:100%;height:100px;object-fit:cover;border-radius:12px">${canEdit ? `<div class="row" style="position:absolute;top:4px;right:4px;gap:4px">${i > 0 ? `<button type="button" class="small" data-first="${i}" title="Mettre en premier" style="min-height:28px;padding:0 8px;background:#fff;border:0">↑</button>` : ''}<button type="button" class="small" data-delphoto="${i}" aria-label="Retirer la photo ${i + 1}" style="min-height:28px;padding:0 8px;background:#fff;border:0">✕</button></div>` : ''}</div>`).join('')}
           ${canEdit && photos.length < 12 ? `<label style="height:100px;border-radius:12px;border:1.5px dashed #C9B596;display:grid;place-items:center;cursor:pointer;margin:0;color:var(--green);font-weight:700">+ Photos<input type="file" id="photoFiles" accept="image/jpeg,image/png,image/webp" multiple class="hidden"></label>` : ''}</div>
         <p class="muted" style="font-size:12px;margin:8px 0 0">${photos.length} / 12 photos.</p>`)}
+      ${sec('Type et équipements', 'Les voyageurs filtrent les établissements par type et par équipement sur Nuittea.com. Cochez seulement ce qui est réellement disponible.', '<div id="amBox"></div>')}
       ${sec('Localisation', 'Votre position exacte permet aux voyageurs de vous trouver dans la recherche par quartier et « Autour de moi » sur Nuittea.com.', '<div id="locBox"><p class="muted">Chargement…</p></div>')}
       ${sec('Contact et réseaux', 'Facilitez la prise de contact : chaque champ rempli devient un bouton sur votre page.', `
         <div class="row"><div class="field" style="flex:1 1 150px"><label for="pPhone">Téléphone</label><input id="pPhone" type="tel" value="${esc(e.public_phone || '')}"></div><div class="field" style="flex:1 1 150px"><label for="pWa">WhatsApp</label><input id="pWa" value="${esc(e.public_whatsapp || '')}" placeholder="Ex. : 2250700000000"></div><div class="field" style="flex:1 1 180px"><label for="pMail">E-mail</label><input id="pMail" type="email" value="${esc(e.public_email || '')}"></div></div>
@@ -5683,6 +5704,7 @@ async function renderMaPage(){
   if (!canEdit) return;
   const markDirty = () => { const d = $('dirty'); if (d) { d.textContent = 'Modifications non enregistrées.'; d.style.color = '#8A3E1E'; } };
   if ($('locBox')) locWidget($('locBox'), e, canEdit);
+  if ($('amBox')) amWidget($('amBox'), e, canEdit);
   $('pubForm').addEventListener('input', () => { markDirty(); preview(); const n = $('pTag').value.length; $('tagN').textContent = n ? `(${n}/120)` : ''; });
   const save = async (patch, msg) => { const { error: er } = await sb.from('establishments').update(patch).eq('id', e.id); if (er) { toast(er.code === '23505' ? 'Cette adresse est déjà prise.' : /check/.test(er.message || '') ? 'Vérifiez les liens : ils doivent commencer par https://' : errMsg(er), true); return false; } if (msg) toast(msg); renderMaPage(); return true; };
   $('pSlug').oninput = async () => { const v = slugify($('pSlug').value); if (v !== $('pSlug').value) $('pSlug').value = v;

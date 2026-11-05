@@ -718,7 +718,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 
 /* ---- Direction B « Net et professionnel » (boutons, onglets, retours) ---- */
 :root{--b-r:10px;--b-ink:#111827;--b-line:#D0D5DD}
-:is(section[id^="v-"],#modal,.dtop,#onboard,#auth) :is(button,.btn):not(.gstep):not(.loc-sug button):not([role=tab]):not(.toggle button):not(.ghead):not(.leaflet-control *):not(.ck *):not(.lv-chip):not(.lv-tile){
+:is(section[id^="v-"],#modal,.dtop,#onboard,#auth) :is(button,.btn):not(.gstep):not(.loc-sug button):not([role=tab]):not(.toggle button):not(.ghead):not(.leaflet-control *):not(.ck *):not(.lv-chip):not(.lv-tile):not(.xitem){
   border-radius:var(--b-r)!important;font-weight:600!important;letter-spacing:0!important;transition:background-color .12s,border-color .12s,box-shadow .12s,transform .06s!important;
   background:#fff!important;color:var(--b-ink)!important;border:1px solid var(--b-line)!important;box-shadow:0 1px 2px rgba(16,24,40,.05)!important}
 :is(section[id^="v-"],#modal,.dtop,#onboard,#auth) :is(button,.btn):not(.gstep):not([role=tab]):not(.toggle button):hover{background:#F9FAFB!important;border-color:#98A2B3!important}
@@ -797,6 +797,17 @@ section[id^="v-"] .card{border-radius:12px}
 .lv-band{padding:8px 16px;display:flex;flex-direction:column;gap:1px;font-size:13px}.lv-band strong{font-size:14px}
 .lv-tile{transition:transform .12s,box-shadow .12s}.lv-tile:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(15,27,45,.12)}
 .lv-dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:0;box-shadow:0 0 0 1px rgba(0,0,0,.12)}
+.tabbar .admtab{display:none!important}
+body.adminonly .tabbar .admtab{display:flex!important}
+body.adminonly .tabbar [data-tab="dashboard"],body.adminonly .tabbar [data-tab="heberg"],body.adminonly .tabbar [data-tab="argent"],body.adminonly .tabbar [data-tab="resto"]{display:none!important}
+.more-grid button{justify-content:flex-start!important;text-align:left!important;min-height:52px;line-height:1.25}
+.xgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;max-height:46vh;overflow-y:auto;padding:2px}
+.xgrid .xitem:not(#_a):not(#_b){position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-height:84px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:#fff;text-align:left;cursor:pointer}
+.xgrid .xitem:not(#_a):not(#_b).on{border-color:var(--green);background:var(--green-l)}
+.xgrid .xitem:not(#_a):not(#_b):disabled{opacity:.5;cursor:not-allowed}
+.xitem .xl{font-weight:700;font-size:14px;line-height:1.25;padding-right:24px}.xitem .xp{font-weight:800;font-size:15px;color:var(--green-d,#1F6FA8)}.xitem .xs{font-size:11.5px;color:var(--muted)}
+.xitem .xq{position:absolute;top:6px;right:8px;min-width:22px;height:22px;border-radius:11px;background:var(--green);color:#fff;font-size:12px;font-weight:800;display:grid;place-items:center;padding:0 6px}
+.xcart{margin-top:12px;border-top:1px solid var(--line);padding-top:10px}
 /* Centre de contrôle administrateur (style cockpit sombre) */
 #v-admin .ck{background:#0E1621;color:#E8EEF5;border-radius:16px;padding:18px;margin-bottom:18px}
 #v-admin .ck h3{color:#E8EEF5;font-size:15px;font-weight:600;margin:0 0 10px}
@@ -956,6 +967,9 @@ section[id^="v-"] .card{border-radius:12px}
     <button data-tab="heberg"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 18V7M21 18v-6H3M7 12V9h5v3"></path></svg>Hébergement</button>
     <button data-tab="argent"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="6" width="20" height="12" rx="2"></rect><circle cx="12" cy="12" r="2.5"></circle></svg>Argent</button>
     <button data-tab="resto"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10M17 21V3c-2 1-3 4-3 7h3"></path></svg>Resto</button>
+    <button data-tab="adm:apercu" class="admtab"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1.5"></rect><rect x="14" y="3" width="7" height="5" rx="1.5"></rect><rect x="14" y="12" width="7" height="9" rx="1.5"></rect><rect x="3" y="16" width="7" height="5" rx="1.5"></rect></svg>Contrôle</button>
+    <button data-tab="adm:clients" class="admtab"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"></circle><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5M16 4.5a3.5 3.5 0 0 1 0 7M18.5 14.8c1.6.8 2.6 2.5 3 5.2"></path></svg>Clients</button>
+    <button data-tab="adm:paiements" class="admtab"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2"></rect><path d="M2 10h20M6 15h4"></path></svg>Paiements</button>
     <button data-tab="more"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.5"></circle><circle cx="12" cy="12" r="1.5"></circle><circle cx="19" cy="12" r="1.5"></circle></svg>Plus</button>
   </nav>
   <main id="mainContent" tabindex="-1">
@@ -1089,7 +1103,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.11.05-6';
+const APP_VERSION = '2026.11.05-12';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -1492,7 +1506,7 @@ async function boot(){
   if (RECOVERY.pending && !(session.user.user_metadata || {}).staff) { show('auth'); return openNewPassword(true); }
   if (!(await ensureLegalAccepted())) return;
   const [mem, adm] = await Promise.all([
-    sb.from('organization_members').select('organization_id, role, username, display_name, must_change_password, organizations(name)').eq('user_id', session.user.id).eq('is_active', true).limit(1),
+    sb.from('organization_members').select('id, organization_id, role, username, display_name, must_change_password, access_overrides, organizations(name)').eq('user_id', session.user.id).eq('is_active', true).limit(1),
     sb.rpc('is_platform_admin')
   ]);
   S.isAdmin = adm.data === true;
@@ -1631,16 +1645,19 @@ function drawSubnav(){
   const g = groupOf(S.view), list = g ? groupViews(g) : [];
   if (list.length < 2) { box.classList.add('hidden'); box.innerHTML = ''; return; }
   box.classList.remove('hidden');
-  box.innerHTML = list.map(v => `<button type="button" class="${v === S.view ? '' : 'ghost'}" data-sub="${v}">${esc(VIEW_LABEL[v] || v)}</button>`).join('');
+  box.innerHTML = list.map(v => `<button type="button" class="${v === S.view ? 'on' : 'ghost'}" ${v === S.view ? 'aria-current="page"' : ''} data-sub="${v}">${esc(VIEW_LABEL[v] || v)}</button>`).join('');
+  const cur = box.querySelector('.on'); if (cur) requestAnimationFrame(() => { box.scrollLeft = Math.max(0, cur.offsetLeft - 16); });
   box.querySelectorAll('[data-sub]').forEach(b => b.onclick = () => go(b.dataset.sub));
 }
 function syncTabbar(){
   document.querySelectorAll('#tabbar [data-tab]').forEach(b => { const t = b.dataset.tab;
-    if (t !== 'more' && t !== 'dashboard') b.classList.toggle('hidden', !groupViews(t).length);
-    b.classList.toggle('on', t === S.view || t === groupOf(S.view) || (t === 'more' && S.view !== 'dashboard' && !['heberg','argent','resto'].includes(groupOf(S.view)))); });
+    if (t !== 'more' && t !== 'dashboard' && !t.startsWith('adm:')) b.classList.toggle('hidden', !groupViews(t).length);
+    if (t.startsWith('adm:')) return b.classList.toggle('on', S.view === 'admin' && (S._admTab || 'apercu') === t.slice(4));
+    b.classList.toggle('on', t === S.view || t === groupOf(S.view) || (t === 'more' && S.view !== 'dashboard' && !(document.body.classList.contains('adminonly') && S.view === 'admin' && ['apercu', 'clients', 'paiements'].includes(S._admTab || 'apercu')) && !['heberg','argent','resto'].includes(groupOf(S.view)))); });
   const s = $('notifBadge'), m = $('mNotifBadge'); if (s && m) { m.textContent = s.textContent; m.classList.toggle('hidden', s.classList.contains('hidden')); }
 }
 function openTab(t){
+  if (t.startsWith('adm:')) { S._admTab = t.slice(4); if (S.view === 'admin') { renderAdmin(); syncTabbar(); window.scrollTo(0, 0); return; } return go('admin'); }
   if (t === 'more') return openMore();
   if (t === 'dashboard') return go('dashboard');
   const list = groupViews(t); if (!list.length) return;
@@ -1648,15 +1665,17 @@ function openTab(t){
   go(list.includes(last) ? last : list[0]);
 }
 function openMore(){
-  const pilot = groupViews('pilot').map(v => [VIEW_LABEL[v], () => go(v)]);
-  if (canAna() && moduleOn('rapports')) pilot.unshift(['Résultat & analyse', () => openAnalysis(6)]);
-  pilot.unshift(['Assistant', () => openAssistant()]);
-  if (moduleOn('rapports')) pilot.push(['Avis clients', () => openReviews()]);
-  if (moduleOn('pointage')) pilot.unshift([CLOCK.state === 'in' ? 'Pointer mon départ' : 'Pointer mon arrivée', () => toggleClock()]);
+  const pilot = S.org ? groupViews('pilot').map(v => [VIEW_LABEL[v], () => go(v)]) : [];
+  if (!S.org && S.isAdmin) [['formules', 'Formules'], ['naya', 'Nuittea.com'], ['lieux', 'Lieux']].forEach(([k, l]) => pilot.push([l, () => { S._admTab = k; go('admin'); }]));
+  if (S.org && canAna() && moduleOn('rapports')) pilot.unshift(['Résultat & analyse', () => openAnalysis(6)]);
+  if (S.org) pilot.unshift(['Assistant', () => openAssistant()]);
+  if (S.org && moduleOn('rapports')) pilot.push(['Avis clients', () => openReviews()]);
+  if (S.org && moduleOn('pointage')) pilot.unshift([CLOCK.state === 'in' ? 'Pointer mon départ' : 'Pointer mon arrivée', () => toggleClock()]);
   const settings = [...document.querySelectorAll('nav.side .menu button')].filter(b => !b.classList.contains('hidden')).map(b => [b.textContent.trim(), () => b.click()]);
-  const sec = (title, items) => items.length ? `<h3 style="font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:14px 0 6px">${title}</h3><div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px">${items.map(([l], i) => `<button type="button" class="ghost" data-mi="${title}|${i}" style="min-height:52px;border-radius:14px;justify-content:flex-start;text-align:left;white-space:normal">${esc(l)}</button>`).join('')}</div>` : '';
-  const map = { 'Pilotage': pilot, 'Réglages': settings };
-  modal(`<h2 style="font-size:22px">Plus</h2>${sec('Pilotage', pilot)}${sec('Réglages', settings)}`);
+  const sec = (title, items) => items.length ? `<h3 style="font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:14px 0 6px">${title}</h3><div class="more-grid" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px">${items.map(([l], i) => `<button type="button" class="ghost" data-mi="${title}|${i}" style="min-height:52px;border-radius:14px;justify-content:flex-start;text-align:left;white-space:normal">${esc(l)}</button>`).join('')}</div>` : '';
+  const ptitle = S.org ? 'Pilotage' : 'Administration';
+  const map = { [ptitle]: pilot, 'Réglages': settings };
+  modal(`<h2 style="font-size:22px">Plus</h2>${sec(ptitle, pilot)}${sec('Réglages', settings)}`);
   document.querySelectorAll('[data-mi]').forEach(x => x.onclick = () => { const [t, i] = x.dataset.mi.split('|'); closeModal(); map[t][+i][1](); });
 }
 document.querySelectorAll('#tabbar [data-tab]').forEach(b => b.onclick = () => openTab(b.dataset.tab));
@@ -1738,7 +1757,9 @@ const ROLE_VIEWS = {
   staff: ['resto','dashboard','planning']
 };
 const ROLE_LABEL = { owner:'Propriétaire', admin:'Administrateur', manager:'Gérant', receptionist:'Réceptionniste', housekeeping:'Ménage', accountant:'Comptable', staff:'Serveur / Barman' };
-const allowed = (v) => v === 'admin' ? S.isAdmin : (moduleOn(v) && (!S.member || !ROLE_VIEWS[S.member.role] || ROLE_VIEWS[S.member.role].includes(v)));
+const memberViews = (m) => { const base = ROLE_VIEWS[m.role]; if (!base) return null; const o = (m.access_overrides && m.access_overrides.pages) || {}; return base.filter(v => !(o.remove || []).includes(v)).concat((o.add || []).filter(v => !base.includes(v))); };
+const memberCan = (a) => { const m = S.member; if (!m) return false; if (['owner','admin'].includes(m.role)) return true; const o = m.access_overrides && m.access_overrides.actions; if (o && a in o) return !!o[a]; return a === 'discount' ? ['manager','receptionist'].includes(m.role) : a === 'cancel_payment' ? m.role === 'manager' : false; };
+const allowed = (v) => v === 'admin' ? S.isAdmin : (moduleOn(v) && (!S.member || !memberViews(S.member) || memberViews(S.member).includes(v)));
 function applyRoleNav(){ [['navAna', 'rapports'], ['navReviews', 'rapports'], ['navRates', 'mapage'], ['navDir', 'mapage'], ['navPrn', 'caisse']].forEach(([id, m]) => { const e = $(id); if (e) e.classList.toggle('hidden', !moduleOn(m)); }); document.querySelectorAll('nav.side [data-view]').forEach(b => { if (b.dataset.view !== 'admin') b.classList.toggle('hidden', !allowed(b.dataset.view)); b.classList.toggle('locked', !!lockedView(b.dataset.view)); }); renderEstSwitch(); applyNavExtras(); }
 
 const VIEW_FEATURE = { resto: ['restaurant', 'Le module Restaurant & Bar', 'Vos plats et boissons en photo, une caisse tactile, le stock qui se décompte à chaque vente, les marges et les alertes de réapprovisionnement.'],
@@ -1801,7 +1822,7 @@ async function openEstablishments(){
 }
 function go(view){
   if (view === 'admin' && !S.isAdmin) view = 'abonnement';
-  if (S.org && !allowed(view)) view = (ROLE_VIEWS[S.member.role] || ['dashboard']).find(allowed) || 'dashboard';
+  if (S.org && !allowed(view)) view = (memberViews(S.member) || ['dashboard']).find(allowed) || 'dashboard';
   if (!S.org && view !== 'admin') view = 'admin';
   S.view = view; try { localStorage.setItem('hh_last_view', view); } catch (_) {}
   if (!navigator.onLine && S.offlineBoot && view !== 'resto') { /* vue sans données hors connexion */ }
@@ -2281,6 +2302,7 @@ async function renderAdmin(){
   el.querySelectorAll('[data-go]').forEach(b => b.onclick = () => { S._admTab = b.dataset.go; if (b.dataset.fil) S._admFilter = b.dataset.fil; S._admPlan = b.dataset.plan || ''; S._admQ = b.dataset.q || ''; renderAdmin().then(() => { window.scrollTo({ top: 0 }); const q = $('subSearch'); if (q && S._admQ) { q.value = S._admQ; q.dispatchEvent(new Event('input')); } }); });
   el.querySelectorAll('[data-admplan]').forEach(b => b.onclick = () => { S._admPlan = b.dataset.admplan; renderAdmin(); });
   el.querySelectorAll('[data-admtab]').forEach(b => b.onclick = () => { S._admTab = b.dataset.admtab; renderAdmin(); });
+  if (typeof syncTabbar === 'function') syncTabbar();
   el.querySelectorAll('[data-lxfil]').forEach(b => b.onclick = () => { S._lxFil = b.dataset.lxfil; renderAdmin(); });
   if ($('lxQ')) { let t; $('lxQ').oninput = () => { clearTimeout(t); t = setTimeout(() => { S._lxQ = $('lxQ').value; const pos = $('lxQ').value.length; renderAdmin().then(() => { const i = $('lxQ'); if (i) { i.focus(); i.setSelectionRange(pos, pos); } }); }, 300); }; }
   el.querySelectorAll('[data-lxok]').forEach(b => b.onclick = async () => { const x = S._lxAll.find(y => y.id === b.dataset.lxok); b.disabled = true;
@@ -2403,7 +2425,7 @@ const SOURCE = { direct:'Direct', telephone:'Téléphone', walk_in:'Walk-in', wh
 const srcOpts = (cur) => cur === 'naya' ? opt({ naya: 'Nuittea' }, 'naya') : opt(Object.fromEntries(Object.entries(SOURCE).filter(([k]) => k !== 'naya')), cur);
 const PMETHOD = { cash:'Espèces', orange_money:'Orange Money', mtn_money:'MTN MoMo', moov_money:'Moov Money', wave:'Wave', card:'Carte', bank_transfer:'Virement' };
 const HKS = { clean:'Propre', dirty:'Sale', cleaning:'En nettoyage', ready:'Prête', out_of_service:'Hors service' };
-const money = (n) => { const c = (typeof CURRENCIES !== 'undefined' && CURRENCIES[S.currency]) || [0, 'F', 0]; const v = Number(n || 0); const t = new Intl.NumberFormat('fr-FR', { minimumFractionDigits: c[2] && v % 1 ? 2 : 0, maximumFractionDigits: c[2] }).format(c[2] ? v : Math.round(v)).replace(/[\u202f\u00a0 ]/g, '\u00a0'); return c[1] === '$' ? '$' + t : t + '\u00a0' + c[1]; };
+const money = (n) => { if (S.maskMoney && S.view === 'dashboard') return '••• ' + (((typeof CURRENCIES !== 'undefined' && CURRENCIES[S.currency]) || [0, 'F'])[1]); const c = (typeof CURRENCIES !== 'undefined' && CURRENCIES[S.currency]) || [0, 'F', 0]; const v = Number(n || 0); const t = new Intl.NumberFormat('fr-FR', { minimumFractionDigits: c[2] && v % 1 ? 2 : 0, maximumFractionDigits: c[2] }).format(c[2] ? v : Math.round(v)).replace(/[\u202f\u00a0 ]/g, '\u00a0'); return c[1] === '$' ? '$' + t : t + '\u00a0' + c[1]; };
 const iso = (d) => { const x = new Date(d); x.setMinutes(x.getMinutes() - x.getTimezoneOffset()); return x.toISOString().slice(0,10); };
 const today = () => iso(new Date());
 const addDays = (s, n) => { const d = new Date(s + 'T00:00:00'); d.setDate(d.getDate() + n); return iso(d); };
@@ -2533,7 +2555,7 @@ function nayaBalanceCard(B, compact){
       ${compact ? '<button class="small primary" data-go="naya">Voir le détail</button>' : `<div style="font-size:13px;color:#3B4D46;text-align:right">Dû au total : ${money(B.earned)}<br>Déjà réglé : ${money(B.paid)}${B.last_payment ? '<br>Dernier règlement : ' + dfr(String(B.last_payment).slice(0, 10)) : ''}</div>`}</div>
     ${compact ? '' : `<div style="margin-top:10px;padding-top:10px;border-top:1px dashed rgba(0,0,0,.15)"><strong style="font-size:14px">Comment régler</strong>${ins}<div class="muted" style="font-size:12px;margin-top:6px">Indiquez le nom de votre établissement en référence. Le solde se met à jour dès que l’équipe Nuittea enregistre votre paiement.</div></div>`}</div>`;
 }
-async function renderDashboard(){ if (!S._idPurged && S.org) { S._idPurged = true; setTimeout(idPurge, 4000); } await renderDashboardCore(); if (S.view !== 'dashboard') return; drawCA(S._caP || (() => { try { return localStorage.getItem('hh_ca_p'); } catch (_) { return null; } })() || 'today');
+async function renderDashboard(){ if (!S._idPurged && S.org) { S._idPurged = true; setTimeout(idPurge, 4000); } await renderDashboardCore(); { const mb = $('maskBtn'); if (mb) mb.onclick = () => { S.maskMoney = !S.maskMoney; try { localStorage.setItem('hh_mask', S.maskMoney ? '1' : '0'); } catch (_) {} renderDashboard(); }; } if (S.view !== 'dashboard') return; drawCA(S._caP || (() => { try { return localStorage.getItem('hh_ca_p'); } catch (_) { return null; } })() || 'today');
   if (SHOW_COMMISSION_DUE && can(['owner','admin','manager']) && S.org) { const { data: B } = await sb.rpc('naya_commission_balance', { p_org: S.org }); const nb = $('nayaDueBanner'); if (nb) { nb.innerHTML = nayaBalanceCard(B, true); nb.querySelectorAll('[data-go]').forEach(x => x.onclick = () => go(x.dataset.go)); } }
 }
 async function renderDashboardCore(){
@@ -2574,7 +2596,7 @@ async function renderDashboardCore(){
   el.innerHTML = `
     <div class="row between" style="margin-bottom:20px;align-items:flex-end">
       <div><div class="muted" style="font-size:14px">${hello} · ${new Date().toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long' })}</div><h1 style="font-size:clamp(28px,4vw,40px)">Aujourd’hui</h1></div>
-      <div class="row">${upgradeBtn()}<button data-walkin>Walk-in</button><button class="primary" data-newresa aria-keyshortcuts="N">Nouvelle réservation<kbd class="kb" aria-hidden="true">N</kbd></button></div>
+      <div class="row"><button type="button" class="ghost" id="maskBtn" aria-pressed="${!!S.maskMoney}" aria-label="${S.maskMoney ? 'Afficher les montants' : 'Masquer les montants'}" title="${S.maskMoney ? 'Afficher les montants' : 'Masquer les montants'}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${S.maskMoney ? '<path d="M3 3l18 18M10.6 10.6a2 2 0 0 0 2.8 2.8M9.4 5.2A9.6 9.6 0 0 1 12 5c5 0 9 5 10 7a17 17 0 0 1-3.2 4.2M6.3 6.3C4.2 7.8 2.7 10 2 12c1 2 5 7 10 7a9.4 9.4 0 0 0 4.4-1.1"/>' : '<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>'}</svg></button>${upgradeBtn()}<button data-walkin>Walk-in</button><button class="primary" data-newresa aria-keyshortcuts="N">Nouvelle réservation<kbd class="kb" aria-hidden="true">N</kbd></button></div>
     </div>
     ${readOnlyNote()}
     ${guide.checklist}
@@ -2791,8 +2813,9 @@ async function renderReservations(){
     body = `<div class="card"><div class="row between" style="margin-bottom:10px"><h3 style="font-size:20px">${TABS.find(x => x[0] === f.tab)[1]}</h3><label class="row" style="gap:6px;margin:0;font-weight:500"><input type="checkbox" id="rfUnp" style="width:22px;height:22px;min-height:0" ${f.unpaid ? 'checked' : ''}> Solde impayé</label></div>${table(rows, f.q ? 'Aucun résultat pour cette recherche.' : 'Rien à afficher ici.')}</div>`; }
 
   el.innerHTML = head('Réservations', `<input id="rfQ" value="${esc(f.q)}" placeholder="Nom, chambre, téléphone…" aria-label="Rechercher une réservation (nom, chambre, téléphone, numéro)" style="width:min(300px,100%)" aria-label="Rechercher"><button data-walkin>Walk-in</button><button class="primary" data-newresa>Nouvelle réservation</button>`) + readOnlyNote() +
-    `<div class="row" role="tablist" style="gap:6px;background:#E9DCC8;padding:5px;border-radius:26px;width:fit-content;max-width:100%;overflow-x:auto;margin-bottom:16px;flex-wrap:nowrap">${TABS.map(([k, l, n]) => `<button role="tab" aria-selected="${k === f.tab}" class="small ${k === f.tab ? 'primary' : 'ghost'}" style="white-space:nowrap;border:0" data-rtab="${k}">${l}${n ? ' · ' + n : ''}</button>`).join('')}</div>` + body;
+    `<div class="row" role="tablist" style="gap:6px;background:#E9DCC8;padding:5px;border-radius:26px;width:fit-content;max-width:100%;overflow-x:auto;margin-bottom:16px;flex-wrap:nowrap">${TABS.map(([k, l, n]) => `<button role="tab" aria-selected="${k === f.tab}" class="small ${k === f.tab ? 'primary' : 'ghost'}" style="white-space:nowrap;border:0" data-rtab="${k}">${l}${n ? ' · ' + n : ''}</button>`).join('')}</div>` + (S.resSrc ? (() => { const m0 = t.slice(0, 8) + '01', rows = all.filter(r => (r.source === S.resSrc || (S.resSrc === 'walk_in' && r.source === 'direct')) && r.check_in >= m0 && !['cancelled', 'no_show'].includes(r.status)); return `<section class="card" style="margin-bottom:16px"><div class="row between" style="margin-bottom:10px"><h3 style="font-size:18px">Réservations du mois · ${esc(S.resSrc === 'walk_in' ? 'Sur place' : (SOURCE[S.resSrc] || S.resSrc))} · ${rows.length}</h3><button type="button" class="small ghost" id="srcClear">Fermer</button></div>${table(rows, 'Aucune réservation pour ce canal ce mois-ci.')}</section>`; })() : '') + body;
   el.querySelectorAll('[data-rtab]').forEach(b => b.onclick = () => { f.tab = b.dataset.rtab; renderReservations(); });
+  { const sc = $('srcClear'); if (sc) sc.onclick = () => { S.resSrc = null; renderReservations(); }; }
   let qt; $('rfQ').oninput = () => { clearTimeout(qt); qt = setTimeout(() => { f.q = $('rfQ').value; renderReservations().then(() => { const i = $('rfQ'); i.focus(); i.setSelectionRange(i.value.length, i.value.length); }); }, 350); };
   const u = $('rfUnp'); if (u) u.onchange = () => { f.unpaid = u.checked; renderReservations(); };
   el.querySelectorAll('[data-pay]').forEach(b => b.onclick = (e) => { e.preventDefault(); const r = all.find(x => x.id === b.dataset.pay); if (r) openEncaisser(r, renderReservations); });
@@ -2935,7 +2958,7 @@ async function openQuickResa(pre, refresh){
       </div>
       <details id="qMore" ${st.more ? 'open' : ''} style="margin-bottom:12px"><summary style="cursor:pointer;font-weight:600;font-size:14px;min-height:32px">Plus d’options : prix, remise, origine, notes</summary>
         <div class="row" style="gap:10px;margin-top:10px"><div class="field" style="flex:1 1 110px"><label for="qRt">Prix / nuit (F)</label><input id="qRt" type="number" min="0" value="${st.rate ?? ''}"></div>
-          <div class="field" style="flex:1 1 110px"><label for="qDs">Remise (F)</label><input id="qDs" type="number" min="0" value="${st.disc || 0}"></div>
+          <div class="field" style="flex:1 1 110px"><label for="qDs">Remise (F)</label><input id="qDs" type="number" min="0" value="${st.disc || 0}" ${memberCan('discount') ? '' : 'disabled title="Remise réservée au gérant"'}></div>
           <div class="field" style="flex:1 1 130px"><label for="qSr">Origine</label><select id="qSr">${srcOpts(st.src)}</select></div></div>
         <div class="field"><label for="qNo">Notes</label><input id="qNo" value="${esc(st.notes)}" placeholder="Heure d’arrivée, demande particulière…"></div>
       </details>
@@ -3042,7 +3065,7 @@ async function openResaForm(pre, refresh){
       main = `<div class="field"><label for="wPh">Téléphone du client</label><input id="wPh" type="tel" value="${esc(st.phone)}" placeholder="Ex. : 07 07 00 00 01" autocomplete="off"><div id="wPhH" class="muted" style="font-size:13px;margin-top:4px">${known ? `✓ Client déjà venu : <strong>${esc(known.full_name)}</strong> — <a href="#" id="wNew">autre client</a>` : 'S’il est déjà venu, sa fiche se remplit toute seule.'}</div></div>
         <div class="field ${known ? 'hidden' : ''}"><label for="wNm">Nom complet</label><input id="wNm" value="${esc(st.name)}" autocomplete="off" list="wGl"><datalist id="wGl">${G.slice(0, 300).map(g => `<option value="${esc(g.full_name)}">${esc(g.phone || '')}</option>`).join('')}</datalist></div>
         <div class="row"><div class="field" style="flex:1 1 120px"><label for="wRt">Prix / nuit (F)</label><input id="wRt" type="number" min="0" value="${st.rate ?? ''}"></div>${st.rateNote ? `<p class="muted" style="flex:1 1 100%;font-size:12px;margin:-6px 0 6px;color:var(--green)">${esc(st.rateNote)}</p>` : ''}
-          <div class="field" style="flex:1 1 110px"><label for="wDs">Remise (F) <span title="Au-delà de ${discPct} % de remise, le propriétaire est prévenu automatiquement." style="display:inline-grid;place-items:center;width:17px;height:17px;border-radius:50%;background:var(--ink);color:#fff;font-size:11px;cursor:help">?</span></label><input id="wDs" type="number" min="0" value="${st.disc}"></div>
+          <div class="field" style="flex:1 1 110px"><label for="wDs">Remise (F) <span title="Au-delà de ${discPct} % de remise, le propriétaire est prévenu automatiquement." style="display:inline-grid;place-items:center;width:17px;height:17px;border-radius:50%;background:var(--ink);color:#fff;font-size:11px;cursor:help">?</span></label><input id="wDs" type="number" min="0" value="${st.disc}" ${memberCan('discount') ? '' : 'disabled title="Remise réservée au gérant"'}></div>
           <div class="field" style="flex:1 1 130px"><label for="wSr">Origine</label><select id="wSr">${srcOpts(st.src)}</select></div></div>
         <div id="wDW" class="hidden" style="margin:-6px 0 12px;font-size:13px;color:#6B4A00;background:#FFF4E5;border-radius:10px;padding:8px 10px">Remise supérieure à ${discPct} % : le propriétaire sera prévenu.</div>
         <div class="field"><label for="wNo">Notes</label><input id="wNo" value="${esc(st.notes)}" placeholder="Heure d’arrivée, demande particulière…"></div>
@@ -3473,7 +3496,7 @@ async function renderCaisse(){
   const rows = mv.filter(m => (st.kind === 'all' || (st.kind === 'in' ? ['payment','income'].includes(m.kind) : st.kind === 'out' ? ['expense','refund'].includes(m.kind) : m.kind === 'deposit')) && (st.by === 'all' || m.created_by === st.by));
   const mgr = can(['owner','admin','manager']);
   const reversed = new Set(mv.filter(m => (m.reference || '').startsWith('ANN:')).map(m => m.reference.slice(4)));
-  const canRev = (m) => mgr && sess && ['payment','income','expense'].includes(m.kind) && !(m.reference || '').startsWith('ANN:') && !reversed.has(m.id) && (m.method !== 'cash' || m.session_id === sess.id);
+  const canRev = (m) => memberCan('cancel_payment') && sess && ['payment','income','expense'].includes(m.kind) && !(m.reference || '').startsWith('ANN:') && !reversed.has(m.id) && (m.method !== 'cash' || m.session_id === sess.id);
   const KICON = { payment:'<path d="M3 18V7M21 18v-6H3M7 12V9h5v3"></path>', income:'<path d="M12 5v14M5 12h14"></path>', expense:'<path d="M5 12h14"></path>', refund:'<path d="M9 14L4 9l5-5"></path><path d="M4 9h11a5 5 0 0 1 0 10h-3"></path>', deposit:'<path d="M3 21h18M5 21V10M19 21V10M12 3l9 6H3z"></path>' };
   const KBG = { payment:'#E3F2EA', income:'#FFF4DE', expense:'#FCE8E6', refund:'#FCE8E6', deposit:'#EAEFF6' };
   const ico = (k) => `<span class="kj-ic" style="background:${KBG[k]}"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${KICON[k] || ''}</svg></span>`;
@@ -3491,7 +3514,7 @@ async function renderCaisse(){
     `<div class="k-top">
       <div class="k-hero"><div class="l">Espèces attendues dans le tiroir</div><div class="v">${money(expected)}</div>
         <div class="f">${sess ? `<span>Fond <b>${money(sess.opening_balance)}</b></span><span>+ Entrées <b>${money(cashIn)}</b></span><span>− Sorties <b>${money(cashOut)}</b></span>` : '<span>Caisse fermée</span>'}</div></div>
-      <div class="k-side"><button type="button" class="primary k-cta" id="kPay">Encaisser un client</button>
+      <div class="k-side"><button type="button" class="primary k-cta" id="kPay">Encaisser un client</button><button type="button" class="k-cta" id="kExtra" style="margin-top:8px">Ventes annexes${(() => { const n = xHold().length; return n ? ` · ${n} en attente` : ''; })()}</button>
         ${sess ? `<div class="k-acts">${act('kExp', 'Dépense', '<path d="M5 12h14"></path>')}${act('kInc', 'Entrée', '<path d="M12 5v14M5 12h14"></path>')}${act('kDep', 'Versement', '<path d="M3 21h18M5 21V10M19 21V10M12 3l9 6H3z"></path>', mgr)}${act('kClose', 'Clôturer', '<rect x="4" y="11" width="16" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path>')}</div>` : ''}</div>
     </div>
     <div class="k-kpis">
@@ -3545,6 +3568,7 @@ async function renderCaisse(){
   const a = (id, fn) => { const b = $(id); if (b) b.onclick = fn; };
   a('kExp', () => hasF('expenses') ? openExpenseForm({ fromCaisse: true, onDone: renderCaisse }) : openSimpleMove('expense', renderCaisse));
   a('kInc', () => openSimpleMove('income', renderCaisse));
+  a('kExtra', () => openExtras(renderCaisse));
   a('kDep', () => openSimpleMove('deposit', renderCaisse));
   a('kClose', () => openClosure(sess, expected, renderCaisse));
   a('kOpt', () => openCashOptions(renderCaisse));
@@ -3679,17 +3703,116 @@ async function printReceipt(key){
   const { data: b } = r0.reservation_id ? await sb.from('reservation_balances').select('guest_name,room_number,check_in,check_out,balance').eq('id', r0.reservation_id).maybeSingle() : { data: null };
   const est = S.ests.find(x => x.id === r0.establishment_id) || {};
   const total = rows.reduce((a, m) => a + Number(m.amount), 0);
+  let rvTok = null;
+  if (r0.reservation_id && rcpt(est).show_review_qr !== false) { const { data: tk } = await sb.rpc('request_review', { p_reservation: r0.reservation_id }); rvTok = tk || null; }
   await teamNames();
-  w.document.write(`<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Reçu ${receiptNo(key)}</title><style>body{font:14px/1.5 system-ui,sans-serif;color:#1C2B26;max-width:420px;margin:30px auto;padding:0 18px}h1{font-size:20px;margin:0;color:#1F7AB8}table{width:100%;border-collapse:collapse;margin:10px 0}td{padding:7px 0;border-bottom:1px dashed #C9D8D1}.r{text-align:right}.t{font-size:18px;font-weight:800}.m{color:#5E6E68;font-size:12px}${printCss('ticket')}</style></head><body>
-    ${rcptHead(est)}<hr class="tk-sep">
-    <div class="tk-c"><div class="tk-big">REÇU N° ${receiptNo(key)}</div><div class="m">${new Date(r0.created_at).toLocaleString('fr-FR', { dateStyle:'long', timeStyle:'short' })}</div></div>
-    ${b ? `<hr class="tk-sep"><p style="margin:4px 0">Client : <strong>${esc(b.guest_name)}</strong><br>Chambre ${esc(b.room_number)} · du ${dfr(b.check_in)} au ${dfr(b.check_out)}</p>` : ''}
-    <table>${rows.map(m => `<tr><td>${esc(m.label)} · ${PMETHOD[m.method]}${m.reference ? `<br><span class="m">réf. ${esc(m.reference)}</span>` : ''}</td><td class="r">${money(m.amount)}</td></tr>`).join('')}
-    <tr class="tot"><td class="t">Total reçu</td><td class="r t">${money(total)}</td></tr></table>
-    ${b ? `<p class="tk-c" style="margin:6px 0">${Number(b.balance) > 0 ? 'Reste à payer : <strong>' + money(b.balance) + '</strong>' : '<strong>✓ Séjour entièrement réglé</strong>'}</p>` : ''}<hr class="tk-sep">
-    ${rcpt(est).show_server !== false ? `<p class="m">Encaissé par ${esc(who(r0.created_by))}.</p>` : ''}${rcptFoot(est, 'Merci de votre confiance.')}${S.overview && S.overview.plan && S.overview.plan.slug === 'decouverte' ? '<p class="m" style="text-align:center;margin-top:18px">Propulsé par Nuittea Manager · gestion hôtelière gratuite</p>' : ''}
+  const when = new Date(r0.created_at), nights = b ? Math.max(1, Math.round((new Date(b.check_out) - new Date(b.check_in)) / 864e5)) : 0;
+  const kv = (k, v) => `<div class="rc-kv"><span>${k}</span><strong>${v}</strong></div>`;
+  const paid = b && Number(b.balance) <= 0;
+  w.document.write(`<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Reçu ${receiptNo(key)}</title><style>body{font:14px/1.5 system-ui,sans-serif;color:#111;max-width:420px;margin:30px auto;padding:0 18px}h1{font-size:20px;margin:0}.m{color:#555;font-size:12px}${printCss('ticket')}${RECEIPT_CSS}</style></head><body>
+    ${rcptHead(est)}
+    <div class="rc-title">Reçu de paiement</div>
+    <div class="rc-grid">${kv('N°', receiptNo(key))}${kv('Date', when.toLocaleDateString('fr-FR'))}${kv('Heure', when.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }))}${rcpt(est).show_server !== false ? kv('Caisse', esc(who(r0.created_by))) : ''}</div>
+    ${b ? `<div class="rc-box"><div class="rc-lbl">Séjour</div><div class="rc-guest">${esc(b.guest_name)}</div>
+      <div class="rc-stay"><span>Chambre <strong>${esc(b.room_number)}</strong></span><span>${plur(nights, 'nuit', 'nuits')}</span></div>
+      <div class="rc-dates"><span>Arrivée<br><strong>${dfr(b.check_in)}</strong></span><span class="rc-arrow">→</span><span>Départ<br><strong>${dfr(b.check_out)}</strong></span></div></div>` : ''}
+    <div class="rc-lbl" style="margin-top:10px">Détail</div>
+    <div class="rc-lines">${rows.map(m => `<div class="rc-line"><div><div>${esc(m.label)}</div><div class="m">${PMETHOD[m.method] || esc(m.method || '')}${m.reference ? ' · réf. ' + esc(m.reference) : ''}</div></div><div class="rc-amt">${money(m.amount)}</div></div>`).join('')}</div>
+    <div class="rc-total"><span>Total reçu</span><strong>${money(total)}</strong></div>
+    ${b ? (paid ? `<div class="rc-stamp">Séjour soldé</div>` : `<div class="rc-due"><span>Reste à payer</span><strong>${money(b.balance)}</strong></div>`) : ''}
+    ${rvTok ? `<div class="rc-review"><img src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=0&data=${encodeURIComponent(reviewUrl(rvTok))}" alt="" onerror="this.style.display='none'"><div><div class="rc-review-t">Notez votre séjour</div><div class="rc-stars">★ ★ ★ ★ ★</div><div class="m">Scannez ce code avec votre téléphone : 30 secondes suffisent, sans inscription.</div></div></div>` : ''}
+    <div class="rc-foot">${rcptFoot(est, 'Merci de votre confiance.')}<div class="m" style="text-align:center">Conservez ce reçu, il justifie votre paiement.</div>${S.overview && S.overview.plan && S.overview.plan.slug === 'decouverte' ? '<div class="m" style="text-align:center;margin-top:8px">Propulsé par Nuittea Manager</div>' : ''}</div>
     <script>window.onload=()=>window.print()<\/script></body></html>`);
   w.document.close();
+}
+
+
+/* ---------- Ventes annexes : boissons, petit-déjeuner, blanchisserie, transport ---------- */
+const XCAT = { boissons: 'Boissons', petit_dejeuner: 'Petit-déjeuner', blanchisserie: 'Blanchisserie', transport: 'Transport', autre: 'Autre' };
+const xHoldKey = () => 'hh_xhold_' + (S.est || '');
+const xHold = () => { try { return JSON.parse(localStorage.getItem(xHoldKey()) || '[]'); } catch (_) { return []; } };
+const xHoldSave = (l) => { try { localStorage.setItem(xHoldKey(), JSON.stringify(l.slice(0, 20))); } catch (_) {} };
+async function openExtras(refresh, cart){
+  const [iR, sR] = await Promise.all([
+    sb.from('extra_items').select('*').eq('establishment_id', S.est).eq('is_active', true).order('sort_order').order('label'),
+    sb.from('reservation_balances').select('id,guest_name,room_number,status,balance').eq('establishment_id', S.est).in('status', ['checked_in', 'confirmed']).lte('check_in', today()).gte('check_out', today()).order('room_number')
+  ]);
+  if (iR.error) return toast(errMsg(iR.error), true);
+  const items = iR.data || [], stays = sR.data || [], mgr = can(['owner', 'admin', 'manager']);
+  const st = { cart: cart || {}, cat: '' };
+  const draw = () => {
+    const list = items.filter(i => !st.cat || i.category === st.cat), cats = [...new Set(items.map(i => i.category))];
+    const lines = Object.entries(st.cart).map(([id, q]) => [items.find(i => i.id === id), q]).filter(([i]) => i);
+    const total = lines.reduce((a, [i, q]) => a + Number(i.price) * q, 0), held = xHold();
+    modal(`<div class="row between" style="margin-bottom:10px;flex-wrap:nowrap"><h2 style="font-size:22px">Ventes annexes</h2><button type="button" class="small ghost" data-close aria-label="Fermer" style="border:0;font-size:18px">✕</button></div>
+      ${items.length ? `<div class="row" style="gap:6px;margin-bottom:10px">${['', ...cats].map(c => `<button type="button" class="small ${st.cat === c ? 'primary' : 'ghost'}" data-xcat="${c}">${c ? XCAT[c] : 'Tout'}</button>`).join('')}</div>
+      <div class="xgrid">${list.map(i => { const out = i.stock !== null && i.stock <= 0, low = i.stock !== null && i.stock > 0 && i.stock <= 3, inCart = st.cart[i.id] || 0;
+        return `<button type="button" class="xitem${inCart ? ' on' : ''}" data-xadd="${i.id}" ${out ? 'disabled' : ''} aria-label="${esc(i.label)}, ${money(i.price)}${inCart ? ', ' + inCart + ' dans le panier' : ''}"><span class="xl">${esc(i.label)}</span><span class="xp">${money(i.price)}</span><span class="xs">${out ? 'Épuisé' : low ? 'Stock faible · ' + i.stock : i.stock !== null ? 'Stock ' + i.stock : XCAT[i.category]}</span>${inCart ? `<span class="xq">${inCart}</span>` : ''}</button>`; }).join('')}</div>`
+      : `<div class="card" style="text-align:center;padding:24px"><p style="margin:0 0 10px">Aucun article pour l’instant.</p>${mgr ? '<button type="button" class="primary" id="xManage2">Créer mes articles</button>' : '<p class="muted" style="margin:0">Demandez au gérant de créer les articles.</p>'}</div>`}
+      <div class="xcart">
+        <div class="row between" style="flex-wrap:nowrap"><strong>Panier</strong>${lines.length ? '<button type="button" class="small ghost" id="xClear">Vider</button>' : ''}</div>
+        ${lines.length ? lines.map(([i, q]) => `<div class="row between" style="flex-wrap:nowrap;padding:6px 0;border-bottom:1px solid var(--line)"><span>${esc(i.label)}</span><span class="row" style="gap:6px;flex-wrap:nowrap"><button type="button" class="small ghost" data-xdec="${i.id}" aria-label="Retirer un ${esc(i.label)}" style="min-width:36px">−</button><strong>${q}</strong><button type="button" class="small ghost" data-xadd="${i.id}" aria-label="Ajouter un ${esc(i.label)}" style="min-width:36px">+</button><span style="min-width:84px;text-align:right">${money(Number(i.price) * q)}</span></span></div>`).join('') : '<p class="muted" style="margin:6px 0">Touchez un article pour l’ajouter.</p>'}
+        <div class="row between" style="margin-top:10px;font-size:18px"><span>Total</span><strong>${money(total)}</strong></div>
+        ${lines.length ? `<div class="field" style="margin-top:10px"><label for="xDest">Paiement</label><select id="xDest"><option value="pay">Encaisser maintenant</option>${stays.length ? `<optgroup label="Porter sur la note du séjour">${stays.map(r => `<option value="${r.id}">Ch. ${esc(r.room_number)} · ${esc(r.guest_name)}</option>`).join('')}</optgroup>` : ''}</select></div>
+        <div class="field" id="xMethW"><label for="xMeth">Moyen</label><select id="xMeth">${Object.entries(PMETHOD).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select></div>
+        <div class="row" style="gap:8px"><button type="button" class="primary" id="xGo" style="flex:1">Valider ${money(total)}</button><button type="button" class="ghost" id="xHoldB">Mettre en attente</button></div>` : ''}
+      </div>
+      <div class="row between" style="margin-top:12px;gap:8px">${held.length ? `<button type="button" class="small ghost" id="xHeld">En attente · ${held.length}</button>` : '<span></span>'}${mgr ? '<button type="button" class="small ghost" id="xManage">Gérer les articles</button>' : ''}</div>`);
+    $('modalBody').style.maxWidth = '640px';
+    document.querySelectorAll('[data-xcat]').forEach(b => b.onclick = () => { st.cat = b.dataset.xcat; draw(); });
+    document.querySelectorAll('[data-xadd]').forEach(b => b.onclick = () => { const i = items.find(x => x.id === b.dataset.xadd); const q = (st.cart[i.id] || 0) + 1; if (i.stock !== null && q > i.stock) return toast(`Stock insuffisant : il reste ${i.stock}.`, true); st.cart[i.id] = q; draw(); });
+    document.querySelectorAll('[data-xdec]').forEach(b => b.onclick = () => { const k = b.dataset.xdec; st.cart[k] = (st.cart[k] || 0) - 1; if (st.cart[k] <= 0) delete st.cart[k]; draw(); });
+    const g = (id, fn) => { const e = $(id); if (e) e.onclick = fn; };
+    g('xClear', () => { st.cart = {}; draw(); });
+    g('xManage', () => openExtraItems(() => openExtras(refresh, st.cart)));
+    g('xManage2', () => openExtraItems(() => openExtras(refresh, st.cart)));
+    const d = $('xDest'); if (d) d.onchange = () => { $('xMethW').classList.toggle('hidden', d.value !== 'pay'); };
+    g('xHoldB', () => { const dv = $('xDest').value, sr = stays.find(r => r.id === dv), name = sr ? `Ch. ${sr.room_number} · ${sr.guest_name}` : `Vente de ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`; const l = xHold(); l.unshift({ name: name.slice(0, 40), cart: st.cart, at: new Date().toISOString() }); xHoldSave(l); toast('Vente mise en attente.'); st.cart = {}; draw(); });
+    g('xHeld', () => { const l = xHold();
+      modal(`<h2 style="font-size:20px;margin-bottom:10px">Ventes en attente</h2>${l.map((h, k) => { const n = Object.values(h.cart).reduce((a, q) => a + q, 0); return `<div class="row between" style="padding:8px 0;border-bottom:1px solid var(--line);flex-wrap:nowrap"><span><strong>${esc(h.name)}</strong><span class="muted" style="font-size:12px"> · ${plur(n, 'article', 'articles')} · ${new Date(h.at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</span></span><span class="row" style="gap:6px;flex-wrap:nowrap"><button type="button" class="small primary" data-xres="${k}">Reprendre</button><button type="button" class="small ghost" data-xdel="${k}">Supprimer</button></span></div>`; }).join('')}<button type="button" class="ghost" id="xBack" style="width:100%;margin-top:12px">Retour</button>`);
+      $('xBack').onclick = () => draw();
+      document.querySelectorAll('[data-xres]').forEach(b => b.onclick = () => { const l2 = xHold(), h = l2.splice(+b.dataset.xres, 1)[0]; xHoldSave(l2); st.cart = { ...st.cart, ...h.cart }; draw(); });
+      document.querySelectorAll('[data-xdel]').forEach(b => b.onclick = () => { const l2 = xHold(); l2.splice(+b.dataset.xdel, 1); xHoldSave(l2); toast('Vente en attente supprimée.'); draw(); }); });
+    g('xGo', async () => { const btn = $('xGo'); btn.disabled = true; const dest = $('xDest').value, resa = dest === 'pay' ? null : dest;
+      const { data, error } = await sb.rpc('extra_sale_record', { p_est: S.est, p_items: Object.entries(st.cart).map(([item_id, qty]) => ({ item_id, qty })), p_reservation: resa, p_method: resa ? null : $('xMeth').value, p_reference: null });
+      if (error) { btn.disabled = false; if (/caisse ouverte/i.test(error.message || '')) return askOpenCash(() => openExtras(refresh, st.cart), 'La caisse du jour n’est pas encore ouverte. Ouvrez-la, puis validez de nouveau la vente.'); return toast(errMsg(error), true); }
+      closeModal(); toast(resa ? 'Ajouté à la note du séjour.' : 'Vente encaissée.'); if (!resa && data) printExtraReceipt(data, lines, total, $('xMeth') ? $('xMeth').value : 'cash'); refresh && refresh(); });
+  };
+  draw();
+}
+function printExtraReceipt(group, lines, total, method){
+  const est = (S.ests || []).find(x => x.id === S.est) || {};
+  const w = window.open('', '_blank'); if (!w) return;
+  w.document.write(`<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Reçu</title><style>body{font:14px/1.5 system-ui,sans-serif;color:#111;max-width:420px;margin:30px auto;padding:0 18px}h1{font-size:20px;margin:0}.m{color:#555;font-size:12px}${printCss('ticket')}${RECEIPT_CSS}</style></head><body>
+    ${rcptHead(est)}<div class="rc-title">Reçu · Ventes annexes</div>
+    <div class="m" style="text-align:center;margin-bottom:8px">${new Date().toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })} · ${PMETHOD[method] || ''}</div>
+    <div class="rc-lines">${lines.map(([i, q]) => `<div class="rc-line"><div>${q} × ${esc(i.label)}</div><div class="rc-amt">${money(Number(i.price) * q)}</div></div>`).join('')}</div>
+    <div class="rc-total"><span>Total</span><strong>${money(total)}</strong></div>
+    <div class="rc-foot">${rcptFoot(est, 'Merci de votre visite.')}</div><script>window.onload=()=>window.print()<\/script></body></html>`);
+  w.document.close();
+}
+async function openExtraItems(back){
+  if (!can(['owner', 'admin', 'manager'])) return;
+  const { data, error } = await sb.from('extra_items').select('*').eq('establishment_id', S.est).order('is_active', { ascending: false }).order('label');
+  if (error) return toast(errMsg(error), true);
+  const items = data || [];
+  modal(`<div class="row between" style="margin-bottom:10px;flex-wrap:nowrap"><h2 style="font-size:22px">Articles des ventes annexes</h2><button type="button" class="small ghost" id="xiBack">Retour</button></div>
+    <form id="xiForm" class="row" style="align-items:flex-end;gap:8px;margin-bottom:12px">
+      <div style="flex:2 1 160px"><label for="xiL">Article</label><input id="xiL" required maxlength="60" placeholder="Coca-Cola 33 cl"></div>
+      <div style="flex:1 1 110px"><label for="xiP">Prix (F)</label><input id="xiP" type="number" min="0" step="1" required></div>
+      <div style="flex:1 1 130px"><label for="xiC">Catégorie</label><select id="xiC">${Object.entries(XCAT).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select></div>
+      <div style="flex:1 1 100px"><label for="xiS">Stock (facultatif)</label><input id="xiS" type="number" min="0" step="1" placeholder="—"></div>
+      <button class="primary">Ajouter</button></form>
+    ${items.length ? `<div class="tablewrap"><table class="table"><thead><tr><th>Article</th><th>Catégorie</th><th class="r">Prix</th><th class="r">Stock</th><th><span class="sr-only">Actions</span></th></tr></thead><tbody>${items.map(i => `<tr style="${i.is_active ? '' : 'opacity:.55'}"><td>${esc(i.label)}</td><td>${XCAT[i.category]}</td><td class="r"><input type="number" min="0" value="${Number(i.price)}" data-xprice="${i.id}" aria-label="Prix de ${esc(i.label)}" style="max-width:110px;min-height:36px"></td><td class="r"><input type="number" min="0" value="${i.stock ?? ''}" placeholder="—" data-xstock="${i.id}" aria-label="Stock de ${esc(i.label)}" style="max-width:90px;min-height:36px"></td><td><button type="button" class="small ghost" data-xtog="${i.id}" data-on="${i.is_active}">${i.is_active ? 'Retirer' : 'Remettre'}</button></td></tr>`).join('')}</tbody></table></div>` : '<p class="muted">Ajoutez vos premiers articles : boissons du minibar, petit-déjeuner, lavage de linge, transfert aéroport…</p>'}`);
+  $('modalBody').style.maxWidth = '720px';
+  $('xiBack').onclick = () => back ? back() : closeModal();
+  $('xiForm').onsubmit = async (e) => { e.preventDefault(); const sv = $('xiS').value.trim();
+    const { error: er } = await sb.from('extra_items').insert({ organization_id: S.org, establishment_id: S.est, label: $('xiL').value.trim(), price: +$('xiP').value, category: $('xiC').value, stock: sv === '' ? null : Math.max(0, parseInt(sv, 10) || 0) });
+    if (er) return toast(errMsg(er), true); toast('Article ajouté.'); openExtraItems(back); };
+  const upd = async (id, v) => { const { error: er } = await sb.from('extra_items').update(v).eq('id', id); if (er) return toast(errMsg(er), true); toast('Enregistré.'); };
+  document.querySelectorAll('[data-xprice]').forEach(i => i.onchange = () => upd(i.dataset.xprice, { price: Math.max(0, +i.value || 0) }));
+  document.querySelectorAll('[data-xstock]').forEach(i => i.onchange = () => upd(i.dataset.xstock, { stock: i.value === '' ? null : Math.max(0, parseInt(i.value, 10) || 0) }));
+  document.querySelectorAll('[data-xtog]').forEach(b => b.onclick = async () => { await upd(b.dataset.xtog, { is_active: b.dataset.on !== 'true' }); openExtraItems(back); });
 }
 
 const GAP_REASONS = ['Erreur de monnaie rendue', 'Dépense non enregistrée', 'Erreur de saisie', 'Paiement noté en espèces par erreur', 'Billet manquant / perte'];
@@ -4167,14 +4290,18 @@ function openStaffForm(isOwner, done){
 async function renderEquipe(){
   const el = $('v-equipe'); el.innerHTML = skeletonView();
   const isOwner = can(['owner']);
-  const [team, inv, org] = await Promise.all([
+  const [team, inv, org, acc] = await Promise.all([
     sb.rpc('org_team_v2', { p_org: S.org }),
     sb.from('organization_invitations').select('*').eq('organization_id', S.org).eq('status', 'pending').order('created_at', { ascending: false }),
-    sb.from('organizations').select('staff_code').eq('id', S.org).single()
+    sb.from('organizations').select('staff_code').eq('id', S.org).single(),
+    sb.from('organization_members').select('id, access_overrides').eq('organization_id', S.org)
   ]);
+
   if (team.error) { el.innerHTML = head('Équipe') + `<p class="muted">${esc(errMsg(team.error))}</p>`; return; }
   const code = org.data && org.data.staff_code;
-  const members = team.data || [];
+  const ovr = Object.fromEntries((acc.data || []).map(x => [x.id, x.access_overrides || {}]));
+  const members = (team.data || []).map(m => ({ ...m, access_overrides: ovr[m.member_id] || {} }));
+  const custom = (m) => { const o = m.access_overrides || {}; return ((o.pages && ((o.pages.add || []).length || (o.pages.remove || []).length)) || (o.actions && Object.keys(o.actions).length)); };
   const hasStaff = members.some(m => m.username);
   const u = (S.overview && S.overview.usage) || {};
   const me = S.session.user.id;
@@ -4189,8 +4316,10 @@ async function renderEquipe(){
       <span class="muted" style="font-size:13px">${m.username ? ' ' + esc(m.username) : ' ' + esc(m.email || '')}</span></div></div>
       <div class="row" style="gap:6px">${canTouch(m) ? `<select data-role="${esc(m.member_id)}" aria-label="Poste" style="flex:1;min-height:38px">${roleOpts(m.role)}</select>` : `<span class="pill st-trial">${esc(ROLE_LABEL[m.role] || m.role)}</span>`}
         <span class="pill ${m.is_active ? (m.must_change_password ? 'st-past_due' : 'st-active') : 'st-cancelled'}">${!m.is_active ? 'Suspendu' : m.must_change_password ? 'Code provisoire' : 'Actif'}</span></div>
+      <span class="muted" style="font-size:12.5px;line-height:1.4">${esc(m.role === 'owner' ? 'Tous les accès' : (ROLE_HELP[m.role] || ''))}${custom(m) ? ' · <strong>accès ajustés</strong>' : ''}</span>
       <span class="muted" style="font-size:12px">${seen(m.last_sign_in_at)}</span>
       ${canTouch(m) ? `<div class="row" style="gap:6px">${m.username ? `<button class="small" type="button" data-reset="${esc(m.member_id)}">Nouveau code</button>` : ''}
+        <button class="small" type="button" data-fiche="${esc(m.member_id)}">Fiche</button>
         <button class="small ghost" type="button" data-active="${esc(m.member_id)}" data-on="${m.is_active}" data-staff="${m.username ? 1 : ''}">${m.is_active ? 'Suspendre' : 'Réactiver'}</button></div>` : ''}
     </div>`;
   el.innerHTML = head('Équipe', `<span class="pill st-trial">${u.users ?? members.filter(m => m.is_active).length} / ${u.max_users ?? '∞'} utilisateurs</span>`) + readOnlyNote() + `
@@ -4199,7 +4328,8 @@ async function renderEquipe(){
       <div style="font-size:13px;opacity:.8">Connexion : onglet « Personnel » → code hôtel + identifiant + code à 4 chiffres</div></div>
       <div class="row">${!hasStaff ? `<button class="small ghost" type="button" id="codeEdit" style="color:#FBF6EE;border-color:#FBF6EE">Modifier le code</button>` : ''}<button class="primary" type="button" id="addStaff">+ Ajouter un employé</button></div>
     </div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px;margin-bottom:16px">${members.map(card).join('')}</div>
+    ${members.length > 4 ? `<div class="row" style="margin-bottom:12px;gap:8px"><input id="eqQ" type="search" placeholder="Rechercher un employé" style="flex:2 1 200px"><select id="eqR" aria-label="Filtrer par poste" style="flex:1 1 150px"><option value="">Tous les postes</option>${Object.entries(ROLE_LABEL).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select></div>` : ''}
+    <div id="eqGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px;margin-bottom:16px">${members.map(card).join('')}</div>
     <details class="card"><summary style="cursor:pointer;font-weight:700">Inviter par e-mail (comptes avec adresse e-mail)</summary>
     <form class="row" id="invForm" style="align-items:flex-end;margin-top:12px">
       <div style="flex:2 1 220px"><label for="iMail">Adresse e-mail</label><input id="iMail" type="email" required placeholder="prenom.nom@exemple.com"></div>
@@ -4210,6 +4340,9 @@ async function renderEquipe(){
     ${(inv.data || []).length ? `<h3 style="font-size:16px;margin:14px 0 6px">Invitations en attente</h3>${inv.data.map(i => `<div class="row between" style="padding:8px 0;border-bottom:1px solid var(--line)"><span>${esc(i.email)} · <strong>${esc(ROLE_LABEL[i.role])}</strong></span><span class="row"><button class="small" type="button" data-copyinv="${esc(i.id)}">Copier le message</button><button class="small ghost" type="button" data-revoke="${esc(i.id)}">Annuler</button></span></div>`).join('')}` : ''}
     </details>`;
   $('addStaff').onclick = () => openStaffForm(isOwner, renderEquipe);
+  const bindCards = () => el.querySelectorAll('[data-fiche]').forEach(b => b.onclick = () => openMemberSheet(members.find(x => x.member_id === b.dataset.fiche)));
+  bindCards();
+  if ($('eqQ')) { const f = () => { const q = $('eqQ').value.trim().toLowerCase(), r = $('eqR').value; const list = members.filter(m => (!r || m.role === r) && (!q || [m.display_name, m.username, m.email].some(x => (x || '').toLowerCase().includes(q)))); $('eqGrid').innerHTML = list.length ? list.map(card).join('') : '<p class="muted">Aucun employé ne correspond.</p>'; bindCards(); bindRows(); }; $('eqQ').oninput = f; $('eqR').onchange = f; }
   if ($('codeEdit')) $('codeEdit').onclick = () => {
     modal(`<h2 style="font-size:22px;margin:0 0 10px">Code hôtel</h2><p class="muted" style="margin:0 0 12px">Court et facile à retenir. Il ne pourra plus être changé après la création du premier compte personnel.</p>
       <form id="ceForm"><div class="field"><input id="ceVal" value="${esc(code || '')}" pattern="[a-z0-9]{3,20}" maxlength="20" required autocapitalize="none"></div><button class="primary" style="width:100%">Enregistrer</button></form>`);
@@ -4224,6 +4357,7 @@ async function renderEquipe(){
     renderEquipe(); };
   el.querySelectorAll('[data-copyinv]').forEach(b => b.onclick = async () => { const i = inv.data.find(x => x.id === b.dataset.copyinv); try { await navigator.clipboard.writeText(invMsg(i)); toast('Message copié.'); } catch (_) { modal(`<p>${esc(invMsg(i))}</p><button class="primary" data-close>Fermer</button>`); } });
   el.querySelectorAll('[data-revoke]').forEach(b => b.onclick = async () => { const { error } = await sb.from('organization_invitations').update({ status: 'revoked' }).eq('id', b.dataset.revoke); if (error) return toast(errMsg(error), true); toast('Invitation annulée.'); renderEquipe(); });
+  const bindRows = () => {
   el.querySelectorAll('[data-role]').forEach(sel => sel.onchange = async () => { const { error } = await sb.from('organization_members').update({ role: sel.value }).eq('id', sel.dataset.role); if (error) { toast(errMsg(error), true); return renderEquipe(); } toast('Poste modifié.'); });
   el.querySelectorAll('[data-reset]').forEach(b => b.onclick = async () => { const m = members.find(x => x.member_id === b.dataset.reset); const p = randPin(); b.disabled = true;
     try { await staffAdmin({ action: 'reset', member_id: m.member_id, pin: p }); renderEquipe(); showCredentials(m.display_name, code, m.username, p); } catch (err) { toast(err.message, true); b.disabled = false; } });
@@ -4233,6 +4367,40 @@ async function renderEquipe(){
       else { const { error } = await sb.from('organization_members').update({ is_active: on }).eq('id', b.dataset.active); if (error) throw new Error(errMsg(error)); }
       toast(on ? 'Compte réactivé.' : 'Compte suspendu.'); await loadCommon(); renderEquipe();
     } catch (err) { toast(err.message, true); b.disabled = false; } });
+  }; bindRows();
+}
+const PAGE_LABEL = { dashboard:'Tableau de bord', reservations:'Réservations', planning:'Planning', naya:'Nuittea.com', passes:'Pass', clients:'Clients', chambres:'Chambres', inventaire:'Inventaire', pointage:'Pointage', caisse:'Caisse', resto:'Restaurant et bar', depenses:'Dépenses', factures:'Factures', rapports:'Rapports', controle:'Contrôle', mapage:'Page publique' };
+function openMemberSheet(m){
+  const base = ROLE_VIEWS[m.role] || [];
+  const o = m.access_overrides || {}, op = o.pages || {}, oa = o.actions || {};
+  const eff = new Set(memberViews({ role: m.role, access_overrides: o }) || []);
+  const defAct = { discount: ['manager','receptionist'].includes(m.role), cancel_payment: m.role === 'manager' };
+  const act = (k) => k in oa ? !!oa[k] : defAct[k];
+  const pages = Object.keys(PAGE_LABEL).filter(moduleOn);
+  modal(`<h2 style="font-size:22px;margin:0 0 4px">${esc(m.display_name || m.email || m.username)}</h2>
+    <p class="muted" style="margin:0 0 12px">${esc(ROLE_LABEL[m.role] || m.role)} · ${esc(ROLE_HELP[m.role] || '')}</p>
+    <div class="row" style="gap:6px;margin-bottom:12px"><button class="small primary" type="button" id="msA">Accès</button><button class="small ghost" type="button" id="msH">Activité</button></div>
+    <div id="msBody"></div>`);
+  const showAccess = () => { $('msA').className = 'small primary'; $('msH').className = 'small ghost';
+    $('msBody').innerHTML = `<form id="msForm"><h3 style="font-size:15px;margin:0 0 6px">Pages visibles</h3>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:4px 12px;margin-bottom:12px">${pages.map(v => `<label style="display:flex;gap:8px;align-items:center;font-weight:500"><input type="checkbox" name="pg" value="${v}" ${eff.has(v) ? 'checked' : ''}> ${PAGE_LABEL[v]}${base.includes(v) ? '' : ' <span class="muted" style="font-size:11px">(hors poste)</span>'}</label>`).join('')}</div>
+      <h3 style="font-size:15px;margin:0 0 6px">Actions sensibles</h3>
+      <label style="display:flex;gap:8px;align-items:center;font-weight:500"><input type="checkbox" id="msDisc" ${act('discount') ? 'checked' : ''}> Accorder des remises</label>
+      <label style="display:flex;gap:8px;align-items:center;font-weight:500;margin-bottom:12px"><input type="checkbox" id="msCanc" ${act('cancel_payment') ? 'checked' : ''}> Annuler un encaissement</label>
+      <p class="muted" style="font-size:12.5px;margin:0 0 12px">Ces deux règles sont vérifiées par le serveur. Chaque modification est inscrite au journal.</p>
+      <div class="row" style="gap:8px"><button class="primary" style="flex:1">Enregistrer</button><button class="ghost" type="button" id="msReset">Revenir aux droits du poste</button></div></form>`;
+    const save = async (ov) => { const { error } = await sb.rpc('set_member_access', { p_member: m.member_id, p_overrides: ov }); if (error) return toast(errMsg(error), true); closeModal(); toast('Accès enregistrés.'); renderEquipe(); };
+    $('msForm').onsubmit = (e) => { e.preventDefault();
+      const on = new Set([...document.querySelectorAll('[name=pg]:checked')].map(x => x.value));
+      const add = pages.filter(v => on.has(v) && !base.includes(v)), remove = base.filter(v => pages.includes(v) && !on.has(v));
+      const actions = {}; [['discount', 'msDisc'], ['cancel_payment', 'msCanc']].forEach(([k, id]) => { if ($(id).checked !== defAct[k]) actions[k] = $(id).checked; });
+      save({ pages: { add, remove }, actions }); };
+    $('msReset').onclick = () => save({}); };
+  const showHist = async () => { $('msH').className = 'small primary'; $('msA').className = 'small ghost'; $('msBody').innerHTML = '<p class="muted">Chargement…</p>';
+    const { data, error } = await sb.rpc('member_activity', { p_member: m.member_id, p_limit: 50 });
+    if (error) { $('msBody').innerHTML = `<p class="muted">${esc(errMsg(error))}</p>`; return; }
+    $('msBody').innerHTML = (data || []).length ? `<div style="max-height:50vh;overflow:auto">${data.map(a => `<div style="padding:8px 0;border-bottom:1px solid var(--line)"><div style="font-size:12px" class="muted">${new Date(a.at).toLocaleString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</div><div>${esc(a.summary || (a.entity + ' · ' + a.action))}</div></div>`).join('')}</div>` : '<p class="muted">Aucune action enregistrée pour cet employé.</p>'; };
+  $('msA').onclick = showAccess; $('msH').onclick = showHist; showAccess();
 }
 
 /* ================= Modules à cocher, devise, résultat & analyse ================= */
@@ -4273,6 +4441,31 @@ async function loadDashResult(){
   const { data, error } = await sb.rpc('business_analytics', { p_org: S.org, p_months: 6 });
   if (error || !data) { box.remove(); return; }
   S.ana = data; const s = data.series, cur = s[s.length - 1], prev = s[s.length - 2] || {};
+  const t0 = today(), mA = t0.slice(0, 8) + '01', dim = new Date(+t0.slice(0, 4), +t0.slice(5, 7), 0).getDate(), dEl = Number(t0.slice(8, 10));
+  try { await sb.rpc('generate_recurring_charges', { p_est: S.est, p_month: mA }); } catch (_) {}
+  const [rcR, fxR, chR] = await Promise.all([
+    sb.from('recurring_charges').select('amount').eq('organization_id', S.org).eq('is_active', true),
+    sb.from('expenses').select('amount').eq('organization_id', S.org).eq('nature', 'fixed').in('status', ['paid', 'pending']).gte('paid_on', mA),
+    sb.from('reservations').select('source,total_amount,status').eq('establishment_id', S.est).not('status', 'in', '(cancelled,no_show)').gte('check_in', mA).lt('check_in', addDays(t0.slice(0, 8) + String(dim).padStart(2, '0'), 1))
+  ]);
+  const fixedMonth = (rcR.data || []).reduce((a, x) => a + Number(x.amount || 0), 0);
+  const fixedPaid = (fxR.data || []).reduce((a, x) => a + Number(x.amount || 0), 0);
+  const variable = Math.max(0, Number(cur.expenses || 0) - fixedPaid), fixedPro = Math.round(fixedMonth * dEl / dim);
+  const fixedCount = Math.max(fixedPaid, fixedPro), est = Number(cur.revenue || 0) - variable - fixedCount;
+  const revpar = data.rooms_count && cur.days ? Number(cur.rooms || 0) / (data.rooms_count * cur.days) : 0;
+  const CHC = { walk_in: '#1F6FA8', direct: '#1F6FA8', naya: '#3F9ED8', telephone: '#7FB8E0', whatsapp: '#2E9E6B', agence: '#C08A2E', en_ligne: '#9AAAB8' };
+  const chT = {}; (chR.data || []).forEach(r => { const k = r.source === 'direct' ? 'walk_in' : (r.source || 'direct'); chT[k] = (chT[k] || 0) + Number(r.total_amount || 0); });
+  const chSum = Object.values(chT).reduce((a, v) => a + v, 0), chList = Object.entries(chT).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]);
+  const chLbl = (k) => k === 'walk_in' ? 'Sur place' : (SOURCE[k] || k);
+  S._dashExtra = `<div class="card" style="margin:-4px 0 16px;padding:16px 20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:14px">
+    <div><div style="font-size:12px;font-weight:700;color:var(--muted)">Bénéfice estimé du mois</div><div style="font-size:22px;font-weight:800;color:${est < 0 ? 'var(--red)' : 'var(--green)'}">${est < 0 ? '−' : ''}${money(Math.abs(est))}</div><div class="muted" style="font-size:12px">${fixedMonth ? 'après charges fixes au prorata' : 'charges fixes non renseignées'}</div></div>
+    <div><div style="font-size:12px;font-weight:700;color:var(--muted)">Charges fixes</div><div style="font-size:22px;font-weight:800">${fixedMonth ? money(fixedMonth) : '—'}</div><div class="muted" style="font-size:12px">${fixedMonth ? 'par mois · ' + money(fixedCount) + ' compté à ce jour' : '<button type="button" class="small ghost" id="fixAdd" style="min-height:30px;padding:2px 10px">Ajouter loyer, salaires…</button>'}</div></div>
+    <div><div style="font-size:12px;font-weight:700;color:var(--muted)">Dépenses variables</div><div style="font-size:22px;font-weight:800">${money(variable)}</div><div class="muted" style="font-size:12px">ce mois-ci</div></div>
+    <div><div style="font-size:12px;font-weight:700;color:var(--muted)">Revenu par chambre disponible</div><div style="font-size:22px;font-weight:800">${revpar ? money(Math.round(revpar)) : '—'}</div><div class="muted" style="font-size:12px">par chambre et par nuit</div></div>
+    ${chSum ? `<div style="grid-column:1/-1"><div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:6px">Réservations du mois par canal</div>
+      <div style="display:flex;height:10px;border-radius:5px;overflow:hidden;background:var(--line)" role="img" aria-label="${chList.map(([k, v]) => chLbl(k) + ' ' + Math.round(v / chSum * 100) + ' %').join(', ')}">${chList.map(([k, v]) => `<span style="flex:${v};background:${CHC[k] || '#9AAAB8'}"></span>`).join('')}</div>
+      <div class="row" style="gap:6px 14px;margin-top:8px;font-size:12.5px">${chList.map(([k, v]) => `<button type="button" class="ghost chlink" data-chsrc="${esc(k)}" style="min-height:28px;padding:2px 8px;font-size:12.5px"><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:${CHC[k] || '#9AAAB8'};margin-right:6px"></span>${esc(chLbl(k))} ${Math.round(v / chSum * 100)} % · ${money(v)}</button>`).join('')}</div></div>` : ''}
+  </div>`;
   { const av = $('adrVal'), as = $('adrSub'); if (av) { av.textContent = cur.sold ? money(cur.adr) : '—'; as.textContent = cur.sold ? `ce mois-ci · ${plur(cur.sold, 'nuitée', 'nuitées')}` : 'aucune nuitée ce mois-ci'; } }
   const ch = pctChg(cur.result, prev.result), max = Math.max(1, ...s.map(x => Math.max(x.revenue, x.expenses)));
   box.innerHTML = `<button type="button" id="resCard" class="card rescard" style="width:100%;text-align:left;display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:16px;align-items:center;margin-bottom:16px;cursor:pointer;min-height:0;padding:18px 20px">
@@ -4285,6 +4478,9 @@ async function loadDashResult(){
       <div class="muted" style="font-size:12px;margin-top:2px">${ch === null ? '' : (ch >= 0 ? '▲ ' : '▼ ') + Math.abs(ch) + ' % vs mois dernier · '}Touchez pour l’analyse détaillée →</div></div>
     <div aria-hidden="true" style="display:flex;gap:6px;align-items:flex-end;height:84px">${s.map(x => `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px"><div style="width:100%;display:flex;gap:2px;align-items:flex-end;height:66px"><div style="flex:1;background:var(--green);border-radius:3px 3px 0 0;height:${Math.max(2, x.revenue / max * 66)}px"></div><div style="flex:1;background:var(--gold-l);border-radius:3px 3px 0 0;height:${Math.max(2, x.expenses / max * 66)}px"></div></div><span class="muted" style="font-size:12px">${moisFr(x.m)}</span></div>`).join('')}</div>
   </button>`;
+  box.insertAdjacentHTML('beforeend', S._dashExtra || '');
+  { const fa = $('fixAdd'); if (fa) fa.onclick = () => { S.depTab = 'fixed'; go('depenses'); }; }
+  box.querySelectorAll('[data-chsrc]').forEach(b => b.onclick = () => { S.resSrc = b.dataset.chsrc; go('reservations'); });
   $('curSel').onchange = (e) => setCurrency(e.target.value);
   $('resCard').onclick = (e) => { if (e.target.closest('#curSel')) return; openAnalysis(6); };
   /* Régularité, en une ligne factuelle : jours du mois en cours avec au moins un encaissement */
@@ -4383,6 +4579,22 @@ h1{letter-spacing:-.01em;margin:0}.m{font-size:.85em}
 table td{border-bottom:1px dashed #000!important}
 tr.tot td{border-top:1.5px solid #000!important;border-bottom:none!important;font-weight:800;font-size:1.2em;padding-top:5px!important}
 .tk-sep{border:0;border-top:1px dashed #000;margin:8px 0}.tk-c{text-align:center}.tk-big{font-size:1.15em;font-weight:800}`;
+/* Reçu de paiement : lisible en noir et blanc, sur ticket thermique comme sur feuille */
+const RECEIPT_CSS = `.rc-title{margin:10px 0 8px;padding:6px 0;border-top:2px solid #000;border-bottom:2px solid #000;text-align:center;font-weight:800;letter-spacing:.14em;text-transform:uppercase;font-size:1.02em}
+.rc-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px 10px;margin:0 0 10px}
+.rc-kv{display:flex;flex-direction:column;line-height:1.25}.rc-kv span{font-size:.78em;text-transform:uppercase;letter-spacing:.06em;color:#555}.rc-kv strong{font-weight:700}
+.rc-box{border:1.5px solid #000;border-radius:6px;padding:8px 10px;margin:6px 0}
+.rc-lbl{font-size:.78em;text-transform:uppercase;letter-spacing:.08em;color:#555;font-weight:700}
+.rc-guest{font-size:1.12em;font-weight:800;margin:2px 0 4px}
+.rc-stay{display:flex;justify-content:space-between;border-bottom:1px dashed #000;padding-bottom:5px;margin-bottom:5px}
+.rc-dates{display:flex;justify-content:space-between;align-items:center;line-height:1.25;font-size:.92em}.rc-dates span:last-child{text-align:right}.rc-arrow{font-size:1.3em;font-weight:700}
+.rc-lines{margin:4px 0 0}.rc-line{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px dotted #000}.rc-amt{white-space:nowrap;font-weight:600}
+.rc-total{display:flex;justify-content:space-between;align-items:baseline;margin:10px 0 6px;padding:8px 10px;border:2px solid #000;border-radius:6px}.rc-total span{font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:.9em}.rc-total strong{font-size:1.45em;font-weight:900;white-space:nowrap}
+.rc-stamp{margin:8px auto;width:max-content;padding:4px 14px;border:2px solid #000;border-radius:999px;font-weight:800;text-transform:uppercase;letter-spacing:.12em;font-size:.9em}
+.rc-due{display:flex;justify-content:space-between;padding:6px 10px;border:1.5px dashed #000;border-radius:6px;margin:6px 0}
+.rc-foot{margin-top:12px;padding-top:8px;border-top:1px dashed #000}
+.rc-review{display:flex;gap:10px;align-items:center;margin:12px 0 4px;padding:8px;border:1.5px solid #000;border-radius:6px}.rc-review img{width:26mm;height:26mm;flex:none}
+.rc-review-t{font-weight:800;font-size:1.05em}.rc-stars{font-size:1.15em;letter-spacing:.05em;margin:1px 0 3px}`;
 const SHEET_SCREEN = (w) => `@media screen{html{background:#E9EEEC}body{width:${w};max-width:${w}!important;min-height:90vh;margin:24px auto!important;padding:16mm 15mm!important;background:#fff;box-shadow:0 6px 30px rgba(20,40,32,.14);border-radius:4px}}`;
 const TICKET_SCREEN = (w) => `@media screen{html{background:#E9EEEC!important;width:auto!important}body{width:${w + 8}mm!important;max-width:${w + 8}mm!important;margin:24px auto!important;padding:5mm 4mm!important;background:#fff!important;box-shadow:0 6px 30px rgba(20,40,32,.14)}}`;
 /* En-tête commun des documents A4/A5 */
@@ -4419,13 +4631,13 @@ function openReceiptEditor(){
       ${f('rcPhone', 'Téléphone', r.phone, est.phone || est.public_phone || 'ex. 07 07 00 00 00', 30)}
       ${f('rcTax', 'Mentions légales (RCCM, NCC…)', r.tax_id, 'ex. RCCM CI-ABJ-2024-B-1234 · NCC 1234567A')}
       <div class="field"><label for="rcFoot">Message de fin</label><textarea id="rcFoot" maxlength="200" rows="2" style="width:100%;min-height:64px;padding:10px 12px;border-radius:12px;border:1px solid var(--line);font:inherit" placeholder="ex. Merci de votre visite ! Wi-Fi : Palmiers2026">${esc(r.footer || '')}</textarea></div>
-      ${[['rcLogo', 'show_logo', 'Afficher le logo', r.show_logo !== false], ['rcServer', 'show_server', 'Afficher le nom du serveur / caissier', r.show_server !== false], ['rcQr', 'show_qr', 'QR code vers ma page de réservation', !!r.show_qr]].map(([id, , l, on]) => `<label class="row" style="gap:8px;font-weight:600;flex-wrap:nowrap;margin-bottom:8px"><input type="checkbox" id="${id}" ${on ? 'checked' : ''} style="width:20px;min-height:20px"> ${l}</label>`).join('')}
+      ${[['rcLogo', 'show_logo', 'Afficher le logo', r.show_logo !== false], ['rcServer', 'show_server', 'Afficher le nom du serveur / caissier', r.show_server !== false], ['rcQr', 'show_qr', 'QR code vers ma page de réservation', !!r.show_qr], ['rcRv', 'show_review_qr', 'QR code pour noter l’hôtel (reçus de séjour)', r.show_review_qr !== false]].map(([id, , l, on]) => `<label class="row" style="gap:8px;font-weight:600;flex-wrap:nowrap;margin-bottom:8px"><input type="checkbox" id="${id}" ${on ? 'checked' : ''} style="width:20px;min-height:20px"> ${l}</label>`).join('')}
       ${!est.public_logo_url ? '<p class="muted" style="font-size:12px;margin:0 0 8px">Ajoutez votre logo dans « Ma fiche Nuittea ».</p>' : ''}
       <button class="primary" style="width:100%" id="rcSave">Enregistrer</button>
     </form>
     <div><div class="muted" style="font-size:12px;margin-bottom:4px">Aperçu</div><div id="rcPrev" style="background:#fff;color:#000;border:1px solid var(--line);border-radius:6px;padding:10px;font:11px/1.4 ui-monospace,Menlo,monospace;box-shadow:0 6px 20px rgba(0,0,0,.08)"></div></div></div>`);
   $('modalBody').style.maxWidth = '720px';
-  const read = () => ({ title: $('rcTitle').value.trim() || null, header: $('rcHeader').value.trim() || null, address: $('rcAddr').value.trim() || null, phone: $('rcPhone').value.trim() || null, tax_id: $('rcTax').value.trim() || null, footer: $('rcFoot').value.trim() || null, show_logo: $('rcLogo').checked, show_server: $('rcServer').checked, show_qr: $('rcQr').checked });
+  const read = () => ({ title: $('rcTitle').value.trim() || null, header: $('rcHeader').value.trim() || null, address: $('rcAddr').value.trim() || null, phone: $('rcPhone').value.trim() || null, tax_id: $('rcTax').value.trim() || null, footer: $('rcFoot').value.trim() || null, show_logo: $('rcLogo').checked, show_server: $('rcServer').checked, show_qr: $('rcQr').checked, show_review_qr: $('rcRv').checked });
   const clean = (o) => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== null));
   const prev = () => { const e2 = { ...est, receipt_settings: clean(read()) };
     $('rcPrev').innerHTML = rcptHead(e2).replace(/<h1 /, '<h1 style="font-size:14px" ') + `<div class="m" style="text-align:center;margin:6px 0">Bar · Ticket n° 128<br>${new Date().toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })}</div>
@@ -5090,6 +5302,7 @@ class Esc {
   drawer(){ return this.raw(0x1B, 0x70, 0x00, 0x19, 0xFA); }
   bytes(){ return new Uint8Array(this.b); }
 }
+try { S.maskMoney = localStorage.getItem('hh_mask') === '1'; } catch (_) {}
 const moneyTxt = (n) => money(n).replace(/[  ]/g, ' ');
 
 // ---- Connexions ----

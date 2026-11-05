@@ -417,12 +417,12 @@ html[data-theme="cuir"] [style*="background:#F6E1D3"],html[data-theme="cuir"] [s
 /* Navigation essentielle : seules les actions du quotidien sont visibles, le reste dans « Plus » */
 .navmore-btn{display:none}
 @media (min-width:900px){
-  body.navess nav.side .ngroup .ghead{display:none!important}
-  body.navess nav.side .ngroup{margin-top:0}
-  body.navess nav.side .ngroup > button:not(.ess){display:none!important}
-  body.navess nav.side .ngroup > button.ess:not(.hidden),body.navess nav.side .ngroup > button.active:not(.hidden){display:flex!important}
-  body.navess nav.side #navEssToggle{display:flex}
-  nav.side .navmore-btn{display:flex;margin-top:6px}
+  /* Sur ordinateur, toutes les fonctionnalités sont affichées dans la barre latérale */
+  nav.side .navmore-btn{display:none!important}
+}
+@media (orientation:portrait) and (max-width:899px){
+  .more-grid{grid-template-columns:1fr!important;gap:4px!important}
+  .more-grid button{min-height:48px;border-radius:12px!important}
 }
 html[data-theme="cuir"] nav.side [data-view="dashboard"]{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 11l9-8 9 8v10h-6v-6H9v6H3z'/%3E%3C/svg%3E")}
 html[data-theme="cuir"] nav.side [data-view="reservations"]{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='5' width='18' height='16' rx='2'/%3E%3Cpath d='M3 10h18M8 3v4M16 3v4'/%3E%3C/svg%3E")}
@@ -803,6 +803,13 @@ body.adminonly .tabbar [data-tab="dashboard"],body.adminonly .tabbar [data-tab="
 .more-grid button{justify-content:flex-start!important;text-align:left!important;min-height:52px;line-height:1.25}
 .xgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;max-height:46vh;overflow-y:auto;padding:2px}
 .xgrid .xitem:not(#_a):not(#_b){position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-height:84px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:#fff;text-align:left;cursor:pointer}
+.xgrid .xitem .xph{width:100%;height:64px;object-fit:cover;border-radius:8px;margin-bottom:4px;background:var(--bg)}
+section.refreshing{position:relative}section.refreshing::before{content:"";position:sticky;top:0;display:block;height:2px;margin-bottom:-2px;background:linear-gradient(90deg,transparent,var(--green),transparent);background-size:50% 100%;animation:rfx 1s linear infinite;z-index:5}@keyframes rfx{from{background-position:-50% 0}to{background-position:150% 0}}
+.kpi .dl{font-size:11.5px;font-weight:700;white-space:nowrap;padding:2px 6px;border-radius:999px;background:var(--bg);vertical-align:middle;font-family:var(--body,inherit)}.kpi .dl.up{color:var(--green);background:var(--green-l)}.kpi .dl.down{color:var(--red);background:#FDECEC}
+.abar{display:grid;grid-template-columns:minmax(80px,30%) 1fr auto;gap:8px;align-items:center;padding:5px 0;font-size:13px}.abar .al{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.abar .at,.atrack{height:10px;border-radius:999px;background:var(--bg);overflow:hidden;display:block}.abar .at i,.atrack i{display:block;height:100%;background:var(--green);border-radius:999px}.atrack{background:rgba(255,255,255,.2)}.abar .av{font-weight:600;white-space:nowrap}
+#navAna{display:none!important}
+.xst{display:grid;grid-template-columns:56px 1fr;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.xst .ph{width:56px;height:56px;border-radius:10px;object-fit:cover;background:var(--bg);display:grid;place-items:center;color:var(--muted);font-size:11px;text-align:center}
 .xgrid .xitem:not(#_a):not(#_b).on{border-color:var(--green);background:var(--green-l)}
 .xgrid .xitem:not(#_a):not(#_b):disabled{opacity:.5;cursor:not-allowed}
 .xitem .xl{font-weight:700;font-size:14px;line-height:1.25;padding-right:24px}.xitem .xp{font-weight:800;font-size:15px;color:var(--green-d,#1F6FA8)}.xitem .xs{font-size:11.5px;color:var(--muted)}
@@ -920,7 +927,7 @@ body.adminonly .tabbar [data-tab="dashboard"],body.adminonly .tabbar [data-tab="
     <div class="ngroup" data-group="pilot"><button type="button" class="ghead" aria-expanded="true"> Pilotage</button>
       <button type="button" id="navAna" data-ana="1">Résultat &amp; analyse</button>
       <button type="button" id="navReviews" data-ana="1">Avis clients</button>
-      <button data-view="rapports">Rapports</button>
+      <button data-view="rapports">Analyse</button>
       <button data-view="controle">Contrôle <span id="alertBadge" class="hidden" style="display:inline-block;min-width:20px;padding:0 6px;border-radius:999px;background:var(--green);color:#fff;font-size:12px;line-height:20px"></span></button>
       <button data-view="pointage">Pointage</button>
       <button data-view="mapage">Ma fiche Nuittea</button></div>
@@ -1069,6 +1076,12 @@ function errMsg(e){ const m = (e && (e.message || e.error_description)) || 'Une 
 function modal(html){ $('modalBody').style.maxWidth = ''; $('modalBody').innerHTML = html; $('modal').classList.remove('hidden'); $('modalBody').scrollTop = 0; document.body.classList.add('modal-open'); }
 function closeModal(){ if ($('modal').dataset.locked) return; $('modal').classList.add('hidden'); document.body.classList.remove('modal-open'); }
 $('modal').addEventListener('click', e => { if (e.target.id === 'modal' || e.target.closest('[data-close]')) closeModal(); });
+/* Rapidité : un écran déjà affiché reste visible pendant sa mise à jour (pas d'écran de chargement à chaque retour) */
+function keepOrSkel(el){
+  const k = (S.org || '') + '|' + (S.est || '');
+  if (el.firstElementChild && el.dataset.k === k && !el.querySelector('.skv')) { el.classList.add('refreshing'); clearTimeout(el._rt); el._rt = setTimeout(() => el.classList.remove('refreshing'), 1500); return; }
+  el.dataset.k = k; el.innerHTML = skeletonView();
+}
 function skeletonView(kind){
   const bar = (w, h = 14) => `<div class="sk" style="width:${w};height:${h}px"></div>`;
   const cards = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px">${'<div class="sk" style="height:92px;border-radius:16px"></div>'.repeat(4)}</div>`;
@@ -1103,7 +1116,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.11.05-12';
+const APP_VERSION = '2026.11.05-15';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -1618,7 +1631,7 @@ function renderBanner(){
 }
 document.addEventListener('click', e => { const g = e.target.closest('[data-go]'); if (g) go(g.dataset.go); const m = $('navMore'); if (m && m.open && !e.target.closest('#navMore')) m.open = false; });
 document.querySelectorAll('nav.side [data-view]').forEach(b => b.addEventListener('click', () => { if (b.dataset.rtab) S.rTab = b.dataset.rtab; go(b.dataset.view); }));
-$('navAna').onclick = () => openAnalysis(6);
+$('navAna').classList.add('hidden'); $('navAna').onclick = () => go('rapports');
 $('navReviews').onclick = () => openReviews();
 document.querySelectorAll('nav.side .ghead').forEach(h => { const g = h.parentElement; try { if (localStorage.getItem('hh_grp_' + g.dataset.group) === '0') g.classList.add('collapsed'); } catch (_) {}
   h.onclick = () => { g.classList.toggle('collapsed'); h.setAttribute('aria-expanded', !g.classList.contains('collapsed')); try { localStorage.setItem('hh_grp_' + g.dataset.group, g.classList.contains('collapsed') ? '0' : '1'); } catch (_) {} }; });
@@ -1626,7 +1639,7 @@ $('navSearch').onclick = () => openPalette();
 $('mSearch').onclick = () => openPalette();
 $('mNotif').onclick = () => openNotifs();
 const GROUPS = { heberg: ['reservations','planning','chambres','clients','inventaire'], argent: ['caisse','depenses','factures'], resto: ['resto'], pilot: ['controle','rapports','pointage','mapage'] };
-const VIEW_LABEL = { inventaire:'Inventaire', pointage:'Pointage', reservations:'Réservations', planning:'Planning', chambres:'Chambres', clients:'Clients', caisse:'Caisse', depenses:'Dépenses', factures:'Factures', resto:'Restaurant & Bar', controle:'Contrôle', rapports:'Rapports', mapage:'Ma fiche Nuittea' };
+const VIEW_LABEL = { inventaire:'Inventaire', pointage:'Pointage', reservations:'Réservations', planning:'Planning', chambres:'Chambres', clients:'Clients', caisse:'Caisse', depenses:'Dépenses', factures:'Factures', resto:'Restaurant & Bar', controle:'Contrôle', rapports:'Analyse', mapage:'Ma fiche Nuittea' };
 const groupOf = (v) => Object.keys(GROUPS).find(g => GROUPS[g].includes(v));
 const groupViews = (g) => GROUPS[g].filter(allowed);
 const canAna = () => can(['owner','admin','manager','accountant']);
@@ -1667,7 +1680,6 @@ function openTab(t){
 function openMore(){
   const pilot = S.org ? groupViews('pilot').map(v => [VIEW_LABEL[v], () => go(v)]) : [];
   if (!S.org && S.isAdmin) [['formules', 'Formules'], ['naya', 'Nuittea.com'], ['lieux', 'Lieux']].forEach(([k, l]) => pilot.push([l, () => { S._admTab = k; go('admin'); }]));
-  if (S.org && canAna() && moduleOn('rapports')) pilot.unshift(['Résultat & analyse', () => openAnalysis(6)]);
   if (S.org) pilot.unshift(['Assistant', () => openAssistant()]);
   if (S.org && moduleOn('rapports')) pilot.push(['Avis clients', () => openReviews()]);
   if (S.org && moduleOn('pointage')) pilot.unshift([CLOCK.state === 'in' ? 'Pointer mon départ' : 'Pointer mon arrivée', () => toggleClock()]);
@@ -1919,7 +1931,7 @@ function openCheckout(slug, cycle){
 
 /* ---------- Mon abonnement ---------- */
 async function renderAbonnement(){
-  const el = $('v-abonnement'); el.innerHTML = skeletonView();
+  const el = $('v-abonnement'); keepOrSkel(el);
   await loadCommon();
   const o = S.overview; if (!o) { el.innerHTML = '<p class="muted">Abonnement introuvable.</p>'; return; }
   const canPay = ['owner','admin','accountant'].includes(S.member.role);
@@ -2003,7 +2015,7 @@ async function uploadRoomPhoto(file, roomKey){
   return sb.storage.from('public-media').getPublicUrl(path).data.publicUrl;
 }
 async function renderChambres(){
-  const el = $('v-chambres'); el.innerHTML = skeletonView();
+  const el = $('v-chambres'); keepOrSkel(el);
   await loadEst();
   const { data: all } = await sb.from('rooms').select('*').eq('establishment_id', S.est).order('number');
   const rooms = (all || []).sort(natSort);
@@ -2128,7 +2140,7 @@ function admFlag(c){
   return ['OK', 'st-active'];
 }
 async function renderAdmin(){
-  const el = $('v-admin'); el.innerHTML = skeletonView();
+  const el = $('v-admin'); keepOrSkel(el);
   const tab = S._admTab || 'apercu';
   const [st, orgs, pend, plans, naya, npart, pset, cock] = await Promise.all([
     sb.rpc('admin_platform_stats'), sb.rpc('admin_orgs_overview'),
@@ -2559,7 +2571,7 @@ async function renderDashboard(){ if (!S._idPurged && S.org) { S._idPurged = tru
   if (SHOW_COMMISSION_DUE && can(['owner','admin','manager']) && S.org) { const { data: B } = await sb.rpc('naya_commission_balance', { p_org: S.org }); const nb = $('nayaDueBanner'); if (nb) { nb.innerHTML = nayaBalanceCard(B, true); nb.querySelectorAll('[data-go]').forEach(x => x.onclick = () => go(x.dataset.go)); } }
 }
 async function renderDashboardCore(){
-  const el = $('v-dashboard'); el.innerHTML = skeletonView();
+  const el = $('v-dashboard'); keepOrSkel(el);
   await loadEst();
   const t = today(), t7 = addDays(t, 7);
   const [resas, pay, pend] = await Promise.all([
@@ -2764,7 +2776,7 @@ function waConfirmText(r){
 }
 
 async function renderReservations(){
-  const el = $('v-reservations'); el.innerHTML = skeletonView();
+  const el = $('v-reservations'); keepOrSkel(el);
   await loadEst();
   const t = today();
   const f = S._rf || { tab: 'today', q: '', unpaid: false }; S._rf = f;
@@ -2859,7 +2871,7 @@ async function recordDeposit(resaId, amount, method, ref, refresh){
 const NAYA_URL = 'https://nuittea.pages.dev';
 const openNaya = () => go('naya');
 async function renderNaya(){
-  const el = $('v-naya'); el.innerHTML = skeletonView();
+  const el = $('v-naya'); keepOrSkel(el);
   const owner = can(['owner','admin']);
   const est = S.ests.find(x => x.id === S.est) || {};
   const m0 = new Date(); const mStart = `${m0.getFullYear()}-${String(m0.getMonth() + 1).padStart(2, '0')}-01`;
@@ -3228,7 +3240,7 @@ function printGuestInvoice(i){
 
 /* ---------- Planning ---------- */
 async function renderPlanning(){
-  const el = $('v-planning'); el.innerHTML = skeletonView();
+  const el = $('v-planning'); keepOrSkel(el);
   await loadEst();
   const start = S._ps || addDays(today(), -1), days = 14, end = addDays(start, days);
   const { data } = await sb.from('reservations').select('id,room_id,guest_name,check_in,check_out,status').eq('establishment_id', S.est).not('status', 'in', '(cancelled,no_show)').lt('check_in', end).gt('check_out', start);
@@ -3320,7 +3332,7 @@ function planningDrag(el, RES, start, cell){
 
 /* ---------- Clients ---------- */
 async function renderClients(){
-  const el = $('v-clients'); el.innerHTML = skeletonView();
+  const el = $('v-clients'); keepOrSkel(el);
   const { data } = await sb.from('guests').select('*').eq('organization_id', S.org).order('full_name').limit(1000);
   const q = (S._cq || '').toLowerCase();
   const rows = (data || []).filter(g => !q || (g.full_name + ' ' + (g.phone || '') + ' ' + (g.email || '')).toLowerCase().includes(q));
@@ -3463,7 +3475,7 @@ async function expenseThreshold(){
 }
 
 async function renderCaisse(){
-  const el = $('v-caisse'); el.innerHTML = skeletonView();
+  const el = $('v-caisse'); keepOrSkel(el);
   if (!can(['owner','admin','manager','receptionist','accountant'])) { el.innerHTML = head('Caisse') + '<p class="muted">Accès réservé.</p>'; return; }
   await loadEst(); await teamNames();
   const { data: sess } = await sb.from('cash_sessions').select('*').eq('establishment_id', S.est).eq('status', 'open').maybeSingle();
@@ -3746,8 +3758,8 @@ async function openExtras(refresh, cart){
     const total = lines.reduce((a, [i, q]) => a + Number(i.price) * q, 0), held = xHold();
     modal(`<div class="row between" style="margin-bottom:10px;flex-wrap:nowrap"><h2 style="font-size:22px">Ventes annexes</h2><button type="button" class="small ghost" data-close aria-label="Fermer" style="border:0;font-size:18px">✕</button></div>
       ${items.length ? `<div class="row" style="gap:6px;margin-bottom:10px">${['', ...cats].map(c => `<button type="button" class="small ${st.cat === c ? 'primary' : 'ghost'}" data-xcat="${c}">${c ? XCAT[c] : 'Tout'}</button>`).join('')}</div>
-      <div class="xgrid">${list.map(i => { const out = i.stock !== null && i.stock <= 0, low = i.stock !== null && i.stock > 0 && i.stock <= 3, inCart = st.cart[i.id] || 0;
-        return `<button type="button" class="xitem${inCart ? ' on' : ''}" data-xadd="${i.id}" ${out ? 'disabled' : ''} aria-label="${esc(i.label)}, ${money(i.price)}${inCart ? ', ' + inCart + ' dans le panier' : ''}"><span class="xl">${esc(i.label)}</span><span class="xp">${money(i.price)}</span><span class="xs">${out ? 'Épuisé' : low ? 'Stock faible · ' + i.stock : i.stock !== null ? 'Stock ' + i.stock : XCAT[i.category]}</span>${inCart ? `<span class="xq">${inCart}</span>` : ''}</button>`; }).join('')}</div>`
+      <div class="xgrid">${list.map(i => { const out = i.stock !== null && i.stock <= 0, low = i.stock !== null && i.stock > 0 && i.stock <= (i.alert_qty ?? 3), inCart = st.cart[i.id] || 0;
+        return `<button type="button" class="xitem${inCart ? ' on' : ''}" data-xadd="${i.id}" ${out ? 'disabled' : ''} aria-label="${esc(i.label)}, ${money(i.price)}${inCart ? ', ' + inCart + ' dans le panier' : ''}">${i.photo_url ? `<img class="xph" src="${esc(i.photo_url)}" alt="" loading="lazy">` : ''}<span class="xl">${esc(i.label)}</span><span class="xp">${money(i.price)}</span><span class="xs">${out ? 'Épuisé' : low ? 'Stock faible · ' + i.stock : i.stock !== null ? 'Stock ' + i.stock : XCAT[i.category]}</span>${inCart ? `<span class="xq">${inCart}</span>` : ''}</button>`; }).join('')}</div>`
       : `<div class="card" style="text-align:center;padding:24px"><p style="margin:0 0 10px">Aucun article pour l’instant.</p>${mgr ? '<button type="button" class="primary" id="xManage2">Créer mes articles</button>' : '<p class="muted" style="margin:0">Demandez au gérant de créer les articles.</p>'}</div>`}
       <div class="xcart">
         <div class="row between" style="flex-wrap:nowrap"><strong>Panier</strong>${lines.length ? '<button type="button" class="small ghost" id="xClear">Vider</button>' : ''}</div>
@@ -3791,28 +3803,96 @@ function printExtraReceipt(group, lines, total, method){
     <div class="rc-foot">${rcptFoot(est, 'Merci de votre visite.')}</div><script>window.onload=()=>window.print()<\/script></body></html>`);
   w.document.close();
 }
+async function shrinkImage(file, max = 640){
+  if (!/^image\//.test(file.type)) throw new Error('Choisissez une image.');
+  const img = await new Promise((ok, ko) => { const u = URL.createObjectURL(file), x = new Image(); x.onload = () => { URL.revokeObjectURL(u); ok(x); }; x.onerror = () => ko(new Error('Image illisible.')); x.src = u; });
+  const k = Math.min(1, max / Math.max(img.width, img.height)), c = document.createElement('canvas');
+  c.width = Math.round(img.width * k); c.height = Math.round(img.height * k); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+  return await new Promise((ok) => c.toBlob(b => ok(b), 'image/jpeg', 0.82));
+}
+async function uploadProductPhoto(file, itemId){
+  const blob = await shrinkImage(file);
+  const path = `${S.org}/${S.est}/products/${itemId}-${Date.now()}.jpg`;
+  const { error } = await sb.storage.from('public-media').upload(path, blob, { contentType: 'image/jpeg' });
+  if (error) throw error;
+  return sb.storage.from('public-media').getPublicUrl(path).data.publicUrl;
+}
 async function openExtraItems(back){
   if (!can(['owner', 'admin', 'manager'])) return;
-  const { data, error } = await sb.from('extra_items').select('*').eq('establishment_id', S.est).order('is_active', { ascending: false }).order('label');
-  if (error) return toast(errMsg(error), true);
-  const items = data || [];
-  modal(`<div class="row between" style="margin-bottom:10px;flex-wrap:nowrap"><h2 style="font-size:22px">Articles des ventes annexes</h2><button type="button" class="small ghost" id="xiBack">Retour</button></div>
-    <form id="xiForm" class="row" style="align-items:flex-end;gap:8px;margin-bottom:12px">
+  const [r1, r2] = await Promise.all([
+    sb.from('extra_items').select('*').eq('establishment_id', S.est).order('is_active', { ascending: false }).order('category').order('label'),
+    sb.from('extra_sales').select('item_id, qty').eq('establishment_id', S.est).neq('status', 'cancelled').gte('created_at', new Date(Date.now() - 30 * 864e5).toISOString())
+  ]);
+  if (r1.error) return toast(errMsg(r1.error), true);
+  const items = r1.data || [], sold = {}; (r2.data || []).forEach(x => { sold[x.item_id] = (sold[x.item_id] || 0) + x.qty; });
+  const tracked = items.filter(i => i.is_active && i.stock !== null);
+  const lowL = tracked.filter(i => i.stock <= (i.alert_qty ?? 3));
+  const value = tracked.reduce((a, i) => a + i.stock * Number(i.unit_cost || 0), 0);
+  const margin = (i) => i.unit_cost != null && Number(i.price) > 0 ? Math.round((Number(i.price) - Number(i.unit_cost)) / Number(i.price) * 100) : null;
+  const row = (i) => { const m = margin(i), low = i.stock !== null && i.stock <= (i.alert_qty ?? 3);
+    return `<div class="xst" style="${i.is_active ? '' : 'opacity:.55'}">
+      <label style="cursor:pointer" title="Ajouter ou changer la photo">${i.photo_url ? `<img class="ph" src="${esc(i.photo_url)}" alt="Photo de ${esc(i.label)}">` : '<span class="ph">+ Photo</span>'}<input type="file" accept="image/*" data-xph="${i.id}" class="sr-only"></label>
+      <div style="min-width:0"><div class="row between" style="flex-wrap:wrap;gap:4px"><strong>${esc(i.label)}</strong><span class="muted" style="font-size:12px">${XCAT[i.category]}${sold[i.id] ? ' · ' + sold[i.id] + ' vendus en 30 j' : ''}</span></div>
+        <div class="row" style="gap:6px;margin-top:6px;flex-wrap:wrap;align-items:flex-end">
+          <label style="font-size:11px;font-weight:600;display:flex;flex-direction:column;gap:2px">Vente<input type="number" min="0" value="${Number(i.price)}" data-xprice="${i.id}" style="width:96px;min-height:36px"></label>
+          <label style="font-size:11px;font-weight:600;display:flex;flex-direction:column;gap:2px">Achat<input type="number" min="0" value="${i.unit_cost != null ? Number(i.unit_cost) : ''}" placeholder="—" data-xcost="${i.id}" style="width:90px;min-height:36px"></label>
+          <label style="font-size:11px;font-weight:600;display:flex;flex-direction:column;gap:2px">Alerte à<input type="number" min="0" value="${i.alert_qty ?? ''}" placeholder="3" data-xalert="${i.id}" style="width:70px;min-height:36px"></label>
+          <div style="font-size:13px;padding-bottom:8px">${i.stock === null ? '<span class="muted">Stock non suivi</span>' : `Stock <strong style="${low ? 'color:var(--red)' : ''}">${i.stock}</strong>`}${m !== null ? ` · marge ${m} %` : ''}</div></div>
+        <div class="row" style="gap:6px;margin-top:6px;flex-wrap:wrap"><button type="button" class="small" data-xmv="in|${i.id}">Entrée</button><button type="button" class="small ghost" data-xmv="loss|${i.id}">Perte</button><button type="button" class="small ghost" data-xmv="adjust|${i.id}">Inventaire</button><button type="button" class="small ghost" data-xhist="${i.id}">Historique</button><button type="button" class="small ghost" data-xtog="${i.id}" data-on="${i.is_active}">${i.is_active ? 'Retirer' : 'Remettre'}</button></div></div></div>`; };
+  modal(`<div class="row between" style="margin-bottom:10px;flex-wrap:nowrap"><h2 style="font-size:22px">Stock des ventes annexes</h2><button type="button" class="small ghost" id="xiBack">Retour</button></div>
+    <div class="row" style="gap:8px;margin-bottom:12px;flex-wrap:wrap">
+      <div class="card" style="flex:1 1 140px;padding:10px 12px;margin:0"><div class="muted" style="font-size:12px">Articles suivis</div><strong style="font-size:20px">${tracked.length}</strong></div>
+      <div class="card" style="flex:1 1 140px;padding:10px 12px;margin:0;${lowL.length ? 'border-color:var(--red)' : ''}"><div class="muted" style="font-size:12px">À réapprovisionner</div><strong style="font-size:20px;${lowL.length ? 'color:var(--red)' : ''}">${lowL.length}</strong></div>
+      <div class="card" style="flex:1 1 140px;padding:10px 12px;margin:0"><div class="muted" style="font-size:12px">Valeur du stock (achat)</div><strong style="font-size:20px">${value ? money(value) : '—'}</strong></div></div>
+    ${lowL.length ? `<p style="margin:0 0 10px;font-size:13px"><strong>À commander :</strong> ${lowL.map(i => esc(i.label) + ' (' + i.stock + ')').join(', ')}</p>` : ''}
+    <details class="card" style="margin-bottom:10px" ${items.length ? '' : 'open'}><summary style="cursor:pointer;font-weight:700">+ Nouvel article</summary>
+    <form id="xiForm" class="row" style="align-items:flex-end;gap:8px;margin-top:10px">
       <div style="flex:2 1 160px"><label for="xiL">Article</label><input id="xiL" required maxlength="60" placeholder="Coca-Cola 33 cl"></div>
-      <div style="flex:1 1 110px"><label for="xiP">Prix (F)</label><input id="xiP" type="number" min="0" step="1" required></div>
       <div style="flex:1 1 130px"><label for="xiC">Catégorie</label><select id="xiC">${Object.entries(XCAT).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select></div>
-      <div style="flex:1 1 100px"><label for="xiS">Stock (facultatif)</label><input id="xiS" type="number" min="0" step="1" placeholder="—"></div>
-      <button class="primary">Ajouter</button></form>
-    ${items.length ? `<div class="tablewrap"><table class="table"><thead><tr><th>Article</th><th>Catégorie</th><th class="r">Prix</th><th class="r">Stock</th><th><span class="sr-only">Actions</span></th></tr></thead><tbody>${items.map(i => `<tr style="${i.is_active ? '' : 'opacity:.55'}"><td>${esc(i.label)}</td><td>${XCAT[i.category]}</td><td class="r"><input type="number" min="0" value="${Number(i.price)}" data-xprice="${i.id}" aria-label="Prix de ${esc(i.label)}" style="max-width:110px;min-height:36px"></td><td class="r"><input type="number" min="0" value="${i.stock ?? ''}" placeholder="—" data-xstock="${i.id}" aria-label="Stock de ${esc(i.label)}" style="max-width:90px;min-height:36px"></td><td><button type="button" class="small ghost" data-xtog="${i.id}" data-on="${i.is_active}">${i.is_active ? 'Retirer' : 'Remettre'}</button></td></tr>`).join('')}</tbody></table></div>` : '<p class="muted">Ajoutez vos premiers articles : boissons du minibar, petit-déjeuner, lavage de linge, transfert aéroport…</p>'}`);
-  $('modalBody').style.maxWidth = '720px';
+      <div style="flex:1 1 100px"><label for="xiP">Prix de vente (F)</label><input id="xiP" type="number" min="0" step="1" required></div>
+      <div style="flex:1 1 100px"><label for="xiA">Prix d’achat (F)</label><input id="xiA" type="number" min="0" step="1" placeholder="—"></div>
+      <div style="flex:1 1 90px"><label for="xiS">Stock initial</label><input id="xiS" type="number" min="0" step="1" placeholder="Non suivi"></div>
+      <div style="flex:1 1 90px"><label for="xiF">Photo</label><input id="xiF" type="file" accept="image/*"></div>
+      <button class="primary">Ajouter</button></form></details>
+    ${items.length ? `<div style="max-height:56vh;overflow:auto">${items.map(row).join('')}</div>` : '<p class="muted">Aucun article. Ajoutez vos boissons, petits-déjeuners, services…</p>'}`);
+  $('modalBody').style.maxWidth = '760px';
+  const again = () => openExtraItems(back);
   $('xiBack').onclick = () => back ? back() : closeModal();
-  $('xiForm').onsubmit = async (e) => { e.preventDefault(); const sv = $('xiS').value.trim();
-    const { error: er } = await sb.from('extra_items').insert({ organization_id: S.org, establishment_id: S.est, label: $('xiL').value.trim(), price: +$('xiP').value, category: $('xiC').value, stock: sv === '' ? null : Math.max(0, parseInt(sv, 10) || 0) });
-    if (er) return toast(errMsg(er), true); toast('Article ajouté.'); openExtraItems(back); };
+  $('xiForm').onsubmit = async (e) => { e.preventDefault(); const sv = $('xiS').value.trim(), av = $('xiA').value.trim(), f = $('xiF').files[0];
+    const btn = e.submitter; if (btn) btn.disabled = true;
+    const { data: row1, error: er } = await sb.from('extra_items').insert({ organization_id: S.org, establishment_id: S.est, label: $('xiL').value.trim(), price: +$('xiP').value, category: $('xiC').value, unit_cost: av === '' ? null : Math.max(0, +av), stock: sv === '' ? null : Math.max(0, parseInt(sv, 10) || 0) }).select('id').single();
+    if (er) { if (btn) btn.disabled = false; return toast(errMsg(er), true); }
+    if (f) { try { const url = await uploadProductPhoto(f, row1.id); await sb.from('extra_items').update({ photo_url: url }).eq('id', row1.id); } catch (x) { toast('Article ajouté, mais la photo n’a pas pu être envoyée : ' + errMsg(x), true); } }
+    toast('Article ajouté.'); again(); };
   const upd = async (id, v) => { const { error: er } = await sb.from('extra_items').update(v).eq('id', id); if (er) return toast(errMsg(er), true); toast('Enregistré.'); };
+  const num = (v) => v === '' ? null : Math.max(0, +v || 0);
   document.querySelectorAll('[data-xprice]').forEach(i => i.onchange = () => upd(i.dataset.xprice, { price: Math.max(0, +i.value || 0) }));
-  document.querySelectorAll('[data-xstock]').forEach(i => i.onchange = () => upd(i.dataset.xstock, { stock: i.value === '' ? null : Math.max(0, parseInt(i.value, 10) || 0) }));
-  document.querySelectorAll('[data-xtog]').forEach(b => b.onclick = async () => { await upd(b.dataset.xtog, { is_active: b.dataset.on !== 'true' }); openExtraItems(back); });
+  document.querySelectorAll('[data-xcost]').forEach(i => i.onchange = () => upd(i.dataset.xcost, { unit_cost: num(i.value) }));
+  document.querySelectorAll('[data-xalert]').forEach(i => i.onchange = () => upd(i.dataset.xalert, { alert_qty: i.value === '' ? null : Math.max(0, parseInt(i.value, 10) || 0) }));
+  document.querySelectorAll('[data-xph]').forEach(inp => inp.onchange = async () => { const f = inp.files[0]; if (!f) return; toast('Envoi de la photo…');
+    try { const url = await uploadProductPhoto(f, inp.dataset.xph); await upd(inp.dataset.xph, { photo_url: url }); again(); } catch (x) { toast(errMsg(x), true); } });
+  document.querySelectorAll('[data-xtog]').forEach(b => b.onclick = async () => { await upd(b.dataset.xtog, { is_active: b.dataset.on !== 'true' }); again(); });
+  const KM = { in: ['Entrée en stock', 'Quantité reçue', true], loss: ['Perte', 'Quantité perdue (casse, péremption…)', false], adjust: ['Inventaire', 'Quantité comptée en réserve', false] };
+  document.querySelectorAll('[data-xmv]').forEach(b => b.onclick = () => { const [k, id] = b.dataset.xmv.split('|'), it = items.find(x => x.id === id), [t, lab, cost] = KM[k];
+    modal(`<h2 style="font-size:22px;margin:0 0 4px">${t}</h2><p class="muted" style="margin:0 0 12px">${esc(it.label)} · stock actuel ${it.stock ?? 'non suivi'}</p>
+      <form id="mvF"><div class="row"><div class="field" style="flex:1 1 140px"><label for="mvQ">${lab}</label><input id="mvQ" type="number" min="${k === 'adjust' ? 0 : 1}" step="1" required inputmode="numeric"></div>
+      ${cost ? `<div class="field" style="flex:1 1 140px"><label for="mvC">Prix d’achat unitaire (F)</label><input id="mvC" type="number" min="0" value="${it.unit_cost != null ? Number(it.unit_cost) : ''}" placeholder="Facultatif"></div>` : ''}</div>
+      <div class="field"><label for="mvN">Note</label><input id="mvN" maxlength="200" placeholder="${k === 'in' ? 'Fournisseur, n° de bon…' : 'Motif'}"></div>
+      <div class="row"><button class="primary">Enregistrer</button><button type="button" class="ghost" id="mvBack">Annuler</button></div></form>`);
+    $('mvBack').onclick = again; setTimeout(() => $('mvQ').focus(), 50);
+    $('mvF').onsubmit = async (e) => { e.preventDefault(); const c = $('mvC') ? $('mvC').value.trim() : '';
+      const { error: er } = await sb.rpc('extra_stock_move', { p_item: id, p_kind: k, p_qty: parseInt($('mvQ').value, 10), p_unit_cost: c === '' ? null : +c, p_note: $('mvN').value });
+      if (er) return toast(errMsg(er), true); toast('Stock mis à jour.'); again(); }; });
+  document.querySelectorAll('[data-xhist]').forEach(b => b.onclick = async () => { const it = items.find(x => x.id === b.dataset.xhist);
+    const [m1, m2] = await Promise.all([
+      sb.from('extra_stock_moves').select('*').eq('item_id', it.id).order('created_at', { ascending: false }).limit(40),
+      sb.from('extra_sales').select('qty, created_at, status').eq('item_id', it.id).order('created_at', { ascending: false }).limit(40)]);
+    const L = { in: 'Entrée', loss: 'Perte', adjust: 'Inventaire' };
+    const ev = [...(m1.data || []).map(x => ({ at: x.created_at, t: L[x.kind], q: (x.kind === 'loss' ? '−' : x.kind === 'in' ? '+' : '= ') + x.qty, n: x.note || '' })),
+                ...(m2.data || []).filter(x => x.status !== 'cancelled').map(x => ({ at: x.created_at, t: 'Vente', q: '−' + x.qty, n: '' }))].sort((a, c) => c.at.localeCompare(a.at)).slice(0, 50);
+    modal(`<div class="row between" style="margin-bottom:10px;flex-wrap:nowrap"><h2 style="font-size:22px">${esc(it.label)}</h2><button type="button" class="small ghost" id="hBack">Retour</button></div>
+      ${ev.length ? `<div class="tablewrap"><table class="table"><thead><tr><th>Date</th><th>Mouvement</th><th class="r">Qté</th><th>Note</th></tr></thead><tbody>${ev.map(x => `<tr><td>${new Date(x.at).toLocaleString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</td><td>${x.t}</td><td class="r">${x.q}</td><td>${esc(x.n)}</td></tr>`).join('')}</tbody></table></div>` : '<p class="muted">Aucun mouvement.</p>'}`);
+    $('hBack').onclick = again; });
 }
 
 const GAP_REASONS = ['Erreur de monnaie rendue', 'Dépense non enregistrée', 'Erreur de saisie', 'Paiement noté en espèces par erreur', 'Billet manquant / perte'];
@@ -3959,8 +4039,23 @@ async function openExpenseForm({ fromCaisse = false, due = null, onDone }){
     closeModal(); toast(data && data.status === 'pending' ? 'Dépense enregistrée, en attente de validation du propriétaire.' : 'Dépense enregistrée.'); onDone && onDone(); };
 }
 
+function openRecurringForm(r, done){
+  modal(`<h2 style="font-size:24px;margin-bottom:12px">${r ? 'Modifier la charge fixe' : 'Nouvelle charge fixe'}</h2><form id="rcF">
+    <div class="field"><label for="rcL">Libellé</label><input id="rcL" required maxlength="200" value="${esc(r ? r.label : '')}" placeholder="Ex. : loyer du bâtiment"></div>
+    <div class="row"><div class="field" style="flex:1 1 160px"><label for="rcC">Poste</label><select id="rcC">${EXP_CATS.fixed.map(c => `<option ${r && r.category === c ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select></div>
+      <div class="field" style="flex:1 1 120px"><label for="rcA">Montant (F)</label><input id="rcA" type="number" min="1" required value="${r ? Number(r.amount) : ''}"></div>
+      <div class="field" style="flex:0 1 110px"><label for="rcD">Jour du mois</label><input id="rcD" type="number" min="1" max="28" required value="${r ? r.day_of_month : 5}"></div></div>
+    ${r ? `<label class="row" style="gap:8px;margin-bottom:12px"><input type="checkbox" id="rcOn" style="width:auto" ${r.is_active ? 'checked' : ''}> Active</label>` : ''}
+    <p class="muted" style="font-size:13px">Les montants déjà créés pour ce mois ne changent pas ; la modification s'applique aux mois suivants.</p>
+    <div class="row"><button class="primary">Enregistrer</button><button type="button" class="ghost" data-close>Annuler</button></div></form>`);
+  $('rcF').onsubmit = async (e) => { e.preventDefault();
+    const v = { label: $('rcL').value.trim(), category: $('rcC').value, amount: +$('rcA').value, day_of_month: +$('rcD').value };
+    const { error } = r ? await sb.from('recurring_charges').update({ ...v, is_active: $('rcOn').checked }).eq('id', r.id) : await sb.from('recurring_charges').insert({ ...v, establishment_id: S.est });
+    if (error) return toast(errMsg(error), true); closeModal(); toast('Charge fixe enregistrée.'); (done || renderDepenses)(); };
+}
+
 async function renderDepenses(){
-  const el = $('v-depenses'); el.innerHTML = skeletonView();
+  const el = $('v-depenses'); keepOrSkel(el);
   if (!can(['owner','admin','manager','accountant'])) { el.innerHTML = head('Dépenses') + '<p class="muted">Accès réservé.</p>'; return; }
   await loadEst(); await teamNames();
   const month = S.depMonth || today().slice(0, 7); S.depMonth = month;
@@ -4041,20 +4136,7 @@ async function renderDepenses(){
     modal(`<h2 style="font-size:24px;margin-bottom:8px">Refuser la dépense</h2><p class="muted">La dépense restera enregistrée (l'argent est déjà sorti) mais sera marquée « contestée » et visible dans le journal de contrôle.</p>
       <form id="noF"><div class="field"><label for="noN">Motif</label><input id="noN" required minlength="3" maxlength="300"></div><div class="row"><button class="primary">Refuser</button><button type="button" class="ghost" data-close>Annuler</button></div></form>`);
     $('noF').onsubmit = async (e) => { e.preventDefault(); const { error } = await sb.rpc('decide_expense', { p_id: b.dataset.no, p_approve: false, p_note: $('noN').value.trim() }); if (error) return toast(errMsg(error), true); closeModal(); toast('Dépense contestée.'); renderDepenses(); }; });
-  const recForm = (r) => {
-    modal(`<h2 style="font-size:24px;margin-bottom:12px">${r ? 'Modifier la charge fixe' : 'Nouvelle charge fixe'}</h2><form id="rcF">
-      <div class="field"><label for="rcL">Libellé</label><input id="rcL" required maxlength="200" value="${esc(r ? r.label : '')}" placeholder="Ex. : loyer du bâtiment"></div>
-      <div class="row"><div class="field" style="flex:1 1 160px"><label for="rcC">Poste</label><select id="rcC">${EXP_CATS.fixed.map(c => `<option ${r && r.category === c ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select></div>
-        <div class="field" style="flex:1 1 120px"><label for="rcA">Montant (F)</label><input id="rcA" type="number" min="1" required value="${r ? Number(r.amount) : ''}"></div>
-        <div class="field" style="flex:0 1 110px"><label for="rcD">Jour du mois</label><input id="rcD" type="number" min="1" max="28" required value="${r ? r.day_of_month : 5}"></div></div>
-      ${r ? `<label class="row" style="gap:8px;margin-bottom:12px"><input type="checkbox" id="rcOn" style="width:auto" ${r.is_active ? 'checked' : ''}> Active</label>` : ''}
-      <p class="muted" style="font-size:13px">Les montants déjà créés pour ce mois ne changent pas ; la modification s'applique aux mois suivants.</p>
-      <div class="row"><button class="primary">Enregistrer</button><button type="button" class="ghost" data-close>Annuler</button></div></form>`);
-    $('rcF').onsubmit = async (e) => { e.preventDefault();
-      const v = { label: $('rcL').value.trim(), category: $('rcC').value, amount: +$('rcA').value, day_of_month: +$('rcD').value };
-      const { error } = r ? await sb.from('recurring_charges').update({ ...v, is_active: $('rcOn').checked }).eq('id', r.id) : await sb.from('recurring_charges').insert({ ...v, establishment_id: S.est });
-      if (error) return toast(errMsg(error), true); closeModal(); toast('Charge fixe enregistrée.'); renderDepenses(); };
-  };
+  const recForm = (r) => openRecurringForm(r, renderDepenses);
   const ra = $('dRecAdd'); if (ra) ra.onclick = () => recForm(null);
   el.querySelectorAll('[data-rec]').forEach(b => b.onclick = () => recForm(rec[+b.dataset.rec]));
   const budForm = () => {
@@ -4072,7 +4154,7 @@ async function renderDepenses(){
 
 /* ---------- Factures clients ---------- */
 async function renderFactures(){
-  const el = $('v-factures'); el.innerHTML = skeletonView();
+  const el = $('v-factures'); keepOrSkel(el);
   await loadEst();
   const { data } = await sb.from('guest_invoices').select('*').eq('organization_id', S.org).order('issued_at', { ascending: false }).limit(300);
   S._ginv = data || [];
@@ -4091,56 +4173,138 @@ function periodOf(key){
     case '30j': return [addDays(today(), -29), today()];
     case 'mois_dernier': return [f(new Date(y, m - 1, 1)), f(new Date(y, m, 0))];
     case 'annee': return [f(new Date(y, 0, 1)), today()];
+    case 'auj': return [today(), today()];
+    case 'trim': { const q = Math.floor(m / 3) * 3; return [f(new Date(y, q, 1)), f(new Date(y, q + 3, 0))]; }
     default: return [f(new Date(y, m, 1)), f(new Date(y, m + 1, 0))];
   }
 }
 async function renderRapports(){
-  const el = $('v-rapports'); el.innerHTML = '<p class="muted">Calcul en cours…</p>';
-  const key = S._rk || 'mois';
+  const el = $('v-rapports'); keepOrSkel(el);
+  const key = S._rk || 'mois', tab = S._rTab || 'renta', cmp = S._rCmp || 'prev';
   const [from, to] = key === 'perso' && S._rfrom ? [S._rfrom, S._rto] : periodOf(key);
-  const { data: r, error } = await sb.rpc('financial_report', { p_org: S.org, p_from: from, p_to: to });
-  if (error) { el.innerHTML = head('Rapports') + `<p class="muted">${esc(errMsg(error))}</p>`; return; }
-  S._rep = r;
-  const PER = { mois:'Ce mois', mois_dernier:'Mois dernier', '7j':'7 derniers jours', '30j':'30 derniers jours', annee:'Depuis le 1er janvier', perso:'Personnalisée' };
-  const max = Math.max(1, ...r.series.map(x => x.rev));
-  const k = (l, v, sub) => `<div class="card kpi"><div class="l">${l}</div><div class="v">${v}</div>${sub ? `<div class="muted" style="font-size:12px">${sub}</div>` : ''}</div>`;
-  const dlabel = (d) => new Date(d + 'T00:00:00').toLocaleDateString('fr-FR', { day:'numeric', month:'short' });
-  el.innerHTML = head('Rapports', `<button class="small" type="button" id="rCsv">Export Excel</button><button class="small" type="button" id="rPdf">PDF / imprimer</button>`) + `
-    <div class="card row" style="margin-bottom:16px;align-items:flex-end">
-      <div style="flex:1 1 180px"><label for="rPer">Période</label><select id="rPer">${Object.entries(PER).map(([kk, v]) => `<option value="${kk}" ${kk === key ? 'selected' : ''}>${v}</option>`).join('')}</select></div>
-      <div style="flex:1 1 150px"><label for="rFrom">Du</label><input id="rFrom" type="date" value="${from}"></div>
-      <div style="flex:1 1 150px"><label for="rTo">Au</label><input id="rTo" type="date" value="${to}"></div>
-    </div>
-    <div class="grid g4" style="margin-bottom:16px">
-      ${k('Chiffre d\u2019affaires hébergement', money(r.room_revenue), `${plur(r.sold_nights, 'nuit vendue', 'nuits vendues')}`)}
-      ${k('Taux d\u2019occupation', String(r.occupancy_pct).replace('.', ',') + ' %', `${r.sold_nights} / ${r.available_nights} nuits`)}
-      ${k('Prix moyen par nuit (ADR)', money(r.adr), 'CA ÷ nuits vendues')}
-      ${k('Revenu par chambre (RevPAR)', money(r.revpar), 'CA ÷ nuits disponibles')}
-      ${k('Encaissé', money(r.cash_in), 'toutes méthodes')}
-      ${k('Dépenses', money(r.expenses), r.refunds > 0 ? `+ ${money(r.refunds)} remboursés` : '')}
-      ${k('Résultat de caisse', money(r.cash_in - r.expenses - r.refunds), 'encaissé − dépenses − remboursements')}
-      ${k('Impayés', money(r.unpaid_total), `${plur(r.unpaid.length, 'séjour', 'séjours')}`)}
-    </div>
-    <div class="card" style="margin-bottom:16px">
-      <h3 style="font-size:20px;margin-bottom:12px">Chiffre d\u2019affaires par jour</h3>
-      <div style="overflow-x:auto"><div style="display:flex;align-items:flex-end;gap:3px;height:200px;min-width:${Math.max(300, r.series.length * 14)}px" role="img" aria-label="Chiffre d'affaires quotidien du ${dlabel(from)} au ${dlabel(to)}">
-        ${r.series.map(x => `<div title="${dlabel(x.d)} : ${money(x.rev)} · ${plur(x.sold, 'nuit', 'nuits')}" style="flex:1;min-width:8px;height:${Math.max(2, x.rev / max * 100)}%;background:${x.d === today() ? 'var(--green)' : '#D9A184'};border-radius:5px 5px 2px 2px"></div>`).join('')}
-      </div></div>
-      <div class="row between muted" style="font-size:12px;margin-top:6px"><span>${dlabel(from)}</span><span>Maximum : ${money(max)}</span><span>${dlabel(to)}</span></div>
-    </div>
+  const days = Math.round((new Date(to) - new Date(from)) / 864e5) + 1;
+  const [cf, ct] = cmp === 'year' ? [addDays(from, -365), addDays(to, -365)] : [addDays(from, -days), addDays(from, -1)];
+  const call = (f, t) => Promise.all([sb.rpc('financial_report', { p_org: S.org, p_from: f, p_to: t }), sb.rpc('analytics_extras', { p_org: S.org, p_from: f, p_to: t })]);
+  const [[a1, a2], [b1, b2]] = await Promise.all([call(from, to), cmp === 'none' ? Promise.resolve([{}, {}]) : call(cf, ct)]);
+  const err = a1.error || a2.error;
+  if (err) { el.innerHTML = head('Analyse') + `<p class="muted">${esc(errMsg(err))}</p>`; return; }
+  const r = a1.data, x = a2.data, pr = b1 && b1.data, px = b2 && b2.data; S._rep = r;
+  const netAllowed = can(['owner', 'admin', 'accountant']);
+  // Résultat
+  const extrasMargin = Number(x.extras_revenue) - Number(x.extras_cost);
+  const fixedPeriod = Math.max(Number(r.expenses_fixed || 0), Math.round(Number(x.fixed_monthly || 0) * days / 30.4));
+  const varExp = Number(r.expenses) - Number(r.expenses_fixed || 0);
+  const revenue = Number(r.room_revenue) + Number(x.extras_revenue);
+  const net = Number(r.room_revenue) + extrasMargin - (Number(x.extras_cost) ? 0 : 0) - varExp - fixedPeriod - Number(r.refunds || 0);
+  const pNet = pr && px ? Number(pr.room_revenue) + (Number(px.extras_revenue) - Number(px.extras_cost)) - (Number(pr.expenses) - Number(pr.expenses_fixed || 0)) - Math.max(Number(pr.expenses_fixed || 0), Math.round(Number(px.fixed_monthly || 0) * days / 30.4)) - Number(pr.refunds || 0) : null;
+  const costs = varExp + fixedPeriod, adr = Number(r.adr) || 0;
+  const beNights = adr > 0 ? Math.ceil(costs / adr) : null;
+  const bePerDay = beNights !== null ? (beNights / days) : null;
+  const beOcc = beNights !== null && r.available_nights ? Math.min(999, Math.round(beNights / r.available_nights * 100)) : null;
+  const leak = Number(x.discounts) + Number(x.cancel_value) + Number(r.unpaid_total);
+  // Comparaison
+  const delta = (v, p, inv) => { if (p === null || p === undefined || cmp === 'none') return ''; const a = Number(v), b = Number(p); if (!b) return a ? '<span class="dl up">nouveau</span>' : ''; const d = Math.round((a - b) / Math.abs(b) * 100); if (!d) return '<span class="dl">=</span>'; const good = inv ? d < 0 : d > 0; return `<span class="dl ${good ? 'up' : 'down'}">${d > 0 ? '+' : ''}${d} %</span>`; };
+  const k = (l, v, sub, dl) => `<div class="card kpi"><div class="l">${l}</div><div class="v">${v}</div>${sub || dl ? `<div class="muted" style="font-size:12px;display:flex;flex-wrap:wrap;gap:6px;align-items:center">${dl || ''}<span>${sub || ''}</span></div>` : ''}</div>`;
+  const pct = (v) => String(v).replace('.', ',') + ' %';
+  // À retenir
+  const tips = [];
+  if (netAllowed) tips.push(net >= 0 ? `Bénéfice estimé de <strong>${money(net)}</strong> sur la période${pNet !== null && cmp !== 'none' ? (net >= pNet ? ', en hausse par rapport à la période comparée' : ', en baisse par rapport à la période comparée') : ''}.` : `La période est déficitaire de <strong>${money(-net)}</strong> : il manque environ ${beNights !== null ? plur(Math.max(0, beNights - r.sold_nights), 'nuit vendue', 'nuits vendues') : 'des ventes'} pour couvrir les charges.`);
+  if (beOcc !== null && costs > 0) tips.push(r.occupancy_pct >= beOcc ? `Votre occupation (${pct(r.occupancy_pct)}) dépasse le seuil de rentabilité (${beOcc} %).` : `Il faut <strong>${beOcc} %</strong> d’occupation pour couvrir les charges ; vous êtes à ${pct(r.occupancy_pct)}.`);
+  if (Number(x.discounts) > 0) tips.push(`Les remises ont représenté <strong>${money(x.discounts)}</strong> (${plur(x.discount_count, 'séjour', 'séjours')}).`);
+  if (Number(r.unpaid_total) > 0) tips.push(`<strong>${money(r.unpaid_total)}</strong> restent à encaisser sur ${plur(r.unpaid.length, 'séjour', 'séjours')}.`);
+  const weakRoom = (r.by_room || []).filter(z => r.days).sort((a, b) => a.revenue - b.revenue)[0];
+  if (weakRoom && r.by_room.length > 2 && revenue > 0 && weakRoom.revenue / Math.max(1, r.room_revenue) < 0.5 / r.by_room.length) tips.push(`La chambre ${esc(weakRoom.room)} rapporte peu sur la période (${money(weakRoom.revenue)}).`);
+  if (Number(x.gaps) > 0) tips.push(`${plur(x.gaps, 'clôture de caisse présente', 'clôtures de caisse présentent')} un écart justifié.`);
+  const PER = { auj: 'Aujourd’hui', '7j': '7 jours', '30j': '30 jours', mois: 'Ce mois', mois_dernier: 'Mois dernier', trim: 'Trimestre', annee: 'Année', perso: 'Personnalisée' };
+  const TABS = [['renta', 'Rentabilité'], ['activite', 'Activité'], ['clients', 'Clients'], ['annexes', 'Ventes annexes']];
+  const dlabel = (d) => new Date(d + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+  const bars = (rows, lab, val, fmt) => { const m = Math.max(1, ...rows.map(val)); return rows.length ? rows.map(z => `<div class="abar"><span class="al">${lab(z)}</span><span class="at"><i style="width:${Math.max(2, val(z) / m * 100)}%"></i></span><span class="av">${fmt(z)}</span></div>`).join('') : '<p class="muted">Aucune donnée sur la période.</p>'; };
+  let body = '';
+  if (tab === 'renta') {
+    body = `<div class="grid g4" style="margin-bottom:16px">
+      ${netAllowed ? k('Bénéfice estimé', `<span style="color:${net >= 0 ? 'var(--green)' : 'var(--red)'}">${money(net)}</span>`, revenue > 0 ? 'marge ' + Math.round(net / revenue * 100) + ' %' : '', delta(net, pNet)) : ''}
+      ${k('Chiffre d’affaires', money(revenue), 'hébergement + ventes annexes', delta(revenue, pr && px ? Number(pr.room_revenue) + Number(px.extras_revenue) : null))}
+      ${k('Charges', money(costs), 'fixes ' + money(fixedPeriod) + ' · variables ' + money(varExp), delta(costs, pr ? Number(pr.expenses) : null, true))}
+      ${k('Manque à gagner', money(leak), 'remises, annulations, impayés', delta(leak, px && pr ? Number(px.discounts) + Number(px.cancel_value) + Number(pr.unpaid_total) : null, true))}</div>
     <div class="grid g2" style="margin-bottom:16px">
-      <div class="card"><h3 style="font-size:20px;margin-bottom:8px">Par origine</h3>${r.by_source.length ? `<table class="table"><thead><tr><th>Origine</th><th>Nuits</th><th style="text-align:right">CA</th></tr></thead><tbody>${r.by_source.map(x => `<tr><td>${SOURCE[x.source] || esc(x.source)}</td><td>${x.nights}</td><td style="text-align:right">${money(x.revenue)}</td></tr>`).join('')}</tbody></table>` : '<p class="muted">Aucune nuit vendue.</p>'}</div>
-      <div class="card"><h3 style="font-size:20px;margin-bottom:8px">Encaissements par moyen</h3>${Object.keys(r.by_method).length ? `<table class="table"><tbody>${Object.entries(r.by_method).map(([m, v]) => `<tr><td>${PMETHOD[m] || esc(m)}</td><td style="text-align:right;font-weight:700">${money(v)}</td></tr>`).join('')}</tbody></table>` : '<p class="muted">Aucun mouvement.</p>'}</div>
-    </div>
+      <div class="card" style="background:var(--ink);color:#FBF6EE"><div style="font-size:13px;opacity:.8">Seuil de rentabilité</div>
+        ${beNights !== null && costs > 0 ? `<div style="font-family:var(--display);font-size:30px;font-weight:800;margin:4px 0">${String(Math.round(bePerDay * 10) / 10).replace('.', ',')} nuit${bePerDay >= 2 ? 's' : ''} / jour</div>
+        <div style="font-size:14px;opacity:.85">soit ${beOcc} % d’occupation, ou ${money(Math.round(costs / days))} de chiffre par jour, pour couvrir les charges de la période.</div>
+        <div class="atrack" style="margin-top:12px"><i style="width:${Math.min(100, beNights ? r.sold_nights / beNights * 100 : 0)}%"></i></div><div style="font-size:12px;opacity:.8;margin-top:6px">${r.sold_nights} / ${beNights} nuits nécessaires vendues</div>` : '<div style="font-size:14px;margin-top:6px;opacity:.85">Renseignez vos charges fixes (loyer, salaires…) pour calculer votre seuil.</div>'}</div>
+      <div class="card"><h3 style="font-size:18px;margin-bottom:8px">Détail du calcul</h3><table class="table"><tbody>
+        <tr><td>Hébergement (nuits consommées)</td><td class="r">${money(r.room_revenue)}</td></tr>
+        <tr><td>+ Marge des ventes annexes</td><td class="r">${money(extrasMargin)}</td></tr>
+        <tr><td>− Dépenses variables</td><td class="r">${money(varExp)}</td></tr>
+        <tr><td>− Charges fixes ${Number(r.expenses_fixed || 0) >= fixedPeriod ? '(payées)' : '(prévues)'}</td><td class="r">${money(fixedPeriod)}</td></tr>
+        ${Number(r.refunds) ? `<tr><td>− Remboursements</td><td class="r">${money(r.refunds)}</td></tr>` : ''}
+        ${netAllowed ? `<tr><th>= Bénéfice estimé</th><th class="r">${money(net)}</th></tr>` : ''}</tbody></table>
+        <p class="muted" style="font-size:12px;margin:8px 0 0">Les remises sont déjà déduites de l’hébergement. ${Number(x.extras_cost) === 0 && Number(x.extras_revenue) > 0 ? 'Renseignez le prix d’achat des articles pour une marge exacte.' : ''}</p></div></div>
     <div class="grid g2" style="margin-bottom:16px">
-      <div class="card"><h3 style="font-size:20px;margin-bottom:8px">Par chambre</h3><div class="tablewrap" style="max-height:340px;overflow-y:auto"><table class="table"><thead><tr><th>Chambre</th><th>Nuits</th><th>Occupation</th><th style="text-align:right">CA</th></tr></thead><tbody>${r.by_room.map(x => `<tr><td><strong>${esc(x.room)}</strong></td><td>${x.nights}</td><td>${Math.round(x.nights / r.days * 100)} %</td><td style="text-align:right">${money(x.revenue)}</td></tr>`).join('')}</tbody></table></div></div>
-      <div class="card"><h3 style="font-size:20px;margin-bottom:8px">Impayés</h3>${r.unpaid.length ? `<div class="tablewrap" style="max-height:340px;overflow-y:auto"><table class="table"><thead><tr><th>Client</th><th>Séjour</th><th style="text-align:right">Reste</th><th><span class="sr-only">Actions</span></th></tr></thead><tbody>${r.unpaid.map(u => `<tr><td><strong>${esc(u.guest_name)}</strong><div class="muted" style="font-size:12px">${esc(u.guest_phone || '')}</div></td><td style="font-size:13px">Ch. ${esc(u.room_number)} · ${dfr(u.check_in)} → ${dfr(u.check_out)}<br><span class="pill ${RSTCLS[u.status]}">${RSTATUS[u.status]}</span></td><td style="text-align:right;font-weight:700;color:var(--amber)">${money(u.balance)}</td><td><button class="small ghost" type="button" data-open="${u.id}">Ouvrir</button></td></tr>`).join('')}</tbody></table></div>` : '<p class="muted">Aucun impayé.</p>'}</div>
-    </div>
-    <p class="muted" style="font-size:12px">Le chiffre d\u2019affaires compte chaque nuit dans la période où elle est consommée (réservations confirmées, en séjour ou terminées), remise répartie sur les nuits. ${plur(r.cancellations, 'annulation', 'annulations')} et ${plur(r.no_shows, 'absence', 'absences')} sur la période.</p>`;
-  $('rPer').onchange = (e) => { S._rk = e.target.value; if (S._rk === 'perso') { S._rfrom = from; S._rto = to; } renderRapports(); };
+      <div class="card"><h3 style="font-size:18px;margin-bottom:8px">Dépenses par poste</h3>${bars(Object.entries(r.expenses_by_category || {}).map(([c, t]) => ({ c, t: Number(t) })).sort((a, b) => b.t - a.t), z => esc(z.c), z => z.t, z => money(z.t))}</div>
+      <div class="card"><h3 style="font-size:18px;margin-bottom:8px">Ce que l’hôtel perd</h3><table class="table"><tbody>
+        <tr><td>Remises accordées</td><td class="r">${money(x.discounts)}</td></tr>
+        <tr><td>Annulations et absences (${r.cancellations + r.no_shows})</td><td class="r">${money(x.cancel_value)}</td></tr>
+        <tr><td>Impayés en cours</td><td class="r">${money(r.unpaid_total)}</td></tr>
+        <tr><td>Clôtures avec écart</td><td class="r">${x.gaps}</td></tr></tbody></table></div></div>`;
+  } else if (tab === 'activite') {
+    const series = r.series || [], pser = (pr && pr.series) || [], mx = Math.max(1, ...series.map(z => z.rev), ...pser.map(z => z.rev));
+    const WD = ['', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
+    body = `<div class="grid g4" style="margin-bottom:16px">
+      ${k('Taux d’occupation', pct(r.occupancy_pct), `${r.sold_nights} / ${r.available_nights} nuits`, delta(r.occupancy_pct, pr && pr.occupancy_pct))}
+      ${k('Prix moyen / nuit (ADR)', money(r.adr), 'CA ÷ nuits vendues', delta(r.adr, pr && pr.adr))}
+      ${k('RevPAR', money(r.revpar), 'CA ÷ nuits disponibles', delta(r.revpar, pr && pr.revpar))}
+      ${k('Durée moyenne de séjour', String(x.avg_stay).replace('.', ',') + ' nuit' + (x.avg_stay >= 2 ? 's' : ''), 'réservé ' + String(x.avg_lead).replace('.', ',') + ' j avant en moyenne', delta(x.avg_stay, px && px.avg_stay))}</div>
+    <div class="card" style="margin-bottom:16px"><div class="row between"><h3 style="font-size:18px">Évolution du chiffre d’hébergement</h3>${cmp !== 'none' ? '<span class="muted" style="font-size:12px"><i style="display:inline-block;width:10px;height:10px;background:var(--line);border-radius:2px"></i> période comparée</span>' : ''}</div>
+      <div style="overflow-x:auto"><div style="display:flex;align-items:flex-end;gap:3px;height:180px;min-width:${Math.max(300, series.length * 14)}px;margin-top:10px" role="img" aria-label="Chiffre d'affaires quotidien">
+        ${series.map((z, ix) => { const pz = pser[ix]; return `<div style="flex:1;min-width:8px;height:100%;display:flex;align-items:flex-end;gap:1px" title="${dlabel(z.d)} : ${money(z.rev)}${pz ? ' · comparé ' + money(pz.rev) : ''}">${pz ? `<div style="flex:1;height:${Math.max(1, pz.rev / mx * 100)}%;background:var(--line);border-radius:3px 3px 1px 1px"></div>` : ''}<div style="flex:1;height:${Math.max(2, z.rev / mx * 100)}%;background:var(--green);border-radius:3px 3px 1px 1px"></div></div>`; }).join('')}
+      </div></div><div class="row between muted" style="font-size:12px;margin-top:6px"><span>${dlabel(from)}</span><span>${dlabel(to)}</span></div></div>
+    <div class="grid g2" style="margin-bottom:16px">
+      <div class="card"><h3 style="font-size:18px;margin-bottom:8px">Nuits par jour de la semaine</h3>${bars([1, 2, 3, 4, 5, 6, 7].map(d => ({ d, n: Number((x.weekday || {})[d] || 0) })), z => WD[z.d], z => z.n, z => String(z.n))}</div>
+      <div class="card"><h3 style="font-size:18px;margin-bottom:8px">Par canal</h3>${bars(r.by_source || [], z => SOURCE[z.source] || esc(z.source), z => Number(z.revenue), z => money(z.revenue) + ' · ' + z.nights + ' n.')}</div>
+      <div class="card"><h3 style="font-size:18px;margin-bottom:8px">Par chambre</h3><div style="max-height:320px;overflow:auto">${bars(r.by_room || [], z => 'Ch. ' + esc(z.room), z => Number(z.revenue), z => money(z.revenue) + ' · ' + Math.round(z.nights / Math.max(1, r.days) * 100) + ' %')}</div></div>
+      <div class="card"><h3 style="font-size:18px;margin-bottom:8px">Par membre de l’équipe</h3>${bars(x.by_staff || [], z => esc(z.name), z => Number(z.revenue), z => money(z.revenue) + ' · ' + z.count)}</div>
+      <div class="card"><h3 style="font-size:18px;margin-bottom:8px">Encaissements par moyen</h3>${bars(Object.entries(r.by_method || {}).map(([m, v]) => ({ m, v: Number(v) })).filter(z => z.v > 0).sort((a, b) => b.v - a.v), z => PMETHOD[z.m] || esc(z.m), z => z.v, z => money(z.v))}</div>
+      <div class="card"><h3 style="font-size:18px;margin-bottom:8px">Impayés</h3>${r.unpaid.length ? `<div class="tablewrap" style="max-height:320px;overflow-y:auto"><table class="table"><tbody>${r.unpaid.map(u => `<tr><td><strong>${esc(u.guest_name)}</strong><div class="muted" style="font-size:12px">Ch. ${esc(u.room_number)} · ${dlabel(u.check_in)}</div></td><td class="r">${money(u.balance)}</td><td><button class="small ghost" type="button" data-open="${u.id}">Ouvrir</button></td></tr>`).join('')}</tbody></table></div>` : '<p class="muted">Aucun impayé.</p>'}</div></div>`;
+  } else if (tab === 'clients') {
+    const tot = Number(x.guests_new) + Number(x.guests_returning);
+    body = `<div class="grid g4" style="margin-bottom:16px">
+      ${k('Clients sur la période', String(tot), plur(x.reservations, 'réservation', 'réservations'), delta(tot, px ? Number(px.guests_new) + Number(px.guests_returning) : null))}
+      ${k('Nouveaux clients', String(x.guests_new), tot ? Math.round(x.guests_new / tot * 100) + ' %' : '', delta(x.guests_new, px && px.guests_new))}
+      ${k('Clients fidèles', String(x.guests_returning), Number(x.returning_revenue) ? money(x.returning_revenue) + ' de chiffre' : 'déjà venus avant la période', delta(x.guests_returning, px && px.guests_returning))}
+      ${k('Note moyenne des avis', x.rating ? String(x.rating).replace('.', ',') + ' / 5' : '—', plur(x.rating_count, 'avis', 'avis'), delta(x.rating, px && px.rating))}</div>
+    <div class="grid g2" style="margin-bottom:16px">
+      <div class="card"><h3 style="font-size:18px;margin-bottom:8px">Meilleurs clients</h3>${(x.top_guests || []).length ? `<table class="table"><thead><tr><th>Client</th><th>Séjours</th><th>Nuits</th><th class="r">Chiffre</th></tr></thead><tbody>${x.top_guests.map(g => `<tr><td><strong>${esc(g.name)}</strong></td><td>${g.stays}</td><td>${g.nights}</td><td class="r">${money(g.revenue)}</td></tr>`).join('')}</tbody></table>` : '<p class="muted">Aucun séjour sur la période.</p>'}</div>
+      <div class="card"><h3 style="font-size:18px;margin-bottom:8px">Nationalités</h3>${bars(Object.entries(x.nationalities || {}).map(([n, c]) => ({ n, c: Number(c) })).sort((a, b) => b.c - a.c), z => esc(z.n), z => z.c, z => String(z.c))}
+        <p class="muted" style="font-size:12px;margin:8px 0 0">Calculé sur les fiches clients renseignées.</p></div></div>`;
+  } else {
+    body = `<div class="grid g4" style="margin-bottom:16px">
+      ${k('Ventes annexes', money(x.extras_revenue), 'sur la période', delta(x.extras_revenue, px && px.extras_revenue))}
+      ${k('Marge', money(extrasMargin), Number(x.extras_revenue) ? Math.round(extrasMargin / x.extras_revenue * 100) + ' %' : '', delta(extrasMargin, px ? Number(px.extras_revenue) - Number(px.extras_cost) : null))}
+      ${k('Par séjour', x.reservations ? money(Math.round(x.extras_revenue / x.reservations)) : '—', 'panier moyen par réservation')}
+      ${k('Part du chiffre', revenue ? Math.round(x.extras_revenue / revenue * 100) + ' %' : '—', 'du chiffre total')}</div>
+    <div class="grid g2" style="margin-bottom:16px">
+      <div class="card"><h3 style="font-size:18px;margin-bottom:8px">Par article</h3>${(x.extras_by_item || []).length ? `<table class="table"><thead><tr><th>Article</th><th>Qté</th><th class="r">Chiffre</th><th class="r">Marge</th></tr></thead><tbody>${x.extras_by_item.map(z => `<tr><td>${esc(z.label)}</td><td>${z.qty}</td><td class="r">${money(z.revenue)}</td><td class="r">${z.cost !== null ? money(z.revenue - z.cost) : '—'}</td></tr>`).join('')}</tbody></table>` : '<p class="muted">Aucune vente annexe sur la période.</p>'}</div>
+      <div class="card"><h3 style="font-size:18px;margin-bottom:8px">Par catégorie</h3>${bars(Object.entries(x.extras_by_cat || {}).map(([c, v]) => ({ c, v: Number(v) })).sort((a, b) => b.v - a.v), z => XCAT[z.c] || esc(z.c), z => z.v, z => money(z.v))}
+        ${can(['owner', 'admin', 'manager']) ? '<button type="button" class="small" id="aStock" style="margin-top:12px">Gérer le stock</button>' : ''}</div></div>`;
+  }
+  el.innerHTML = head('Analyse', `<button class="small" type="button" id="rCsv">Export Excel</button><button class="small" type="button" id="rPdf">PDF / imprimer</button>`) + `
+    <div class="card" style="margin-bottom:14px;display:flex;flex-direction:column;gap:10px">
+      <div class="row" style="gap:6px">${Object.entries(PER).filter(([kk]) => kk !== 'perso').map(([kk, v]) => `<button type="button" class="small ${kk === key ? 'primary' : 'ghost'}" data-per="${kk}">${v}</button>`).join('')}</div>
+      <div class="row" style="gap:8px;align-items:flex-end">
+        <div style="flex:1 1 140px"><label for="rFrom">Du</label><input id="rFrom" type="date" value="${from}"></div>
+        <div style="flex:1 1 140px"><label for="rTo">Au</label><input id="rTo" type="date" value="${to}"></div>
+        <div style="flex:1 1 200px"><label for="rCmp">Comparer avec</label><select id="rCmp"><option value="prev" ${cmp === 'prev' ? 'selected' : ''}>Période précédente (${dlabel(addDays(from, -days))} – ${dlabel(addDays(from, -1))})</option><option value="year" ${cmp === 'year' ? 'selected' : ''}>Même période l’an dernier</option><option value="none" ${cmp === 'none' ? 'selected' : ''}>Pas de comparaison</option></select></div></div></div>
+    ${tips.length ? `<div class="card" style="margin-bottom:14px;border-left:4px solid var(--green)"><div style="font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:6px">À retenir</div>${tips.slice(0, 4).map(t => `<p style="margin:4px 0">${t}</p>`).join('')}</div>` : ''}
+    <div class="row" role="tablist" style="gap:6px;margin-bottom:14px">${TABS.map(([kk, v]) => `<button type="button" role="tab" aria-selected="${kk === tab}" class="small ${kk === tab ? 'primary' : 'ghost'}" data-rtab="${kk}">${v}</button>`).join('')}</div>
+    ${body}
+    <p class="muted" style="font-size:12px">Le chiffre d’hébergement compte chaque nuit dans la période où elle est consommée, remise répartie sur les nuits. Charges fixes : montant payé sur la période ou, s’il est inférieur, part des charges fixes récurrentes.</p>`;
+  el.querySelectorAll('[data-per]').forEach(b => b.onclick = () => { S._rk = b.dataset.per; renderRapports(); });
+  el.querySelectorAll('[data-rtab]').forEach(b => b.onclick = () => { S._rTab = b.dataset.rtab; renderRapports(); });
+  $('rCmp').onchange = (e) => { S._rCmp = e.target.value; renderRapports(); };
   const custom = () => { if ($('rFrom').value && $('rTo').value && $('rTo').value >= $('rFrom').value) { S._rk = 'perso'; S._rfrom = $('rFrom').value; S._rto = $('rTo').value; renderRapports(); } else toast('Période invalide.', true); };
   $('rFrom').onchange = custom; $('rTo').onchange = custom;
   el.querySelectorAll('[data-open]').forEach(b => b.onclick = () => openResa(b.dataset.open, renderRapports));
+  if ($('aStock')) $('aStock').onclick = () => openExtraItems(null);
   $('rCsv').onclick = () => exportReportCsv(r);
   $('rPdf').onclick = () => printReport(r);
 }
@@ -4187,7 +4351,7 @@ async function refreshAlertBadge(){
   b.textContent = count > 99 ? '99+' : (count || ''); b.classList.toggle('hidden', !count);
 }
 async function renderControle(){
-  const el = $('v-controle'); el.innerHTML = skeletonView();
+  const el = $('v-controle'); keepOrSkel(el);
   const day = S._cday || today(), ent = S._cent || '', onlyUnread = S._cunread !== false;
   let aq = sb.from('owner_alerts').select('*').eq('organization_id', S.org).order('created_at', { ascending: false }).limit(100);
   if (onlyUnread) aq = aq.is('read_at', null);
@@ -4288,7 +4452,7 @@ function openStaffForm(isOwner, done){
   };
 }
 async function renderEquipe(){
-  const el = $('v-equipe'); el.innerHTML = skeletonView();
+  const el = $('v-equipe'); keepOrSkel(el);
   const isOwner = can(['owner']);
   const [team, inv, org, acc] = await Promise.all([
     sb.rpc('org_team_v2', { p_org: S.org }),
@@ -4369,7 +4533,7 @@ async function renderEquipe(){
     } catch (err) { toast(err.message, true); b.disabled = false; } });
   }; bindRows();
 }
-const PAGE_LABEL = { dashboard:'Tableau de bord', reservations:'Réservations', planning:'Planning', naya:'Nuittea.com', passes:'Pass', clients:'Clients', chambres:'Chambres', inventaire:'Inventaire', pointage:'Pointage', caisse:'Caisse', resto:'Restaurant et bar', depenses:'Dépenses', factures:'Factures', rapports:'Rapports', controle:'Contrôle', mapage:'Page publique' };
+const PAGE_LABEL = { dashboard:'Tableau de bord', reservations:'Réservations', planning:'Planning', naya:'Nuittea.com', passes:'Pass', clients:'Clients', chambres:'Chambres', inventaire:'Inventaire', pointage:'Pointage', caisse:'Caisse', resto:'Restaurant et bar', depenses:'Dépenses', factures:'Factures', rapports:'Analyse', controle:'Contrôle', mapage:'Page publique' };
 function openMemberSheet(m){
   const base = ROLE_VIEWS[m.role] || [];
   const o = m.access_overrides || {}, op = o.pages || {}, oa = o.actions || {};
@@ -4479,10 +4643,10 @@ async function loadDashResult(){
     <div aria-hidden="true" style="display:flex;gap:6px;align-items:flex-end;height:84px">${s.map(x => `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px"><div style="width:100%;display:flex;gap:2px;align-items:flex-end;height:66px"><div style="flex:1;background:var(--green);border-radius:3px 3px 0 0;height:${Math.max(2, x.revenue / max * 66)}px"></div><div style="flex:1;background:var(--gold-l);border-radius:3px 3px 0 0;height:${Math.max(2, x.expenses / max * 66)}px"></div></div><span class="muted" style="font-size:12px">${moisFr(x.m)}</span></div>`).join('')}</div>
   </button>`;
   box.insertAdjacentHTML('beforeend', S._dashExtra || '');
-  { const fa = $('fixAdd'); if (fa) fa.onclick = () => { S.depTab = 'fixed'; go('depenses'); }; }
+  { const fa = $('fixAdd'); if (fa) fa.onclick = () => openRecurringForm(null, () => go('dashboard')); }
   box.querySelectorAll('[data-chsrc]').forEach(b => b.onclick = () => { S.resSrc = b.dataset.chsrc; go('reservations'); });
   $('curSel').onchange = (e) => setCurrency(e.target.value);
-  $('resCard').onclick = (e) => { if (e.target.closest('#curSel')) return; openAnalysis(6); };
+  $('resCard').onclick = (e) => { if (e.target.closest('#curSel')) return; S._rTab = 'renta'; go(allowed('rapports') && !lockedView('rapports') ? 'rapports' : 'dashboard'); if (!allowed('rapports') || lockedView('rapports')) openAnalysis(6); };
   /* Régularité, en une ligne factuelle : jours du mois en cours avec au moins un encaissement */
   { const t = today(), a = t.slice(0, 8) + '01', nd = Number(t.slice(8, 10)), seen = new Set();
     for (let f = 0; f < 50000; f += 1000) { const { data: m, error: er } = await sb.from('cash_movements').select('id,created_at').eq('establishment_id', S.est).in('kind', ['payment', 'income']).gte('created_at', a + 'T00:00:00').lt('created_at', addDays(t, 1) + 'T00:00:00').order('id').range(f, f + 999); if (er) return; (m || []).forEach(x => seen.add(String(x.created_at).slice(0, 10))); if (!m || m.length < 1000) break; }
@@ -4690,7 +4854,7 @@ const hhmm = (d) => new Date(d).toLocaleTimeString('fr-FR', { hour: '2-digit', m
 const minsLeft = (d) => Math.round((new Date(d) - Date.now()) / 60000);
 async function renderPasses(){
   const el = $('v-passes'); clearInterval(PASS_TIMER);
-  if (!el.dataset.loaded) el.innerHTML = skeletonView();
+  if (!el.dataset.loaded) keepOrSkel(el);
   await loadEst();
   const t = today(), mgr = can(['owner','admin','manager']);
   const [fo, ps, rs] = await Promise.all([
@@ -4963,7 +5127,7 @@ function openAssistant(){
 const SUP_CATS = ['Linge', 'Produits d’accueil', 'Entretien', 'Minibar', 'Fournitures'];
 const SUP_PRESETS = [['Draps 2 places', 'Linge', 'pièce'], ['Taies d’oreiller', 'Linge', 'pièce'], ['Serviettes de bain', 'Linge', 'pièce'], ['Tapis de bain', 'Linge', 'pièce'], ['Savons', 'Produits d’accueil', 'pièce'], ['Gel douche', 'Produits d’accueil', 'flacon'], ['Papier toilette', 'Produits d’accueil', 'rouleau'], ['Eau minérale 50 cl', 'Minibar', 'bouteille'], ['Javel', 'Entretien', 'litre'], ['Sacs poubelle', 'Entretien', 'paquet']];
 async function renderInventaire(){
-  const el = $('v-inventaire'); el.innerHTML = skeletonView();
+  const el = $('v-inventaire'); keepOrSkel(el);
   const [it, mv] = await Promise.all([
     sb.from('supplies').select('*').eq('establishment_id', S.est).eq('is_active', true).order('category').order('name'),
     sb.from('supply_movements').select('*').eq('establishment_id', S.est).order('created_at', { ascending: false }).limit(40)
@@ -4975,7 +5139,7 @@ async function renderInventaire(){
   const byCat = {}; items.forEach(x => (byCat[x.category] = byCat[x.category] || []).push(x));
   const name = (id) => (items.find(x => x.id === id) || {}).name || 'Article retiré';
   const K = { in: ['Entrée', 'st-active'], out: ['Sortie', 'st-trial'], loss: ['Perte', 'st-cancelled'], adjust: ['Inventaire', 'st-past_due'] };
-  el.innerHTML = head('Inventaire', mgr ? '<button class="primary" type="button" id="supAdd">+ Article</button>' : '') + readOnlyNote() + `
+  el.innerHTML = head('Inventaire', mgr ? '<button class="ghost" type="button" id="supSell">Stock des articles vendus</button><button class="primary" type="button" id="supAdd">+ Article</button>' : '') + readOnlyNote() + `
     <p class="muted" style="margin:-10px 0 16px">Linge, produits d’accueil, entretien et minibar des chambres.</p>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-bottom:16px">
       <div class="card"><div class="muted" style="font-size:13px">Articles suivis</div><div style="font-family:var(--display);font-size:26px;font-weight:800">${items.length}</div></div>
@@ -4988,6 +5152,7 @@ async function renderInventaire(){
         <button class="small" type="button" data-sm="in|${esc(x.id)}" aria-label="Entrée">+</button><button class="small ghost" type="button" data-sm="out|${esc(x.id)}" aria-label="Sortie">−</button>
         <button class="small ghost" type="button" data-sm="more|${esc(x.id)}" aria-label="Plus d’options">…</button></div></div>`; }).join('')}</div>`).join('')}
     ${(mv.data || []).length ? `<div class="card"><h3 style="font-size:17px;margin-bottom:8px">Mouvements récents</h3>${mv.data.map(m => `<div class="row between" style="padding:6px 0;border-bottom:1px dashed var(--line);font-size:13px;flex-wrap:nowrap"><span><span class="pill ${K[m.kind][1]}">${K[m.kind][0]}</span> ${esc(name(m.supply_id))}${m.room_id ? ' · ch. ' + esc((S.rooms.find(r => r.id === m.room_id) || {}).number || '') : ''}${m.note ? ' <span class="muted">· ' + esc(m.note) + '</span>' : ''}<br><span class="muted">${new Date(m.created_at).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })}</span></span><strong style="color:${m.qty < 0 ? 'var(--red)' : 'var(--green)'}">${m.qty > 0 ? '+' : ''}${+m.qty}</strong></div>`).join('')}</div>` : ''}`;
+  if ($('supSell')) $('supSell').onclick = () => openExtraItems(null);
   if ($('supAdd')) $('supAdd').onclick = () => openSupplyForm(null);
   if ($('supPre')) $('supPre').onclick = async () => { const { error } = await sb.from('supplies').insert(SUP_PRESETS.map(([n, c, u]) => ({ establishment_id: S.est, name: n, category: c, unit: u, alert_qty: 5 }))); if (error) return toast(errMsg(error), true); toast('Liste de base ajoutée : saisissez vos quantités avec « + ».'); renderInventaire(); };
   el.querySelectorAll('[data-sm]').forEach(b => b.onclick = () => { const [k, id] = b.dataset.sm.split('|'); const x = items.find(y => y.id === id); k === 'more' ? openSupplyMore(x) : openSupplyMove(x, k); });
@@ -5045,7 +5210,7 @@ async function toggleClock(){
   if (S.view === 'pointage') renderPointage();
 }
 async function renderPointage(){
-  const el = $('v-pointage'); el.innerHTML = skeletonView();
+  const el = $('v-pointage'); keepOrSkel(el);
   S.ptMonth = S.ptMonth || today().slice(0, 7);
   const from = S.ptMonth + '-01', to = addDays(new Date(new Date(from).getFullYear(), new Date(from).getMonth() + 1, 1).toISOString().slice(0, 10), 0);
   const [att, team] = await Promise.all([
@@ -5238,7 +5403,7 @@ const prodThumb = (p, size = 64) => ((p.images && p.images[0]) || p.image_url)
 const stockTxt = (p) => !p.track_stock ? '' : Number(p.stock_qty) <= 0 ? '<span class="pill st-cancelled">Rupture</span>' : Number(p.stock_qty) <= Number(p.alert_qty) ? `<span class="pill st-past_due">Reste ${+p.stock_qty}</span>` : `<span class="muted" style="font-size:12px">Stock ${+p.stock_qty}</span>`;
 
 async function renderResto(){
-  const el = $('v-resto'); el.innerHTML = skeletonView();
+  const el = $('v-resto'); keepOrSkel(el);
   S.rTab = S.rTab || 'caisse'; S.rOutlet = S.rOutlet || 'restaurant'; S.cart = S.cart || [];
   if (!isMgr() && !['caisse', 'ventes'].includes(S.rTab)) S.rTab = 'caisse';
   if (S.rTab === 'ventes' && !can(['owner', 'admin', 'manager', 'accountant'])) S.rTab = 'caisse';
@@ -5958,7 +6123,7 @@ function amWidget(box, e, canEdit){
 }
 
 async function renderMaPage(){
-  const el = $('v-mapage'); el.innerHTML = skeletonView();
+  const el = $('v-mapage'); keepOrSkel(el);
   await loadEst();
   const { data: e, error } = await sb.from('establishments').select('*').eq('id', S.est).single();
   if (error || !e) { el.innerHTML = head('Ma fiche Nuittea') + `<p class="muted">${esc(errMsg(error))}</p>`; return; }

@@ -718,7 +718,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 
 /* ---- Direction B « Net et professionnel » (boutons, onglets, retours) ---- */
 :root{--b-r:10px;--b-ink:#111827;--b-line:#D0D5DD}
-:is(section[id^="v-"],#modal,.dtop,#onboard,#auth) :is(button,.btn):not(.gstep):not(.loc-sug button):not([role=tab]):not(.toggle button):not(.ghead):not(.leaflet-control *){
+:is(section[id^="v-"],#modal,.dtop,#onboard,#auth) :is(button,.btn):not(.gstep):not(.loc-sug button):not([role=tab]):not(.toggle button):not(.ghead):not(.leaflet-control *):not(.ck *){
   border-radius:var(--b-r)!important;font-weight:600!important;letter-spacing:0!important;transition:background-color .12s,border-color .12s,box-shadow .12s,transform .06s!important;
   background:#fff!important;color:var(--b-ink)!important;border:1px solid var(--b-line)!important;box-shadow:0 1px 2px rgba(16,24,40,.05)!important}
 :is(section[id^="v-"],#modal,.dtop,#onboard,#auth) :is(button,.btn):not(.gstep):not([role=tab]):not(.toggle button):hover{background:#F9FAFB!important;border-color:#98A2B3!important}
@@ -790,6 +790,37 @@ section[id^="v-"] .card{border-radius:12px}
 .am-it{display:flex;align-items:center;gap:10px;min-height:44px;padding:6px 12px;border:1px solid var(--line);border-radius:10px;font-weight:500;cursor:pointer;margin:0}
 .am-it input{width:20px;height:20px;min-height:0;margin:0;flex:none}
 .am-it:has(input:checked){border-color:#1F7AB8;background:#EAF4FB}
+
+/* Centre de contrôle administrateur (style cockpit sombre) */
+#v-admin .ck{background:#0E1621;color:#E8EEF5;border-radius:16px;padding:18px;margin-bottom:18px}
+#v-admin .ck h3{color:#E8EEF5;font-size:15px;font-weight:600;margin:0 0 10px}
+#v-admin .ck .ck-top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+#v-admin .ck .ck-ok{font-size:12px;color:#7FD1A8}.ck .ck-warn{font-size:12px;color:#F5B25C}
+#v-admin .ck .ck-g4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+#v-admin .ck .ck-main{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2fr);gap:10px;margin-top:10px}
+#v-admin .ck .ck-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+#v-admin .ck .ck-b:not(#_a):not(#_b){display:block;align-self:stretch;background:#16212F;border:1px solid #1E2C3D;border-radius:12px;padding:12px 14px;text-align:left;color:inherit;width:100%;min-height:0;font:inherit;cursor:pointer;position:relative;transition:background .15s,border-color .15s}
+#v-admin .ck button.ck-b:not(#_a):not(#_b):hover,#v-admin .ck button.ck-b:not(#_a):not(#_b):focus-visible{background:#1B2939;border-color:#3F9ED8;outline:none}
+#v-admin .ck button.ck-b:not(#_a):not(#_b)::after{content:'›';position:absolute;top:8px;right:12px;color:#5D7089;font-size:16px}
+#v-admin .ck .ck-l{font-size:12px;color:#8A9BB0}.ck .ck-v{font-size:26px;font-weight:700;color:#fff;line-height:1.2;margin-top:2px}
+#v-admin .ck .ck-s{font-size:12px;color:#8A9BB0;margin-top:2px}.ck .up{color:#7FD1A8}.ck .down{color:#F49A8E}
+#v-admin .ck .ck-row{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-top:1px solid #1E2C3D;font-size:13px}
+#v-admin .ck .ck-row:first-of-type{border-top:none}
+#v-admin .ck .ck-row button:not(#_a):not(#_b){min-height:32px;padding:4px 10px;font-size:12px;background:#22324A;color:#E8EEF5;border:1px solid #2E4360;border-radius:8px}
+#v-admin .ck .ck-row button:not(#_a):not(#_b):hover{background:#2A3E5C}
+#v-admin .ck .ck-bars{display:flex;align-items:flex-end;gap:6px;height:70px;margin-top:6px}
+#v-admin .ck .ck-bars button:not(#_a):not(#_b){flex:1;min-height:0;padding:0;border:none;border-radius:4px 4px 0 0;background:#2A4A68;cursor:pointer}
+#v-admin .ck .ck-bars button.cur:not(#_a):not(#_b){background:#6CC4F5}.ck .ck-bars button:hover{background:#4F8FC0}
+#v-admin .ck .ck-mo{display:flex;gap:6px;font-size:11px;color:#8A9BB0;margin-top:4px}.ck .ck-mo span{flex:1;text-align:center}
+#v-admin .ck .ck-stack{display:flex;height:10px;border-radius:5px;overflow:hidden;margin:8px 0 6px}
+#v-admin .ck .ck-chips:not(#_a):not(#_b){display:flex;flex-wrap:wrap;gap:6px}
+#v-admin .ck .ck-chip:not(#_a):not(#_b){min-height:30px;padding:4px 10px;font-size:12px;border-radius:999px;background:#1B2939;color:#E8EEF5;border:1px solid #2E4360;cursor:pointer}
+#v-admin .ck .ck-chip:not(#_a):not(#_b):hover{border-color:#3F9ED8}.ck .ck-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:1px}
+#v-admin .ck .ck-j{font-size:13px;padding:6px 0;border-top:1px solid #1E2C3D;display:flex;gap:10px}.ck .ck-j time{color:#8A9BB0;min-width:74px;font-size:12px}
+#v-admin .ck .ck-empty{font-size:13px;color:#8A9BB0}
+.adm-back{margin-bottom:14px}
+@media (max-width:600px){#v-admin .ck .ck-v{font-size:20px;white-space:nowrap}}
+@media (max-width:900px){#v-admin .ck .ck-g4{grid-template-columns:repeat(2,minmax(0,1fr))}#v-admin .ck .ck-main,#v-admin .ck .ck-grid{grid-template-columns:minmax(0,1fr)}}
 </style>
 </head>
 <body>
@@ -1052,7 +1083,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.11.05-3';
+const APP_VERSION = '2026.11.05-4';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -2052,7 +2083,7 @@ async function openRoomForm(room, refresh, types){
 
 /* ---------- Administration plateforme ---------- */
 /* ================= Tableau de bord administrateur plateforme ================= */
-const ADM_TABS = [['apercu', 'Vue d’ensemble'], ['clients', 'Clients'], ['paiements', 'Paiements'], ['naya', 'Nuittea'], ['formules', 'Formules'], ['lieux', 'Lieux']];
+const ADM_TABS = [['apercu', 'Centre de contrôle'], ['clients', 'Clients'], ['paiements', 'Paiements'], ['naya', 'Nuittea'], ['formules', 'Formules'], ['lieux', 'Lieux']];
 const admDays = (d) => d ? Math.ceil((new Date(d) - Date.now()) / 86400000) : null;
 const admEnd = (c) => c.billing_cycle === 'trial' ? c.trial_end_at : c.period_end;
 function admFlag(c){
@@ -2066,11 +2097,12 @@ function admFlag(c){
 async function renderAdmin(){
   const el = $('v-admin'); el.innerHTML = skeletonView();
   const tab = S._admTab || 'apercu';
-  const [st, orgs, pend, plans, naya, npart, pset] = await Promise.all([
+  const [st, orgs, pend, plans, naya, npart, pset, cock] = await Promise.all([
     sb.rpc('admin_platform_stats'), sb.rpc('admin_orgs_overview'),
     sb.from('payments').select('id,created_at,amount,payment_method,billing_cycle,organization_id,organizations(name),plans(name)').eq('status', 'pending').order('created_at'),
     sb.from('plans').select('*').order('sort_order'), sb.rpc('admin_naya_overview', { p_month: S._admMonth || null }),
-    sb.rpc('admin_naya_partners'), sb.from('platform_settings').select('key,value')
+    sb.rpc('admin_naya_partners'), sb.from('platform_settings').select('key,value'),
+    tab === 'apercu' ? sb.rpc('admin_cockpit') : Promise.resolve({ data: null })
   ]);
   const NP = (npart.data || []).filter(x => !x.is_test), PS = Object.fromEntries((pset.data || []).map(x => [x.key, x.value]));
   const comDue = NP.reduce((a, x) => a + Number(x.balance || 0), 0), comPaid = NP.reduce((a, x) => a + Number(x.paid || 0), 0), comLate = NP.reduce((a, x) => a + Number(x.overdue || 0), 0);
@@ -2084,24 +2116,72 @@ async function renderAdmin(){
   let body = '';
 
   if (tab === 'apercu') {
-    const top = (s.plans_usage || [])[0];
-    body = `<div class="grid g5" style="margin-bottom:18px">
-      ${k('Commissions Nuittea gagnées', fcfa(NP.reduce((a, x) => a + Number(x.earned || 0), 0)), 'séjours réalisés via Nuittea.com')}
-      ${k('Revenu mensuel récurrent', fcfa(s.mrr), 'abonnements payants actifs')}${k('Encaissé ce mois', fcfa(s.revenue_current_month))}${k('Encaissé cette année', fcfa(s.revenue_current_year))}${k('Commissions Nuittea du mois', fcfa(nayaDue), `${(N.rows || []).reduce((a, r) => a + Number(r.bookings), 0)} réservation(s) · ${N.listed || 0} en ligne`)}${k('Paiements à valider', P.length)}
-      ${k('Clients', real.length, `${C.length - real.length} compte(s) de test`)}${k('Abonnements actifs', s.subscriptions_active)}${k('Essais en cours', s.trials_active, `${s.trials_expired} expiré(s)`)}${k('Chambres gérées', s.rooms)}${k('Utilisateurs', s.users)}
-    </div>
-    <p class="muted" style="margin:-6px 0 18px">Formule la plus utilisée : <strong>${top ? esc(top.plan) + ' (' + top.count + ')' : '—'}</strong> · Suspendus : ${s.suspended}</p>
-    <div class="card"><h3 style="font-size:20px;margin-bottom:4px">À suivre</h3><p class="muted" style="margin-bottom:10px">Essais ou abonnements qui expirent sous 7 jours, comptes expirés, suspendus ou sans activité depuis 14 jours.</p>
-      ${todo.length ? `<div class="tablewrap"><table class="table"><thead><tr><th>Client</th><th>Formule</th><th>Situation</th><th>Dernière activité</th><th><span class="sr-only">Actions</span></th></tr></thead><tbody>
-      ${todo.map(c => { const f = admFlag(c); return `<tr><td><strong>${esc(c.name)}</strong><div class="muted" style="font-size:12px">${esc(c.owner_email || '')}</div></td><td>${esc(c.plan || '—')}</td><td><span class="pill ${f[1]}">${esc(f[0])}</span></td><td>${c.last_activity ? date(c.last_activity) : 'jamais'}</td>
-        <td class="row">${wa(c, `Bonjour, ici l'équipe Nuittea Manager. Votre ${c.billing_cycle === 'trial' ? 'essai' : 'abonnement'} ${esc(c.plan || '')} arrive à échéance. Pouvons-nous vous aider à continuer ?`)}<button class="small" data-manage="${esc(c.id)}">Gérer</button></td></tr>`; }).join('')}</tbody></table></div>` : '<p class="muted">Rien à signaler.</p>'}</div>`;
+    const K = cock.data || {}, PL = (plans.data || []).filter(x => x.is_active !== false);
+    const go = (t, extra = '') => `data-go="${t}" ${extra}`;
+    const paying = real.filter(c => ['monthly', 'yearly'].includes(c.billing_cycle) && c.status !== 'suspended');
+    const susp = real.filter(c => c.status === 'suspended'), trials = real.filter(c => c.billing_cycle === 'trial');
+    const exp7 = real.filter(c => { const l = admDays(admEnd(c)); return c.billing_cycle !== 'free' && l !== null && l >= 0 && l <= 7; });
+    const diff = (K.signups_month || 0) - (K.signups_prev || 0);
+    const rev = K.revenue_6m || [], rmax = Math.max(1, ...rev.map(x => Number(x.total) || 0));
+    const MO = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
+    const PCOL = ['#C9DDF0', '#8DBFE6', '#3F9ED8', '#2B7FC0', '#7FD1A8', '#F5B25C', '#C9A7F5'];
+    const byPlan = PL.map((p, i) => ({ p, n: real.filter(c => c.plan_slug === p.slug).length, col: PCOL[i % PCOL.length] }));
+    const TYPES = { hotel: 'Hôtels', residence: 'Résidences', appartement: 'Appartements', maison_hotes: 'Maisons d’hôtes' };
+    const todoRows = [
+      ...P.map(x => [`Paiement à valider : ${esc(x.organizations?.name || '')} · ${fcfa(x.amount)}`, go('paiements'), 'Valider']),
+      ...exp7.map(c => [`${esc(c.name)} : ${c.billing_cycle === 'trial' ? 'essai' : 'abonnement'} expire ${admDays(admEnd(c)) <= 0 ? 'aujourd’hui' : 'dans ' + admDays(admEnd(c)) + ' j'}`, `data-manage="${esc(c.id)}"`, 'Gérer']),
+      ...(K.low_reviews || []).map(v => [`Avis ${v.rating}/5 chez ${esc(v.org)}`, `data-manage="${esc(v.org_id)}"`, 'Voir']),
+      ...(K.near_limit || []).map(x => [`${esc(x.name)} : ${x.rooms}/${x.max} chambres (${esc(x.plan)})`, `data-manage="${esc(x.id)}"`, 'Proposer']),
+      ...(K.localities_pending ? [[`${K.localities_pending} lieu(x) proposé(s) à vérifier`, go('lieux'), 'Vérifier']] : []),
+      ...(comLate > 0 ? [[`Commissions Nuittea en retard : ${fcfa(comLate)}`, go('naya'), 'Voir']] : [])
+    ];
+    const rk = K.requests_by_kind || {}, RK = { read: 'consultations', book: 'réservations', cancel: 'annulations', review: 'avis', loc: 'lieux' };
+    const JK = { signup: '#6CC4F5', payment: '#7FD1A8', payment_pending: '#F5B25C', suspended: '#F49A8E', review: '#C9A7F5' };
+    body = `<div class="ck" aria-label="Centre de contrôle">
+      <div class="ck-top"><div><div class="ck-l">${new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}</div><div style="font-size:20px;font-weight:700">Centre de contrôle</div></div>
+        <span class="${todoRows.length ? 'ck-warn' : 'ck-ok'}">${todoRows.length ? plur(todoRows.length, 'action à faire', 'actions à faire') : 'Rien à traiter'}</span></div>
+      <div class="ck-g4">
+        <button class="ck-b" ${go('clients', 'data-fil="tous"')}><div class="ck-l">Comptes inscrits</div><div class="ck-v">${real.length}</div><div class="ck-s"><span class="${diff >= 0 ? 'up' : 'down'}">${K.signups_month || 0} ce mois</span> · ${K.signups_prev || 0} le mois dernier</div></button>
+        <button class="ck-b" ${go('clients', 'data-fil="payant"')}><div class="ck-l">Comptes payants</div><div class="ck-v">${paying.length}</div><div class="ck-s">${real.length ? Math.round(paying.length / real.length * 100) : 0} % des comptes · ${trials.length} en essai</div></button>
+        <button class="ck-b" ${go('paiements')}><div class="ck-l">Encaissé ce mois</div><div class="ck-v" style="color:#6CC4F5">${fcfa(s.revenue_current_month)}</div><div class="ck-s">Revenu récurrent ${fcfa(s.mrr)}</div></button>
+        <button class="ck-b" ${go('clients', 'data-fil="suspendu"')}><div class="ck-l">Comptes suspendus</div><div class="ck-v" style="color:${susp.length ? '#F49A8E' : '#fff'}">${susp.length}</div><div class="ck-s">${s.trials_expired || 0} essai(s) expiré(s)</div></button>
+      </div>
+      <div class="ck-main">
+        <div class="ck-b" style="cursor:default"><h3>À faire aujourd’hui</h3>
+          ${todoRows.length ? todoRows.slice(0, 8).map(([t, a, l]) => `<div class="ck-row"><span>${t}</span><button ${a}>${l}</button></div>`).join('') + (todoRows.length > 8 ? `<div class="ck-row"><span class="ck-s">${plur(todoRows.length - 8, 'autre action', 'autres actions')}</span><button data-go="clients" data-fil="suivre">Tout voir</button></div>` : '') : '<p class="ck-empty">Aucune action en attente.</p>'}</div>
+        <div class="ck-grid">
+          <div class="ck-b" style="cursor:default"><h3>Comptes par formule</h3>
+            <div class="ck-stack">${byPlan.filter(x => x.n).map(x => `<span style="flex:${x.n};background:${x.col}"></span>`).join('') || '<span style="flex:1;background:#1E2C3D"></span>'}</div>
+            <div class="ck-chips">${byPlan.map(x => `<button class="ck-chip" data-go="clients" data-fil="tous" data-plan="${esc(x.p.slug)}"><span class="ck-dot" style="background:${x.col}"></span>${esc(x.p.name)} ${x.n}</button>`).join('')}</div></div>
+          <div class="ck-b" style="cursor:default"><h3>Encaissements sur 6 mois</h3>
+            <div class="ck-bars">${rev.map((x, i) => `<button title="${fcfa(x.total)}" aria-label="${MO[+x.month.slice(5) - 1]} : ${fcfa(x.total)}" class="${i === rev.length - 1 ? 'cur' : ''}" data-go="paiements" style="height:${Math.max(4, Math.round((Number(x.total) || 0) / rmax * 100))}%"></button>`).join('')}</div>
+            <div class="ck-mo">${rev.map(x => `<span>${MO[+x.month.slice(5) - 1]}</span>`).join('')}</div></div>
+          <button class="ck-b" ${go('clients', 'data-fil="tous"')}><h3>Utilisation réelle</h3>
+            <div class="ck-s">Actifs aujourd’hui : <strong style="color:#fff">${K.active_today || 0}</strong> · cette semaine : <strong style="color:#fff">${K.active_week || 0}</strong></div>
+            <div class="ck-s">Jamais utilisés : <strong style="color:${K.never_used ? '#F5B25C' : '#fff'}">${K.never_used || 0}</strong> · chambres gérées : <strong style="color:#fff">${s.rooms || 0}</strong></div>
+            <div class="ck-s">${Object.entries(K.by_type || {}).map(([k, n]) => `${TYPES[k] || esc(k)} ${n}`).join(' · ') || '—'}</div></button>
+          <button class="ck-b" ${go('naya')}><h3>Nuittea.com</h3>
+            <div class="ck-s">Réservations aujourd’hui : <strong style="color:#fff">${K.naya_today || 0}</strong> · ce mois : <strong style="color:#fff">${K.naya_month || 0}</strong></div>
+            <div class="ck-s">Annulations du mois : <strong style="color:#fff">${K.naya_cancel_month || 0}</strong> · commissions dues : <strong style="color:#fff">${fcfa(comDue)}</strong></div>
+            <div class="ck-s">Fiches incomplètes : <strong style="color:${K.listings_incomplete ? '#F5B25C' : '#fff'}">${K.listings_incomplete || 0}</strong></div></button>
+          <div class="ck-b" style="cursor:default"><h3>Villes</h3>
+            <div class="ck-chips">${(K.by_city || []).map(x => `<button class="ck-chip" data-go="clients" data-fil="tous" data-q="${esc(x.city === 'Non renseignée' ? '' : x.city)}">${esc(x.city)} ${x.count}</button>`).join('') || '<span class="ck-empty">Aucune donnée.</span>'}</div></div>
+          <div class="ck-b" style="cursor:default"><h3>Sécurité · 24 heures</h3>
+            <div class="ck-s">Requêtes surveillées : <strong style="color:#fff">${K.requests_24h || 0}</strong></div>
+            <div class="ck-s">${Object.entries(rk).map(([k, n]) => `${RK[k] || esc(k)} ${n}`).join(' · ') || '—'}</div>
+            <div class="ck-s">Pièces d’identité (30 j) : <strong style="color:#fff">${K.id_docs_30d || 0}</strong> opération(s)</div></div>
+        </div>
+      </div>
+      <div class="ck-b" style="cursor:default;margin-top:10px"><h3>Journal récent</h3>
+        ${(K.journal || []).length ? K.journal.map(j => `<div class="ck-j"><time>${dfr(String(j.at).slice(0, 10))}</time><span><span class="ck-dot" style="background:${JK[j.kind] || '#8A9BB0'}"></span>${esc(j.text)}</span></div>`).join('') : '<p class="ck-empty">Aucun événement.</p>'}</div>
+    </div>`;
   }
-
   if (tab === 'clients') {
     const f = S._admFilter || 'tous';
-    const FIL = { tous: 'Clients réels', essai: 'En essai', payant: 'Payants', gratuit: 'Gratuits', suivre: 'À suivre', naya: 'Sur Nuittea', tests: 'Comptes de test' };
-    const keep = (c) => (f === 'tests') === !!c.is_test && (f === 'tous' || f === 'tests' || (f === 'essai' && c.billing_cycle === 'trial') || (f === 'payant' && ['monthly', 'yearly'].includes(c.billing_cycle)) || (f === 'gratuit' && c.billing_cycle === 'free') || (f === 'suivre' && admFlag(c)[0] !== 'OK') || (f === 'naya' && c.naya_listed));
-    body = `<div class="card"><div class="row between" style="margin-bottom:12px;flex-wrap:wrap;gap:8px"><div class="row" style="gap:6px;flex-wrap:wrap">${Object.entries(FIL).map(([id, l]) => `<button class="small ${f === id ? 'primary' : 'ghost'}" data-admfil="${id}">${l}</button>`).join('')}</div>
+    const FIL = { tous: 'Clients réels', essai: 'En essai', payant: 'Payants', gratuit: 'Gratuits', suspendu: 'Suspendus', suivre: 'À suivre', naya: 'Sur Nuittea', tests: 'Comptes de test' };
+    const fp = S._admPlan || '';
+    const keep = (c) => (f === 'tests') === !!c.is_test && (f === 'tous' || f === 'tests' || (f === 'essai' && c.billing_cycle === 'trial') || (f === 'payant' && ['monthly', 'yearly'].includes(c.billing_cycle)) || (f === 'gratuit' && c.billing_cycle === 'free') || (f === 'suivre' && admFlag(c)[0] !== 'OK') || (f === 'naya' && c.naya_listed) || (f === 'suspendu' && c.status === 'suspended')) && (!fp || c.plan_slug === fp);
+    body = `${fp ? `<p class="muted" style="margin:0 0 10px">Formule : <strong>${esc(((plans.data || []).find(x => x.slug === fp) || {}).name || fp)}</strong> · <button class="small ghost" data-admplan="">Toutes les formules</button></p>` : ''}<div class="card"><div class="row between" style="margin-bottom:12px;flex-wrap:wrap;gap:8px"><div class="row" style="gap:6px;flex-wrap:wrap">${Object.entries(FIL).map(([id, l]) => `<button class="small ${f === id ? 'primary' : 'ghost'}" data-admfil="${id}">${l}</button>`).join('')}</div>
       <div class="row" style="gap:8px"><input id="subSearch" aria-label="Rechercher un client" placeholder="Nom, e-mail, ville…" style="max-width:240px"><button class="small primary" id="admNewTest">+ Compte de test</button></div></div>
       <div class="tablewrap"><table class="table"><thead><tr><th>Client</th><th>Formule</th><th>Échéance</th><th>Utilisation</th><th>Activité</th><th>Nuittea</th><th><span class="sr-only">Actions</span></th></tr></thead><tbody id="subRows">
       ${C.filter(keep).map(c => { const fl = admFlag(c); return `<tr data-name="${esc([c.name, c.owner_email, c.city, c.staff_code].join(' ').toLowerCase())}">
@@ -2185,7 +2265,9 @@ async function renderAdmin(){
       </tbody></table></div>` : `<p class="muted">Aucun lieu dans cette liste.</p>`}</div>`;
   }
 
-  el.innerHTML = `<div class="eyebrow">Administrateur plateforme</div><h1 style="font-size:34px;margin:4px 0 16px">Tableau de bord</h1>${tabs}${body}`;
+  el.innerHTML = `<div class="eyebrow">Administrateur plateforme</div><h1 style="font-size:34px;margin:4px 0 16px">Tableau de bord</h1>${tabs}${tab !== 'apercu' ? '<button class="small ghost adm-back" data-go="apercu">‹ Retour au centre de contrôle</button>' : ''}${body}`;
+  el.querySelectorAll('[data-go]').forEach(b => b.onclick = () => { S._admTab = b.dataset.go; if (b.dataset.fil) S._admFilter = b.dataset.fil; S._admPlan = b.dataset.plan || ''; S._admQ = b.dataset.q || ''; renderAdmin().then(() => { window.scrollTo({ top: 0 }); const q = $('subSearch'); if (q && S._admQ) { q.value = S._admQ; q.dispatchEvent(new Event('input')); } }); });
+  el.querySelectorAll('[data-admplan]').forEach(b => b.onclick = () => { S._admPlan = b.dataset.admplan; renderAdmin(); });
   el.querySelectorAll('[data-admtab]').forEach(b => b.onclick = () => { S._admTab = b.dataset.admtab; renderAdmin(); });
   el.querySelectorAll('[data-lxfil]').forEach(b => b.onclick = () => { S._lxFil = b.dataset.lxfil; renderAdmin(); });
   if ($('lxQ')) { let t; $('lxQ').oninput = () => { clearTimeout(t); t = setTimeout(() => { S._lxQ = $('lxQ').value; const pos = $('lxQ').value.length; renderAdmin().then(() => { const i = $('lxQ'); if (i) { i.focus(); i.setSelectionRange(pos, pos); } }); }, 300); }; }

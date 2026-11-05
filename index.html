@@ -721,7 +721,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 
 /* ---- Direction B « Net et professionnel » (boutons, onglets, retours) ---- */
 :root{--b-r:10px;--b-ink:#111827;--b-line:#D0D5DD}
-:is(section[id^="v-"],#modal,.dtop,#onboard,#auth) :is(button,.btn):not(.gstep):not(.loc-sug button):not([role=tab]):not(.toggle button):not(.ghead):not(.leaflet-control *):not(.ck *):not(.lv-chip):not(.lv-tile):not(.xitem):not(.pcard):not(.ccard){
+:is(section[id^="v-"],#modal,.dtop,#onboard,#auth) :is(button,.btn):not(.gstep):not(.loc-sug button):not([role=tab]):not(.toggle button):not(.ghead):not(.leaflet-control *):not(.ck *):not(.lv-chip):not(.lv-tile):not(.xitem):not(.pcard):not(.ccard):not([data-part]):not([data-mode]){
   border-radius:var(--b-r)!important;font-weight:600!important;letter-spacing:0!important;transition:background-color .12s,border-color .12s,box-shadow .12s,transform .06s!important;
   background:#fff!important;color:var(--b-ink)!important;border:1px solid var(--b-line)!important;box-shadow:0 1px 2px rgba(16,24,40,.05)!important}
 :is(section[id^="v-"],#modal,.dtop,#onboard,#auth) :is(button,.btn):not(.gstep):not([role=tab]):not(.toggle button):hover{background:#F9FAFB!important;border-color:#98A2B3!important}
@@ -1143,7 +1143,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.11.05-20';
+const APP_VERSION = '2026.11.05-21';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -3734,11 +3734,11 @@ function openSimpleMove(kind, done){
 
 function openEncaisser(b, done){
   const bal = Number(b.balance);
-  const st = { mode: 'cash', amount: bal, received: '', op: 'wave', ref: '', mix: [{ method: 'cash', amount: bal, reference: '' }], open: false };
+  const st = { mode: 'cash', amount: bal, received: '', op: 'wave', ref: '', mix: [{ method: 'cash', amount: bal, reference: '' }], open: false, part: false };
   const MODES = [['cash', 'Espèces', '<rect x="2" y="6" width="20" height="12" rx="2"></rect><circle cx="12" cy="12" r="2.5"></circle>'], ['mobile', 'Mobile', '<rect x="7" y="2" width="10" height="20" rx="2"></rect><path d="M11 18h2"></path>'], ['card', 'Carte', '<rect x="2" y="5" width="20" height="14" rx="2"></rect><path d="M2 10h20"></path>'], ['mix', 'Mixte', '<path d="M12 2l9 5-9 5-9-5z"></path><path d="M3 12l9 5 9-5M3 17l9 5 9-5"></path>']];
   const OPS = [['wave', 'Wave'], ['orange_money', 'Orange'], ['mtn_money', 'MTN'], ['moov_money', 'Moov']];
   const round = (v, s) => Math.ceil(v / s) * s;
-  const chips = () => [bal, ...[...new Set([1000, 2000, 5000, 10000, 20000, 50000].map(s => round(bal, s)))].filter(v => v > bal).sort((x, y) => x - y)].slice(0, 4);
+  const chips = () => { const v0 = +st.amount || bal; return [v0, ...[...new Set([1000, 2000, 5000, 10000, 20000, 50000].map(s => round(v0, s)))].filter(v => v > v0).sort((x, y) => x - y)].slice(0, 4); };
   const lines = () => st.mode === 'mix' ? st.mix : [{ method: st.mode === 'cash' ? 'cash' : st.mode === 'card' ? 'card' : st.op, amount: +st.amount || 0, reference: st.ref }];
   const total = () => lines().reduce((a, l) => a + (+l.amount || 0), 0);
   modal('<div id="ek"></div>'); $('modalBody').style.maxWidth = '560px';
@@ -3752,15 +3752,20 @@ function openEncaisser(b, done){
           <div style="font-family:var(--display);font-weight:800;font-size:30px;white-space:nowrap">${money(bal)}</div></div>
         ${st.open ? `<div style="font-size:13px;color:var(--muted);border-top:1px dashed var(--line);margin-top:8px;padding-top:8px">${dfr(b.check_in)} → ${dfr(b.check_out)} · total ${money(b.total_amount)} · déjà payé ${money(b.paid)}</div>` : ''}
       </div>
+      <div style="font-size:12px;font-weight:800;letter-spacing:.12em;color:var(--muted);margin-bottom:8px">CE QUE LE CLIENT PAIE</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px" role="group" aria-label="Type de paiement">
+        <button type="button" data-part="0" aria-pressed="${!st.part}" style="min-height:64px;border-radius:14px;border:2px solid ${!st.part ? 'var(--ink)' : 'var(--line)'};background:${!st.part ? 'var(--ink)' : 'var(--card)'};color:${!st.part ? 'var(--card)' : 'var(--ink)'};font-weight:700;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px">Tout le solde<span style="font-size:13px;font-weight:500;opacity:.8">${money(bal)}</span></button>
+        <button type="button" data-part="1" aria-pressed="${st.part}" style="min-height:64px;border-radius:14px;border:2px solid ${st.part ? 'var(--amber, #B7791F)' : 'var(--line)'};background:${st.part ? 'var(--amber-l, #FFF4E0)' : 'var(--card)'};color:var(--ink);font-weight:700;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px">Paiement partiel<span style="font-size:13px;font-weight:500;opacity:.8">${st.part && +st.amount < bal ? 'reste ' + money(bal - (+st.amount || 0)) : 'une partie du montant'}</span></button></div>
       <div style="font-size:12px;font-weight:800;letter-spacing:.12em;color:var(--muted);margin-bottom:8px">MOYEN DE PAIEMENT</div>
       <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:14px">${MODES.map(([k, l, ic]) => `<button type="button" data-mode="${k}" aria-pressed="${st.mode === k}" style="min-height:86px;border-radius:16px;border:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;font-weight:600;${st.mode === k ? 'background:var(--ink);color:var(--card)' : 'background:var(--bg);color:var(--ink)'}"><span style="width:38px;height:38px;border-radius:10px;display:grid;place-items:center;background:${st.mode === k ? 'rgba(255,255,255,.14)' : 'var(--card)'}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">${ic}</svg></span>${l}</button>`).join('')}</div>
       <div style="background:var(--bg);border-radius:18px;padding:16px;margin-bottom:14px">
       ${st.mode === 'mix' ? `<div style="font-weight:700;margin-bottom:8px">Répartition</div>${st.mix.map((l, i) => `<div class="row" style="gap:8px;margin-bottom:8px;flex-wrap:wrap"><select data-mi="${i}" data-mf="method" style="flex:1 1 120px">${opt(PMETHOD, l.method)}</select><input data-mi="${i}" data-mf="amount" type="number" min="1" value="${l.amount || ''}" style="flex:0 1 120px" aria-label="Montant">${l.method !== 'cash' ? `<input data-mi="${i}" data-mf="reference" value="${esc(l.reference)}" placeholder="N° transaction" style="flex:1 1 130px">` : ''}${st.mix.length > 1 ? `<button type="button" class="small ghost" data-mrm="${i}" aria-label="Retirer">✕</button>` : ''}</div>`).join('')}<button type="button" class="small ghost" id="ekAdd">+ Ajouter un moyen</button>
         <div class="row between" style="margin-top:10px;font-weight:700"><span>Total</span><span style="color:${t === bal ? 'var(--ok)' : t > bal ? 'var(--red)' : 'var(--ink)'}">${money(t)}${t < bal ? ' · reste ' + money(bal - t) : t > bal ? ' · trop' : ' · soldé'}</span></div>`
       : `${st.mode === 'mobile' ? `<div class="row" style="gap:6px;margin-bottom:12px">${OPS.map(([k, l]) => `<button type="button" class="small ${st.op === k ? 'primary' : 'ghost'}" data-op="${k}">${l}</button>`).join('')}</div>` : ''}
-        <label for="ekAmt" style="font-size:15px;color:var(--ink)">Montant à encaisser</label>
+        <label for="ekAmt" style="font-size:15px;color:var(--ink)">${st.part ? 'Montant versé maintenant' : 'Montant à encaisser'}</label>
         <div style="position:relative"><input id="ekAmt" type="number" min="1" max="${bal}" value="${st.amount}" style="font-size:22px;font-weight:700;min-height:56px;padding-right:60px"><span class="muted" style="position:absolute;right:14px;top:16px">FCFA</span></div>
-        ${st.amount < bal ? `<div class="muted" style="font-size:13px;margin-top:4px">Paiement partiel · il restera ${money(bal - st.amount)}</div>` : ''}
+        ${st.part ? `<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:8px">${[25, 50, 75].map(p => `<button type="button" class="small ghost" data-pct="${p}" style="background:var(--card)">${p} %</button>`).join('')}<button type="button" class="small ghost" data-pct="n" style="background:var(--card)">1 nuit</button></div>` : ''}
+        ${st.amount < bal ? `<div style="margin-top:8px;padding:8px 10px;border-radius:10px;background:var(--amber-l, #FFF4E0);font-weight:700;font-size:14px">Paiement partiel · il restera ${money(bal - st.amount)} à payer</div>` : ''}
         ${st.mode === 'cash' ? `<label for="ekRec" style="font-size:15px;color:var(--ink);margin-top:12px">Montant reçu du client</label>
           <div style="position:relative"><input id="ekRec" type="number" min="0" value="${st.received}" placeholder="0" style="font-size:18px;min-height:50px;padding-right:60px"><span class="muted" style="position:absolute;right:14px;top:13px">FCFA</span></div>
           <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:8px">${chips().map((v, i) => `<button type="button" class="small ghost" data-rec="${v}" style="background:var(--card)">${i === 0 ? 'Juste' : new Intl.NumberFormat('fr-FR').format(v).replace(/\u202f|\u00a0/g, ' ')}</button>`).join('')}</div>
@@ -3774,8 +3779,10 @@ function openEncaisser(b, done){
   const bind = () => {
     $('ekDet').onclick = () => { st.open = !st.open; draw(); };
     document.querySelectorAll('[data-mode]').forEach(x => x.onclick = () => { st.mode = x.dataset.mode; draw(); });
+    document.querySelectorAll('[data-part]').forEach(x => x.onclick = () => { st.part = x.dataset.part === '1'; if (!st.part) { st.amount = bal; st.mix = [{ method: 'cash', amount: bal, reference: '' }]; } else if (+st.amount >= bal) { st.amount = ''; } draw(); if (st.part) { const a = $('ekAmt'); if (a) a.focus(); } });
+    document.querySelectorAll('[data-pct]').forEach(x => x.onclick = () => { const nights = Math.max(1, Math.round((new Date(b.check_out) - new Date(b.check_in)) / 864e5)); st.amount = x.dataset.pct === 'n' ? Math.min(bal, Math.round(Number(b.total_amount) / nights)) : Math.round(bal * +x.dataset.pct / 100 / 100) * 100; draw(); });
     document.querySelectorAll('[data-op]').forEach(x => x.onclick = () => { st.op = x.dataset.op; draw(); });
-    const a = $('ekAmt'); if (a) a.onchange = () => { st.amount = Math.min(bal, Math.max(0, +a.value || 0)); draw(); };
+    const a = $('ekAmt'); if (a) a.onchange = () => { st.amount = Math.min(bal, Math.max(0, +a.value || 0)); if (st.amount < bal) st.part = true; draw(); };
     const r = $('ekRec'); if (r) r.onchange = () => { st.received = r.value; draw(); };
     document.querySelectorAll('[data-rec]').forEach(x => x.onclick = () => { st.received = x.dataset.rec; draw(); });
     const rf = $('ekRef'); if (rf) rf.oninput = () => { st.ref = rf.value; };
@@ -3941,7 +3948,7 @@ async function shrinkImage(file, max = 640){
   c.width = Math.round(img.width * k); c.height = Math.round(img.height * k); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
   return await new Promise((ok) => c.toBlob(b => ok(b), 'image/jpeg', 0.82));
 }
-async function uploadProductPhoto(file, itemId){
+async function uploadExtraPhoto(file, itemId){
   const blob = await shrinkImage(file);
   const path = `${S.org}/${S.est}/products/${itemId}-${Date.now()}.jpg`;
   const { error } = await sb.storage.from('public-media').upload(path, blob, { contentType: 'image/jpeg' });
@@ -3993,7 +4000,7 @@ async function openExtraItems(back){
     const btn = e.submitter; if (btn) btn.disabled = true;
     const { data: row1, error: er } = await sb.from('extra_items').insert({ organization_id: S.org, establishment_id: S.est, label: $('xiL').value.trim(), price: +$('xiP').value, category: $('xiC').value, unit_cost: av === '' ? null : Math.max(0, +av), stock: sv === '' ? null : Math.max(0, parseInt(sv, 10) || 0) }).select('id').single();
     if (er) { if (btn) btn.disabled = false; return toast(errMsg(er), true); }
-    if (f) { try { const url = await uploadProductPhoto(f, row1.id); await sb.from('extra_items').update({ photo_url: url }).eq('id', row1.id); } catch (x) { toast('Article ajouté, mais la photo n’a pas pu être envoyée : ' + errMsg(x), true); } }
+    if (f) { try { const url = await uploadExtraPhoto(f, row1.id); await sb.from('extra_items').update({ photo_url: url }).eq('id', row1.id); } catch (x) { toast('Article ajouté, mais la photo n’a pas pu être envoyée : ' + errMsg(x), true); } }
     toast('Article ajouté.'); again(); };
   const upd = async (id, v) => { const { error: er } = await sb.from('extra_items').update(v).eq('id', id); if (er) return toast(errMsg(er), true); toast('Enregistré.'); };
   const num = (v) => v === '' ? null : Math.max(0, +v || 0);
@@ -4001,7 +4008,7 @@ async function openExtraItems(back){
   document.querySelectorAll('[data-xcost]').forEach(i => i.onchange = () => upd(i.dataset.xcost, { unit_cost: num(i.value) }));
   document.querySelectorAll('[data-xalert]').forEach(i => i.onchange = () => upd(i.dataset.xalert, { alert_qty: i.value === '' ? null : Math.max(0, parseInt(i.value, 10) || 0) }));
   document.querySelectorAll('[data-xph]').forEach(inp => inp.onchange = async () => { const f = inp.files[0]; if (!f) return; toast('Envoi de la photo…');
-    try { const url = await uploadProductPhoto(f, inp.dataset.xph); await upd(inp.dataset.xph, { photo_url: url }); again(); } catch (x) { toast(errMsg(x), true); } });
+    try { const url = await uploadExtraPhoto(f, inp.dataset.xph); await upd(inp.dataset.xph, { photo_url: url }); again(); } catch (x) { toast(errMsg(x), true); } });
   document.querySelectorAll('[data-xtog]').forEach(b => b.onclick = async () => { await upd(b.dataset.xtog, { is_active: b.dataset.on !== 'true' }); again(); });
   const KM = { in: ['Entrée en stock', 'Quantité reçue', true], loss: ['Perte', 'Quantité perdue (casse, péremption…)', false], adjust: ['Inventaire', 'Quantité comptée en réserve', false] };
   document.querySelectorAll('[data-xmv]').forEach(b => b.onclick = () => { const [k, id] = b.dataset.xmv.split('|'), it = items.find(x => x.id === id), [t, lab, cost] = KM[k];
@@ -4105,9 +4112,9 @@ async function renderProduits(){
   el.querySelectorAll('[data-pcat]').forEach(b => b.onclick = () => { S._pCat = b.dataset.pcat; renderProduits(); });
   el.querySelectorAll('[data-pview]').forEach(b => b.onclick = () => { try { localStorage.setItem('hh_pview', b.dataset.pview); } catch (_) {} renderProduits(); });
   if ($('pQ')) { let t; $('pQ').oninput = () => { clearTimeout(t); t = setTimeout(() => { S._pQ = $('pQ').value; renderProduits().then(() => { const q = $('pQ'); if (q) { q.focus(); q.setSelectionRange(q.value.length, q.value.length); } }); }, 250); }; }
-  el.querySelectorAll('[data-pedit]').forEach(b => b.onclick = () => mgr ? openProductForm(items.find(i => i.id === b.dataset.pedit), { sold, rev, rank }) : null);
+  el.querySelectorAll('[data-pedit]').forEach(b => b.onclick = () => mgr ? openXProductForm(items.find(i => i.id === b.dataset.pedit), { sold, rev, rank }) : null);
   el.querySelectorAll('[data-pact]').forEach(c => c.onchange = async () => { const { error } = await sb.from('extra_items').update({ is_active: c.checked }).eq('id', c.dataset.pact); if (error) toast(errMsg(error), true); renderProduits(); });
-  if ($('pNew')) $('pNew').onclick = () => openProductForm(null, { sold, rev, rank });
+  if ($('pNew')) $('pNew').onclick = () => openXProductForm(null, { sold, rev, rank });
   el.querySelectorAll('#pStarter').forEach(b => b.onclick = () => openStarter(items));
   if ($('pBulk')) $('pBulk').onclick = () => openBulkPrice(items);
   if ($('pShop')) { const txt = () => `Commande ${(S.ests.find(e => e.id === S.est) || {}).name || ''} du ${new Date().toLocaleDateString('fr-FR')} :\n` + tracked.filter(i => isLow(i) || i.stock <= 0).map(i => `- ${i.label} : ${Math.max(1, Math.max((i.alert_qty ?? 3) * 2, Math.ceil(perDay(i) * 14)) - Math.max(0, i.stock))}`).join('\n');
@@ -4117,7 +4124,7 @@ async function renderProduits(){
   el.querySelectorAll('[data-copen]').forEach(b => b.onclick = () => openCount(b.dataset.copen));
   if ($('rcNew')) $('rcNew').onclick = () => openReception(items.filter(i => i.is_active));
 }
-async function openProductForm(it, stats){
+async function openXProductForm(it, stats){
   const i = it || { category: 'boissons', is_active: true, sell_pos: true };
   const st = stats || {}, r = it ? (st.rank || []).indexOf(it.id) : -1;
   const v = (x) => x == null ? '' : esc(String(x));
@@ -4154,7 +4161,7 @@ async function openProductForm(it, stats){
   let file = null;
   $('pfFile').onchange = () => { file = $('pfFile').files[0]; if (file) $('pfPh').innerHTML = `<img src="${URL.createObjectURL(file)}" alt="" style="width:96px;height:96px;object-fit:cover;border-radius:12px">`; };
   if ($('pfScan')) $('pfScan').onclick = () => scanBarcode((code) => { $('pfB').value = code; });
-  if ($('pfStock')) $('pfStock').onclick = () => openExtraItems(() => openProductForm(it, stats));
+  if ($('pfStock')) $('pfStock').onclick = () => openExtraItems(() => openXProductForm(it, stats));
   $('pfF').onsubmit = async (e) => { e.preventDefault();
     const num = (id) => { const x = $(id) && $(id).value.trim(); return x === '' || x == null ? null : Math.max(0, +x); };
     const row = { label: $('pfL').value.trim(), description: $('pfD').value.trim() || null, category: $('pfC').value, subcategory: $('pfS').value.trim() || null, barcode: $('pfB').value.trim() || null,
@@ -4167,17 +4174,8 @@ async function openProductForm(it, stats){
     if (it) ({ error } = await sb.from('extra_items').update(row).eq('id', it.id));
     else { const sv = $('pfQ').value.trim(); const res = await sb.from('extra_items').insert({ ...row, organization_id: S.org, establishment_id: S.est, stock: sv === '' ? null : Math.max(0, parseInt(sv, 10) || 0) }).select('id').single(); error = res.error; id = res.data && res.data.id; }
     if (error) { if (btn) btn.disabled = false; return toast(errMsg(error), true); }
-    if (file && id) { try { const url = await uploadProductPhoto(file, id); await sb.from('extra_items').update({ photo_url: url }).eq('id', id); } catch (x) { toast('Produit enregistré, mais la photo n’a pas pu être envoyée : ' + errMsg(x), true); } }
+    if (file && id) { try { const url = await uploadExtraPhoto(file, id); await sb.from('extra_items').update({ photo_url: url }).eq('id', id); } catch (x) { toast('Produit enregistré, mais la photo n’a pas pu être envoyée : ' + errMsg(x), true); } }
     closeModal(); toast('Produit enregistré.'); if (S.view === 'produits') renderProduits(); };
-}
-async function scanBarcode(done){
-  let stream; try { stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } }); } catch (_) { return toast('Caméra indisponible.', true); }
-  const ov = document.createElement('div'); ov.style.cssText = 'position:fixed;inset:0;z-index:10060;background:#000;display:flex;flex-direction:column';
-  ov.innerHTML = '<video playsinline autoplay muted style="flex:1;width:100%;object-fit:cover"></video><button type="button" style="min-height:56px;font-weight:700">Annuler</button>';
-  document.body.appendChild(ov); const vd = ov.querySelector('video'); vd.srcObject = stream;
-  const stop = () => { stream.getTracks().forEach(t => t.stop()); ov.remove(); clearInterval(iv); };
-  ov.querySelector('button').onclick = stop;
-  const det = new BarcodeDetector(); const iv = setInterval(async () => { try { const r = await det.detect(vd); if (r.length) { stop(); done(r[0].rawValue); } } catch (_) {} }, 400);
 }
 function openStarter(items){
   const have = new Set(items.map(i => i.label.toLowerCase()));

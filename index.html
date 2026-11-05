@@ -1052,7 +1052,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.11.05-2';
+const APP_VERSION = '2026.11.05-3';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -1447,8 +1447,8 @@ async function boot(){
   const QP = new URLSearchParams(location.search); const LEGAL_Q = QP.get('legal'); if (LEGAL_Q) return renderLegalPage(LEGAL_Q);
   if (QP.get('avis')) return renderReviewPage(QP.get('avis'));
   /* Les établissements n'ont plus de page publique propre : tout passe par Nuittea.com (pages conservées dans le code). */
-  if (QP.has('annuaire')) return location.replace('https://naya-ci.netlify.app/sejours');
-  if (PUBLIC_SLUG) return location.replace('https://naya-ci.netlify.app/hotel/' + encodeURIComponent(PUBLIC_SLUG));
+  if (QP.has('annuaire')) return location.replace('https://nuittea.pages.dev/sejours');
+  if (PUBLIC_SLUG) return location.replace('https://nuittea.pages.dev/hotel/' + encodeURIComponent(PUBLIC_SLUG));
   const { data: { session } } = await sb.auth.getSession();
   S.session = session;
   if (!session) { renderAuth(); renderProfiles(); show('auth'); setTimeout(() => { const f = $('email').value ? $('password') : $('email'); if (f) f.focus(); }, 50); return; }
@@ -2720,7 +2720,7 @@ async function recordDeposit(resaId, amount, method, ref, refresh){
 }
 
 /* ---------- Branchement Nuittea : publication sur la place de marché et suivi des commissions ---------- */
-const NAYA_URL = 'https://naya-ci.netlify.app';
+const NAYA_URL = 'https://nuittea.pages.dev';
 const openNaya = () => go('naya');
 async function renderNaya(){
   const el = $('v-naya'); el.innerHTML = skeletonView();
@@ -5475,7 +5475,7 @@ async function drawSales(){
 }
 
 /* ================= Ma page publique (espace propriétaire) ================= */
-const publicUrl = (slug) => 'https://naya-ci.netlify.app/hotel/' + encodeURIComponent(slug);
+const publicUrl = (slug) => 'https://nuittea.pages.dev/hotel/' + encodeURIComponent(slug);
 const slugify = (t) => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 48);
 
 const THEMES = {

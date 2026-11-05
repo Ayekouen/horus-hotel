@@ -718,7 +718,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 
 /* ---- Direction B « Net et professionnel » (boutons, onglets, retours) ---- */
 :root{--b-r:10px;--b-ink:#111827;--b-line:#D0D5DD}
-:is(section[id^="v-"],#modal,.dtop,#onboard,#auth) :is(button,.btn):not(.gstep):not(.loc-sug button):not([role=tab]):not(.toggle button):not(.ghead):not(.leaflet-control *):not(.ck *){
+:is(section[id^="v-"],#modal,.dtop,#onboard,#auth) :is(button,.btn):not(.gstep):not(.loc-sug button):not([role=tab]):not(.toggle button):not(.ghead):not(.leaflet-control *):not(.ck *):not(.lv-chip):not(.lv-tile){
   border-radius:var(--b-r)!important;font-weight:600!important;letter-spacing:0!important;transition:background-color .12s,border-color .12s,box-shadow .12s,transform .06s!important;
   background:#fff!important;color:var(--b-ink)!important;border:1px solid var(--b-line)!important;box-shadow:0 1px 2px rgba(16,24,40,.05)!important}
 :is(section[id^="v-"],#modal,.dtop,#onboard,#auth) :is(button,.btn):not(.gstep):not([role=tab]):not(.toggle button):hover{background:#F9FAFB!important;border-color:#98A2B3!important}
@@ -791,6 +791,12 @@ section[id^="v-"] .card{border-radius:12px}
 .am-it input{width:20px;height:20px;min-height:0;margin:0;flex:none}
 .am-it:has(input:checked){border-color:#1F7AB8;background:#EAF4FB}
 
+.lv-legend{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;align-items:center}
+.lv-legend .lv-chip:not(#_a):not(#_b){background:var(--lb);color:var(--lc);border:2px solid transparent;border-radius:999px;min-height:36px;padding:4px 14px;font-size:13px;font-weight:600;display:inline-flex;gap:8px;align-items:center;cursor:pointer}
+.lv-legend .lv-chip:not(#_a):not(#_b).on{border-color:var(--ink,#111827)}
+.lv-band{padding:8px 16px;display:flex;flex-direction:column;gap:1px;font-size:13px}.lv-band strong{font-size:14px}
+.lv-tile{transition:transform .12s,box-shadow .12s}.lv-tile:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(15,27,45,.12)}
+.lv-dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:0;box-shadow:0 0 0 1px rgba(0,0,0,.12)}
 /* Centre de contrôle administrateur (style cockpit sombre) */
 #v-admin .ck{background:#0E1621;color:#E8EEF5;border-radius:16px;padding:18px;margin-bottom:18px}
 #v-admin .ck h3{color:#E8EEF5;font-size:15px;font-weight:600;margin:0 0 10px}
@@ -1083,7 +1089,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.11.05-4';
+const APP_VERSION = '2026.11.05-6';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -1980,13 +1986,17 @@ async function renderChambres(){
   await loadEst();
   const { data: all } = await sb.from('rooms').select('*').eq('establishment_id', S.est).order('number');
   const rooms = (all || []).sort(natSort);
+  const LV = await roomLiveToday(rooms);
   const u = (S.overview && S.overview.usage) || {};
   const canEdit = can(['owner','admin','manager']);
   const types = [...new Set(rooms.map(r => r.room_type).filter(Boolean))];
   const f = S._chf || { type: '', st: '' };
-  const shown = rooms.filter(r => (!f.type || r.room_type === f.type) && (!f.st || (f.st === 'inactive' ? !r.is_active : r.is_active && r.housekeeping_status === f.st)));
+  const shown = rooms.filter(r => (!f.type || r.room_type === f.type) && (!f.st || (f.st === 'inactive' ? !r.is_active : r.is_active && r.housekeeping_status === f.st)) && (!f.live || (LV[r.id] || {}).st === f.live));
+  const lvCount = (k) => rooms.filter(r => r.is_active && (LV[r.id] || {}).st === k).length;
+  const lvInfo = (r) => { const x = LV[r.id] || {}, z = x.resa; if (x.st === 'occupied') return `${esc(z.guest_name || 'Client')} · départ ${dfr(z.check_out)}`; if (x.st === 'departing') return `${esc(z.guest_name || 'Client')} · départ aujourd’hui`; if (x.st === 'arriving') return `${esc(z.guest_name || 'Client')} · arrivée aujourd’hui`; if (x.st === 'dirty') return 'À préparer avant la prochaine arrivée'; if (x.st === 'oos') return r.is_active ? 'Indisponible à la vente' : 'Chambre désactivée'; return r.base_rate != null ? 'Disponible · ' + money(r.base_rate) + ' / nuit' : 'Disponible'; };
   const hkCls = { clean:'st-active', ready:'st-active', dirty:'st-pending', cleaning:'st-trial', out_of_service:'st-expired' };
   el.innerHTML = head('Chambres', `<span class="pill st-trial" style="align-self:center">${u.rooms ?? rooms.filter(r => r.is_active).length} / ${u.max_rooms ?? '∞'} utilisées</span><button class="ghost" type="button" id="rateRulesBtn">Tarifs automatiques</button>${canEdit ? '<button class="primary" id="addRooms">+ Ajouter des chambres</button>' : ''}`) + readOnlyNote() + `
+    <div class="lv-legend" role="group" aria-label="Filtrer par statut du jour">${['free', 'occupied', 'arriving', 'departing', 'dirty', 'oos'].map(k => `<button type="button" class="lv-chip${f.live === k ? ' on' : ''}" data-live="${k}" aria-pressed="${f.live === k}" style="--lb:${LIVE[k][1]};--lc:${LIVE[k][2]}"><span>${LIVE[k][0]}</span><strong>${lvCount(k)}</strong></button>`).join('')}${f.live ? '<button type="button" class="small ghost" data-live="">Toutes</button>' : ''}</div>
     <div class="row" style="margin-bottom:16px">
       <select id="fType" aria-label="Type de chambre" style="width:auto"><option value="">Tous les types</option>${types.map(t => `<option ${t === f.type ? 'selected' : ''}>${esc(t)}</option>`).join('')}</select>
       <select id="fSt" aria-label="État de la chambre" style="width:auto"><option value="">Tous les états</option>${opt(HKS, f.st)}<option value="inactive" ${f.st === 'inactive' ? 'selected' : ''}>Désactivées</option></select>
@@ -1994,12 +2004,13 @@ async function renderChambres(){
     ${shown.length === 0 ? `<div class="card" style="text-align:center;padding:40px 20px"><h3 style="font-size:22px">Aucune chambre</h3><p class="muted">Ajoutez vos chambres une par une ou plusieurs d’un coup (ex. 101 à 120).</p>${canEdit ? '<button class="primary" id="addRooms2">Ajouter des chambres</button>' : ''}</div>` : `
     <div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px">
       ${shown.map(r => { const ph = (r.photos || [])[0];
-        return `<article class="card" style="padding:0;overflow:hidden;display:flex;flex-direction:column;${r.is_active ? '' : 'background:var(--bg);border-style:dashed'}">
+        return `<article class="card" style="padding:0;overflow:hidden;display:flex;flex-direction:column;border:2px solid ${LIVE[(LV[r.id] || {}).st || 'free'][1]};${r.is_active ? '' : 'background:var(--bg);border-style:dashed'}">
           <div style="position:relative;height:160px;background:${ph ? `#2B1E16 url('${esc(ph)}') center/cover` : 'repeating-linear-gradient(135deg,var(--line) 0 12px,#F1E6D4 12px 24px)'}">
             ${ph ? '' : '<span style="position:absolute;inset:0;display:grid;place-items:center;color:var(--muted);font-size:13px;font-weight:600">Aucune photo</span>'}
             <span style="position:absolute;top:10px;left:10px;background:var(--card);color:var(--ink);font-family:var(--display);font-weight:800;font-size:20px;padding:4px 12px;border-radius:999px">${esc(r.number)}</span>
             ${(r.photos || []).length > 1 ? `<span style="position:absolute;bottom:10px;right:10px;background:rgba(43,30,22,.75);color:#fff;font-size:12px;font-weight:700;padding:3px 9px;border-radius:999px">${r.photos.length} photos</span>` : ''}
           </div>
+          <div class="lv-band" style="background:${LIVE[(LV[r.id] || {}).st || 'free'][1]};color:${LIVE[(LV[r.id] || {}).st || 'free'][2]}"><strong>${LIVE[(LV[r.id] || {}).st || 'free'][0]}</strong><span>${lvInfo(r)}</span></div>
           <div style="padding:14px 16px 16px;display:flex;flex-direction:column;gap:8px;flex:1">
             <div class="row between" style="flex-wrap:nowrap"><strong style="font-size:16px">${esc(r.room_type || 'Chambre')}</strong><strong style="color:var(--green)">${r.base_rate != null ? money(r.base_rate) : '—'}</strong></div>
             <div class="muted" style="font-size:13px">${[r.capacity ? r.capacity + ' pers.' : '', BEDS[r.bed_type] || '', r.size_m2 ? r.size_m2 + ' m²' : '', r.floor ? 'Étage ' + esc(r.floor) : ''].filter(Boolean).join(' · ') || '&nbsp;'}</div>
@@ -2011,6 +2022,7 @@ async function renderChambres(){
           </div></article>`; }).join('')}
     </div>`}`;
   $('fType').onchange = (e) => { S._chf = { ...f, type: e.target.value }; renderChambres(); };
+  el.querySelectorAll('[data-live]').forEach(b => b.onclick = () => { S._chf = { ...f, live: f.live === b.dataset.live ? '' : b.dataset.live }; renderChambres(); });
   $('fSt').onchange = (e) => { S._chf = { ...f, st: e.target.value }; renderChambres(); };
   [$('addRooms'), $('addRooms2')].forEach(b => { if (b) b.onclick = () => openRoomForm(null, renderChambres, types); });
   el.querySelectorAll('[data-edit]').forEach(b => b.onclick = () => openRoomForm(rooms.find(r => r.id === b.dataset.edit), renderChambres, types));
@@ -2430,6 +2442,25 @@ const LIVE = document.documentElement.dataset.theme === 'foret' ? {
   dirty:     ['À nettoyer',     '#F7D9C4', '#7A3216'],
   oos:       ['Hors service',   '#E3DCD2', '#6E5A4A']
 };
+const LV_DOT = { free:'#3BA55C', occupied:'#1F7AB8', arriving:'#E0A030', departing:'#A8683A', dirty:'#D9534F', oos:'#8A8F8C' };
+/* Statut du jour de chaque chambre (mêmes règles que le tableau de bord) */
+async function roomLiveToday(rooms){
+  const t = today();
+  const { data } = await sb.from('reservations').select('id,room_id,guest_name,check_in,check_out,status')
+    .eq('establishment_id', S.est).in('status', ['pending', 'confirmed', 'checked_in']).lte('check_in', t).gte('check_out', t);
+  const R = data || [], out = {};
+  rooms.forEach(rm => {
+    const stay = R.find(r => r.room_id === rm.id && r.status === 'checked_in');
+    const arr = R.find(r => r.room_id === rm.id && r.check_in === t && ['pending', 'confirmed'].includes(r.status));
+    let st = 'free', resa = null;
+    if (!rm.is_active || rm.housekeeping_status === 'out_of_service') st = 'oos';
+    else if (stay) { st = stay.check_out === t ? 'departing' : 'occupied'; resa = stay; }
+    else if (arr) { st = 'arriving'; resa = arr; }
+    else if (moduleOn('menage') && ['dirty', 'cleaning'].includes(rm.housekeeping_status)) st = 'dirty';
+    out[rm.id] = { st, resa };
+  });
+  return out;
+}
 function donut(pct, size = 92){
   const r = 38, c = 2 * Math.PI * r, v = Math.max(0, Math.min(100, pct));
   return `<svg width="${size}" height="${size}" viewBox="0 0 100 100" role="img" aria-label="Occupation ${v} %"><circle cx="50" cy="50" r="${r}" fill="none" stroke="var(--line)" stroke-width="12"></circle><circle cx="50" cy="50" r="${r}" fill="none" stroke="var(--green)" stroke-width="12" stroke-linecap="round" stroke-dasharray="${c * v / 100} ${c}" transform="rotate(-90 50 50)"></circle><text x="50" y="56" text-anchor="middle" font-family="var(--display)" font-weight="800" font-size="22" fill="var(--ink)">${v}%</text></svg>`;
@@ -2566,7 +2597,7 @@ async function renderDashboardCore(){
     <div class="card" style="margin-bottom:16px">
       <div class="row between" style="margin-bottom:12px"><h3 style="font-size:22px">Chambres en direct</h3><div class="row" style="gap:6px">${Object.entries(LIVE).map(([k, v]) => `<span class="pill" style="background:${v[1]};color:${v[2]}">${v[0]} · ${countSt(k)}</span>`).join('')}</div></div>
       ${total ? `<div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:10px">${live.map(x => { const c = LIVE[x.st];
-        return `<button type="button" data-room="${x.rm.id}" ${x.resa ? `data-open="${x.resa.id}"` : ''} style="cursor:pointer;border:none;font:inherit;text-align:left;width:100%;border-radius:16px;padding:12px;min-height:96px;background:${c[1]};color:${c[2]};display:flex;flex-direction:column;justify-content:space-between;gap:6px;outline-offset:2px" aria-label="Chambre ${esc(x.rm.number)} : ${c[0]}">
+        return `<button type="button" class="lv-tile" data-room="${x.rm.id}" ${x.resa ? `data-open="${x.resa.id}"` : ''} style="cursor:pointer;border:none;font:inherit;text-align:left;width:100%;border-radius:16px;padding:12px;min-height:96px;background:${c[1]};color:${c[2]};display:flex;flex-direction:column;justify-content:space-between;gap:6px;outline-offset:2px" aria-label="Chambre ${esc(x.rm.number)} : ${c[0]}">
           <span style="font-family:var(--display);font-weight:800;font-size:24px;line-height:1">${esc(x.rm.number)}</span>
           <span style="font-size:12px;font-weight:600;opacity:.9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${x.resa ? esc(x.resa.guest_name) : esc(x.rm.room_type || c[0])}</span>
           <span style="font-size:11px;opacity:.8">${c[0]}</span></button>`; }).join('')}</div>` : '<p class="muted">Aucune chambre.</p>'}
@@ -3182,6 +3213,7 @@ async function renderPlanning(){
   const col = { pending:['var(--amber-l)', 'var(--amber)'], confirmed:['var(--green-l)', 'var(--green-d)'], checked_in:['var(--green)', '#fff'], checked_out:['var(--line)', 'var(--muted)'] };
   const cell = 52, canMove = can(['owner','admin','manager','receptionist']);
   const RES = data || [];
+  const LV = await roomLiveToday(S.rooms);
   el.innerHTML = head('Planning', `<button class="ghost small" id="pPrev">← 7 jours</button><button class="ghost small" id="pToday">Aujourd'hui</button><button class="ghost small" id="pNext">7 jours →</button><button class="primary small" data-newresa>Nouvelle réservation</button>`) + `
     <div class="card" style="padding:0;overflow-x:auto"><div style="min-width:${110 + days * cell}px">
       <div style="display:grid;grid-template-columns:110px repeat(${days},${cell}px);position:sticky;top:0;background:#fff;border-bottom:1px solid var(--line)">
@@ -3190,14 +3222,14 @@ async function renderPlanning(){
       </div>
       ${S.rooms.map(rm => { const rs = (data || []).filter(x => x.room_id === rm.id);
         return `<div data-prow="${rm.id}" style="display:grid;grid-template-columns:110px repeat(${days},${cell}px);position:relative;border-bottom:1px solid var(--line);height:46px">
-          <div style="padding:12px 10px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(rm.number)} <span class="muted" style="font-weight:400;font-size:12px">${HKS[rm.housekeeping_status] === 'Propre' ? '' : esc(HKS[rm.housekeeping_status])}</span></div>
+          <div style="padding:12px 10px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="Aujourd’hui : ${LIVE[(LV[rm.id] || {}).st || 'free'][0]}"><span class="lv-dot" style="background:${LV_DOT[(LV[rm.id] || {}).st || 'free']}" aria-hidden="true"></span>${esc(rm.number)}<span class="sr-only"> · ${esc(LIVE[(LV[rm.id] || {}).st || 'free'][0])}</span></div>
           ${dates.map(d => `<button aria-label="Réserver ${esc(rm.number)} le ${d}" data-slot="${rm.id}|${d}" style="min-height:46px;border:none;border-left:1px solid #F4F1EA;border-radius:0;background:transparent;padding:0"></button>`).join('')}
           ${rs.map(x => { const a = Math.max(0, (new Date(x.check_in) - new Date(start)) / 864e5), b = Math.min(days, (new Date(x.check_out) - new Date(start)) / 864e5);
             const movable = x.status !== 'checked_out' && canMove;
             return `<button data-open="${x.id}" data-bar="${x.id}" title="${esc(x.guest_name)} · ${dfr(x.check_in)} → ${dfr(x.check_out)}${movable ? ' · glissez pour déplacer' : ''}" class="pbar${movable ? ' pmove' : ''}" style="position:absolute;top:6px;height:34px;min-height:34px;left:${110 + a * cell + cell / 2}px;width:${Math.max(cell / 2, (b - a) * cell - 4)}px;background:${col[x.status][0]};color:${col[x.status][1]};border:none;border-radius:8px;font-size:12px;font-weight:700;padding:0 ${movable ? 14 : 8}px 0 8px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;text-align:left">${esc(x.guest_name)}${movable ? '<span class="pgrip" data-grip="1" aria-hidden="true"></span>' : ''}</button>`; }).join('')}
         </div>`; }).join('') || '<p class="muted" style="padding:16px">Aucune chambre.</p>'}
     </div></div>
-    <div class="row" style="margin-top:10px;font-size:12px">${Object.entries(col).map(([k, c]) => `<span><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:${c[0]};vertical-align:middle"></span> ${RSTATUS[k]}</span>`).join('')}<span class="muted">· Cliquez sur une case vide pour réserver. Glissez une réservation pour changer de chambre ou de dates, tirez son bord droit pour changer le départ.</span></div>`;
+    <div class="row" style="margin-top:10px;font-size:12px">${Object.entries(col).map(([k, c]) => `<span><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:${c[0]};vertical-align:middle"></span> ${RSTATUS[k]}</span>`).join('')}<span class="muted" style="margin-left:8px">Aujourd’hui :</span>${Object.entries(LV_DOT).map(([k, c]) => `<span><span class="lv-dot" style="background:${c}"></span>${LIVE[k][0]}</span>`).join('')}<span class="muted">· Cliquez sur une case vide pour réserver. Glissez une réservation pour changer de chambre ou de dates, tirez son bord droit pour changer le départ.</span></div>`;
   $('pPrev').onclick = () => { S._ps = addDays(start, -7); renderPlanning(); };
   $('pNext').onclick = () => { S._ps = addDays(start, 7); renderPlanning(); };
   $('pToday').onclick = () => { S._ps = null; renderPlanning(); };

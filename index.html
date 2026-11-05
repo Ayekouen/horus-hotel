@@ -1116,7 +1116,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.11.05-15';
+const APP_VERSION = '2026.11.05-17';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -1990,7 +1990,7 @@ async function renderAbonnement(){
 
 function printInvoice(i){
   if (!i) return;
-  const w = window.open('', '_blank');
+  const w = openDocWin();
   if (!w) return toast("Autorisez l'ouverture de fenêtres pour imprimer la facture.", true);
   w.document.write(`<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Facture ${esc(i.number)}</title><style>body{max-width:720px;margin:40px auto;padding:0 20px}${printCss('doc')}</style></head><body>
   <div class="dh"><div class="brand"><div><h1>Nuittea Manager</h1><div class="m">Logiciel de gestion hôtelière</div></div></div><div class="meta"><span class="kind">Facture</span><div class="num">${esc(i.number)}</div><div class="m">Émise le ${date(i.issued_at)}</div></div></div>
@@ -3219,22 +3219,80 @@ async function openResa(id, refresh, focusCheckout){
   if (focusCheckout && $('aOut')) $('aOut').focus();
 }
 
-function printGuestInvoice(i){
+/* Montant en toutes lettres (francs CFA) */
+function amountWords(n){
+  n = Math.round(Math.abs(Number(n) || 0));
+  const U = ['zéro','un','deux','trois','quatre','cinq','six','sept','huit','neuf','dix','onze','douze','treize','quatorze','quinze','seize','dix-sept','dix-huit','dix-neuf'];
+  const T = ['', '', 'vingt', 'trente', 'quarante', 'cinquante', 'soixante', 'soixante', 'quatre-vingt', 'quatre-vingt'];
+  const lt100 = (x) => { if (x < 20) return U[x]; const t = Math.floor(x / 10), u = x % 10;
+    if (t === 7 || t === 9) return T[t] + (t === 7 && u === 1 ? '-et-' : '-') + U[10 + u];
+    if (t === 8) return u ? 'quatre-vingt-' + U[u] : 'quatre-vingts';
+    return T[t] + (u === 1 ? '-et-un' : u ? '-' + U[u] : ''); };
+  const lt1000 = (x, last) => { const c = Math.floor(x / 100), r = x % 100; let w = '';
+    if (c) w = (c > 1 ? U[c] + ' cent' + (r === 0 && last ? 's' : '') : 'cent');
+    if (r) w += (w ? ' ' : '') + lt100(r); return w; };
+  if (n === 0) return 'zéro';
+  const parts = []; const b = Math.floor(n / 1e9), m = Math.floor(n / 1e6) % 1000, k = Math.floor(n / 1000) % 1000, r = n % 1000;
+  if (b) parts.push(lt1000(b, true) + ' milliard' + (b > 1 ? 's' : ''));
+  if (m) parts.push(lt1000(m, true) + ' million' + (m > 1 ? 's' : ''));
+  if (k) parts.push(k === 1 ? 'mille' : lt1000(k, false) + ' mille');
+  if (r) parts.push(lt1000(r, true));
+  return parts.join(' ');
+}
+async function printGuestInvoice(i, fmt){
   if (!i) return;
-  const est = S.ests.find(e => e.id === i.establishment_id) || {};
-  const w = window.open('', '_blank'); if (!w) return toast("Autorisez l'ouverture de fenêtres pour imprimer.", true);
-  const due = Number(i.balance) > 0;
-  w.document.write(`<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Facture ${esc(i.number)}</title><style>body{max-width:760px;margin:36px auto;padding:0 20px}${printCss('doc')}</style></head><body>
-  ${docHead(est, 'Facture', i.number, 'Émise le ' + new Date(i.issued_at).toLocaleDateString('fr-FR', { dateStyle: 'long' }))}
-  <div class="cols"><div class="box"><div class="lbl">Facturé à</div><strong>${esc(i.guest_name)}</strong></div>
-    <div class="box"><div class="lbl">Statut</div>${due ? `<span class="pill due">Reste ${money(i.balance)}</span>` : '<span class="pill ok">Réglée</span>'}</div></div>
-  <table><thead><tr><th>Désignation</th><th class="r">Qté</th><th class="r">Prix unitaire</th><th class="r">Montant</th></tr></thead><tbody>
-  ${(i.lines || []).map(l => `<tr><td>${esc(l.label)}</td><td class="r">${l.qty}</td><td class="r">${money(l.unit)}</td><td class="r">${money(l.amount)}</td></tr>`).join('')}</tbody>
-  <tr class="tot"><td colspan="3" class="r">Total</td><td class="r">${money(i.total)}</td></tr>
-  <tr class="sub"><td colspan="3" class="r">Déjà réglé</td><td class="r">${money(i.paid)}</td></tr>
-  <tr class="sub"><td colspan="3" class="r"><strong>Reste à payer</strong></td><td class="r"><strong>${money(i.balance)}</strong></td></tr></table>
-  ${rcpt(est).footer ? `<p class="m" style="margin-top:22px;white-space:pre-line">${esc(rcpt(est).footer)}</p>` : ''}
-  ${docFoot('Montants en francs CFA (XOF).')}<script>window.onload=()=>window.print()<\/script></body></html>`);
+  if (!fmt) { let last = 'a4'; try { last = localStorage.getItem('hh_inv_fmt') || 'a4'; } catch (_) {}
+    modal(`<h2 style="font-size:22px;margin:0 0 12px">Format de la facture</h2>
+      <div class="row" style="gap:10px"><button type="button" class="${last === 'a4' ? 'primary' : 'ghost'}" id="ifA4" style="flex:1;min-height:64px">A4<br><span style="font-size:12px;font-weight:500">Entreprises, comptabilité</span></button>
+      <button type="button" class="${last === 'ticket' ? 'primary' : 'ghost'}" id="ifTk" style="flex:1;min-height:64px">Ticket 80 mm<br><span style="font-size:12px;font-weight:500">Imprimante de la réception</span></button></div>`);
+    const go2 = (f) => { try { localStorage.setItem('hh_inv_fmt', f); } catch (_) {} closeModal(); printGuestInvoice(i, f); };
+    $('ifA4').onclick = () => go2('a4'); $('ifTk').onclick = () => go2('ticket'); return; }
+  const est = S.ests.find(e => e.id === i.establishment_id) || {}, r = rcpt(est);
+  const w = openDocWin(); if (!w) return toast("Autorisez l'ouverture de fenêtres pour imprimer.", true);
+  let res = null; if (i.reservation_id) { const q = await sb.from('reservation_balances').select('room_number,check_in,check_out,nights,adults,guest_phone').eq('id', i.reservation_id).maybeSingle(); res = q.data; }
+  const name = r.title || est.name || 'Hôtel', logoUrl = r.show_logo !== false && est.public_logo_url;
+  const ini = name.split(/\s+/).filter(x => x.length > 2 || /^[A-Z]/.test(x)).slice(0, 2).map(x => x[0].toUpperCase()).join('') || 'H';
+  const addr = r.address ?? [est.address, est.city].filter(Boolean).join(', '), tel = r.phone ?? (est.phone || est.public_phone || '');
+  const d = (x) => new Date(x + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+  const issued = new Date(i.issued_at).toLocaleDateString('fr-FR', { dateStyle: 'long' });
+  const due = Number(i.balance) > 0, lines = i.lines || [];
+  const color = r.color || '#0F2A44';
+  if (fmt === 'ticket') {
+    w.document.write(`<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Facture ${esc(i.number)}</title><style>body{font:13px/1.45 ui-monospace,Menlo,monospace;color:#000;max-width:80mm;margin:20px auto;padding:0 10px}.c{text-align:center}.hr{border-top:1px dashed #000;margin:8px 0}.l{display:flex;justify-content:space-between;gap:8px}h1{font:800 15px Inter,system-ui,sans-serif;margin:4px 0 0}${printCss('ticket')}</style></head><body>
+      <div class="c">${logoUrl ? `<img src="${esc(est.public_logo_url)}" alt="" style="max-height:52px;max-width:60%;object-fit:contain">` : `<div style="display:inline-grid;place-items:center;width:40px;height:40px;border-radius:10px;background:#000;color:#fff;font:800 16px Inter,sans-serif">${esc(ini)}</div>`}
+      <h1>${esc(name.toUpperCase())}</h1>${addr ? `<div>${esc(addr)}</div>` : ''}${tel ? `<div>${esc(tel)}</div>` : ''}${r.tax_id ? `<div>${esc(r.tax_id)}</div>` : ''}</div>
+      <div class="hr"></div><div>FACTURE ${esc(i.number)}</div><div>${new Date(i.issued_at).toLocaleDateString('fr-FR')}${res ? ' · Ch. ' + esc(res.room_number) : ''}</div><div>Client : ${esc(i.guest_name)}</div>${res ? `<div>Séjour : ${new Date(res.check_in + 'T00:00:00').toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })} → ${new Date(res.check_out + 'T00:00:00').toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })} (${res.nights} n.)</div>` : ''}
+      <div class="hr"></div>${lines.map(l => `<div>${esc(l.label)}</div><div class="l"><span>${l.qty} × ${money(l.unit)}</span><span>${money(l.amount)}</span></div>`).join('')}
+      <div class="hr"></div><div class="l"><span>TOTAL</span><b>${money(i.total)}</b></div><div class="l"><span>RÉGLÉ</span><span>${money(i.paid)}</span></div><div class="l" style="font-size:15px"><b>${due ? 'RESTE' : 'SOLDÉE'}</b><b>${due ? money(i.balance) : ''}</b></div>
+      <div class="hr"></div>${r.footer ? `<div class="c" style="white-space:pre-line">${esc(r.footer)}</div>` : '<div class="c">Merci et à bientôt</div>'}
+      <script>window.onload=()=>window.print()<\/script></body></html>`);
+    w.document.close(); return;
+  }
+  w.document.write(`<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Facture ${esc(i.number)}</title><style>
+    *{box-sizing:border-box}body{margin:0;font:14px/1.45 Inter,system-ui,-apple-system,sans-serif;color:#17212B;background:#fff}
+    .pg{max-width:794px;min-height:1080px;margin:0 auto;padding:48px 56px;display:flex;flex-direction:column}
+    .top{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;border-bottom:2px solid ${color};padding-bottom:20px}
+    .br{display:flex;gap:14px;align-items:center}.lg{width:60px;height:60px;border-radius:14px;background:${color};color:#fff;display:grid;place-items:center;font-weight:800;font-size:22px;flex:none}.lg img{width:60px;height:60px;object-fit:contain}
+    .hn{font-size:22px;font-weight:800}.m{font-size:12.5px;color:#5B6B7A}.kind{font-size:30px;font-weight:800;letter-spacing:.04em;color:${color};text-align:right}
+    .boxes{display:flex;gap:20px;margin:24px 0}.bx{flex:1;background:#F4F7FA;border-radius:10px;padding:14px 16px}.lbl{font-size:11px;font-weight:700;letter-spacing:.1em;color:#5B6B7A}
+    table{width:100%;border-collapse:collapse}thead tr{background:${color};color:#fff}th{padding:10px 12px;text-align:left;font-size:13px}td{padding:10px 12px}tbody tr:nth-child(even){background:#F8FAFC}.r{text-align:right}.c{text-align:center}
+    .tot{display:flex;justify-content:flex-end;margin-top:16px}.tot tr{background:none!important}.tot table{width:300px}.tot td{padding:6px 0}.tot .g td{border-top:2px solid ${color};padding-top:10px;font-weight:800;font-size:16px}
+    .ft{margin-top:auto;display:flex;justify-content:space-between;align-items:flex-end;border-top:1px solid #D8E3EC;padding-top:14px;font-size:11.5px;color:#5B6B7A;gap:20px}
+    .sig{text-align:center}.sig div{width:160px;height:56px;border-bottom:1px solid #9AAAB8;margin-bottom:4px}
+    .st{display:inline-block;margin-top:6px;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:700}
+    @page{size:A4;margin:0}@media print{.pg{min-height:100vh}}</style></head><body><div class="pg">
+    <div class="top"><div class="br"><div class="lg">${logoUrl ? `<img src="${esc(est.public_logo_url)}" alt="">` : esc(ini)}</div><div><div class="hn">${esc(name)}</div>${addr ? `<div class="m">${esc(addr)}</div>` : ''}<div class="m">${[tel, r.email].filter(Boolean).map(esc).join(' · ')}</div></div></div>
+      <div><div class="kind">FACTURE</div><div class="m" style="text-align:right">N° ${esc(i.number)}<br>Émise le ${issued}</div></div></div>
+    <div class="boxes"><div class="bx"><div class="lbl">FACTURÉ À</div><div style="font-weight:700;margin-top:4px">${esc(i.guest_name)}</div>${res && res.guest_phone ? `<div class="m">${esc(res.guest_phone)}</div>` : ''}</div>
+      <div class="bx"><div class="lbl">SÉJOUR</div>${res ? `<div style="font-weight:700;margin-top:4px">Du ${d(res.check_in)} au ${d(res.check_out)}</div><div class="m">Chambre ${esc(res.room_number)} · ${plur(res.nights, 'nuit', 'nuits')}${res.adults ? ' · ' + plur(res.adults, 'adulte', 'adultes') : ''}</div>` : '<div class="m" style="margin-top:4px">—</div>'}
+        <span class="st" style="background:${due ? '#FDECEC;color:#B42318' : '#E7F6EC;color:#1B7A3D'}">${due ? 'Reste à payer' : 'Réglée'}</span></div></div>
+    <table><thead><tr><th>Désignation</th><th class="c">Qté</th><th class="r">Prix unitaire</th><th class="r">Montant</th></tr></thead><tbody>
+    ${lines.map(l => `<tr><td>${esc(l.label)}</td><td class="c">${l.qty}</td><td class="r">${money(l.unit)}</td><td class="r">${money(l.amount)}</td></tr>`).join('')}</tbody></table>
+    <div class="tot"><table><tr><td>Total</td><td class="r" style="font-weight:700">${money(i.total)}</td></tr><tr><td>Déjà réglé</td><td class="r">− ${money(i.paid)}</td></tr><tr class="g"><td>Reste à payer</td><td class="r" style="color:${color}">${money(i.balance)}</td></tr></table></div>
+    <p style="margin-top:20px;font-size:13px;color:#4A5A68">Arrêtée la présente facture à la somme de <b>${amountWords(i.total)} francs CFA</b>.</p>
+    ${r.footer ? `<p class="m" style="white-space:pre-line">${esc(r.footer)}</p>` : ''}
+    <div class="ft"><div>${r.tax_id ? esc(r.tax_id) + '<br>' : ''}Montants en francs CFA (XOF)</div><div class="sig"><div></div>Cachet et signature</div></div>
+  </div><script>window.onload=()=>window.print()<\/script></body></html>`);
   w.document.close();
 }
 
@@ -3462,7 +3520,7 @@ async function uploadReceipt(file){
   return path;
 }
 async function viewReceipt(path){
-  const w = window.open('', '_blank');
+  const w = window.open("", "_blank");
   const { data, error } = await sb.storage.from('receipts').createSignedUrl(path, 300);
   if (error || !data) { if (w) w.close(); return toast(errMsg(error), true); }
   if (w) w.location = data.signedUrl; else window.location.href = data.signedUrl;
@@ -3706,8 +3764,31 @@ function openEncaisser(b, done){
   draw();
 }
 
+/* Documents (reçus, factures, rapports) : sur téléphone ou application installée, ouverts dans un panneau
+   plein écran avec « Fermer », « Imprimer » et « Partager » (une nouvelle fenêtre n'y peut pas être refermée). */
+function openDocWin(){
+  const mobile = matchMedia('(max-width: 899px)').matches || isStandalone() || (typeof IN_APP !== 'undefined' && IN_APP);
+  if (!mobile) return window.open('', '_blank');
+  const old = document.getElementById('docWin'); if (old) old.remove();
+  const ov = document.createElement('div'); ov.id = 'docWin';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:10050;background:#fff;display:flex;flex-direction:column';
+  ov.innerHTML = '<div style="display:flex;gap:8px;align-items:center;padding:10px 12px;padding-top:max(10px,env(safe-area-inset-top));border-bottom:1px solid #e5e7eb;background:#fff"><button type="button" id="dwClose" style="min-height:44px;padding:0 16px;border-radius:10px;border:1px solid #d1d5db;background:#fff;font-weight:700">✕ Fermer</button><span style="flex:1"></span><button type="button" id="dwShare" style="min-height:44px;padding:0 14px;border-radius:10px;border:1px solid #d1d5db;background:#fff;font-weight:600">Partager</button><button type="button" id="dwPrint" style="min-height:44px;padding:0 16px;border-radius:10px;border:0;background:#0F2A44;color:#fff;font-weight:700">Imprimer</button></div><iframe id="dwFrame" title="Document" style="flex:1;border:0;width:100%;background:#fff"></iframe>';
+  document.body.appendChild(ov); document.body.style.overflow = 'hidden';
+  const fr = ov.querySelector('#dwFrame'), cw = fr.contentWindow, d = cw.document;
+  const close = () => { ov.remove(); document.body.style.overflow = ''; window.removeEventListener('popstate', onPop); };
+  const onPop = () => close();
+  try { history.pushState({ docWin: 1 }, ''); window.addEventListener('popstate', onPop); } catch (_) {}
+  ov.querySelector('#dwClose').onclick = () => { if (history.state && history.state.docWin) history.back(); else close(); };
+  ov.querySelector('#dwPrint').onclick = () => { try { cw.focus(); cw.print(); } catch (_) {} };
+  ov.querySelector('#dwShare').onclick = async () => { const t = d.title || 'Document', txt = (d.body && d.body.innerText || '').slice(0, 3000);
+    try { if (navigator.share) await navigator.share({ title: t, text: txt }); else { await navigator.clipboard.writeText(txt); toast('Texte du document copié.'); } } catch (_) {} };
+  // Le document ne lance pas l'impression tout seul sur téléphone : l'utilisateur choisit « Imprimer » ou « Partager ».
+  const wrap = { document: { open: () => d.open(), write: (h) => d.write(String(h).replace(/<script>\s*window\.onload\s*=\s*\(\)\s*=>\s*\{?\s*window\.print\(\);?\s*\}?\s*<\\?\/script>|<script>\s*window\.print\(\)\s*<\\?\/script>/g, '')), close: () => d.close() },
+    print: () => { try { cw.print(); } catch (_) {} }, close: () => ov.querySelector('#dwClose').click(), focus: () => {} };
+  d.open(); return wrap;
+}
 async function printReceipt(key){
-  const w = window.open('', '_blank'); if (!w) return toast("Autorisez l'ouverture de fenêtres pour imprimer.", true);
+  const w = openDocWin(); if (!w) return toast("Autorisez l'ouverture de fenêtres pour imprimer.", true);
   let { data: rows } = await sb.from('cash_movements').select('*').eq('payment_group', key);
   if (!rows || !rows.length) ({ data: rows } = await sb.from('cash_movements').select('*').eq('id', key));
   rows = rows || []; if (!rows.length) { w.close(); return toast('Reçu introuvable.', true); }
@@ -3794,7 +3875,7 @@ async function openExtras(refresh, cart){
 }
 function printExtraReceipt(group, lines, total, method){
   const est = (S.ests || []).find(x => x.id === S.est) || {};
-  const w = window.open('', '_blank'); if (!w) return;
+  const w = openDocWin(); if (!w) return;
   w.document.write(`<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Reçu</title><style>body{font:14px/1.5 system-ui,sans-serif;color:#111;max-width:420px;margin:30px auto;padding:0 18px}h1{font-size:20px;margin:0}.m{color:#555;font-size:12px}${printCss('ticket')}${RECEIPT_CSS}</style></head><body>
     ${rcptHead(est)}<div class="rc-title">Reçu · Ventes annexes</div>
     <div class="m" style="text-align:center;margin-bottom:8px">${new Date().toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })} · ${PMETHOD[method] || ''}</div>
@@ -3959,7 +4040,7 @@ async function printZ(s){
   await teamNames();
   const d = await closureData(s); const est = S.ests.find(x => x.id === s.establishment_id) || {};
   const gap = Number(s.counted_balance || 0) - d.expected;
-  const html = () => { const w = window.open('', '_blank'); if (!w) return toast("Autorisez l'ouverture de fenêtres pour imprimer.", true);
+  const html = () => { const w = openDocWin(); if (!w) return toast("Autorisez l'ouverture de fenêtres pour imprimer.", true);
     w.document.write(`<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Ticket Z</title><style>body{font:13px/1.45 ui-monospace,Menlo,monospace;max-width:300px;margin:12px auto;padding:0 8px}h1{text-align:center;font-size:18px;margin:0}table{width:100%;border-collapse:collapse}td{padding:2px 0}.r{text-align:right}.t td{border-top:1px dashed #000;font-weight:700}${printCss('ticket')}</style></head><body>
       <h1>${esc(est.name || '')}</h1><p style="text-align:center">TICKET Z · CLÔTURE<br>${new Date(s.closed_at || Date.now()).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })}<br>par ${esc(who(s.closed_by))}</p>
       <table><tr><td colspan="2"><b>Encaissements</b></td></tr>${d.byM.map(([k, v]) => `<tr><td>${PMETHOD[k]}</td><td class="r">${money(v)}</td></tr>`).join('')}<tr class="t"><td>Total</td><td class="r">${money(d.totalIn)}</td></tr></table>
@@ -3976,7 +4057,7 @@ async function printZ(s){
 }
 
 async function printClosure(s){
-  const w = window.open('', '_blank'); if (!w) return toast("Autorisez l'ouverture de fenêtres pour imprimer.", true);
+  const w = openDocWin(); if (!w) return toast("Autorisez l'ouverture de fenêtres pour imprimer.", true);
   await teamNames();
   const { data: mv } = await sb.from('cash_movements').select('*').eq('establishment_id', s.establishment_id).gte('created_at', s.opened_at).lte('created_at', s.closed_at || new Date().toISOString()).order('created_at');
   const rows = mv || [], cash = rows.filter(m => m.session_id === s.id);
@@ -4325,7 +4406,7 @@ function exportReportCsv(r){
   toast('Fichier téléchargé : il s\u2019ouvre dans Excel.');
 }
 function printReport(r){
-  const w = window.open('', '_blank'); if (!w) return toast("Autorisez l'ouverture de fenêtres pour imprimer.", true);
+  const w = openDocWin(); if (!w) return toast("Autorisez l'ouverture de fenêtres pour imprimer.", true);
   const est = S.ests.find(x => x.id === S.est) || { name: $('orgLabel').textContent.split(' · ')[0] };
   const row = (a, b) => `<tr><td>${a}</td><td class="r">${b}</td></tr>`;
   const kpi = (l, v) => `<div class="kpi"><span>${l}</span><b>${v}</b></div>`;
@@ -5423,7 +5504,7 @@ async function renderResto(){
 
 const PAY_NAME = { cash: 'Espèces', orange_money: 'Orange Money', mtn_money: 'MTN MoMo', moov_money: 'Moov Money', wave: 'Wave', card: 'Carte', bank_transfer: 'Virement' };
 function printPosTicket(s, items){
-  const w = window.open('', '_blank'); if (!w) return toast("Autorisez l'ouverture de fenêtres pour imprimer.", true);
+  const w = openDocWin(); if (!w) return toast("Autorisez l'ouverture de fenêtres pour imprimer.", true);
   const est = (S.ests || []).find(x => x.id === S.est) || {};
   w.document.write(`<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Ticket ${s.number}</title><style>body{font:13px/1.45 ui-monospace,Menlo,monospace;color:#111;max-width:300px;margin:16px auto;padding:0 10px}h1{font-size:16px;margin:0;text-align:center}.c{text-align:center}table{width:100%;border-collapse:collapse;margin:10px 0}td{padding:3px 0;vertical-align:top}.r{text-align:right}.t td{border-top:1px dashed #000;font-weight:700;font-size:15px;padding-top:6px}.m{color:#555;font-size:11px}${printCss('ticket')}</style></head><body>
     ${rcptHead(est)}
@@ -5587,7 +5668,7 @@ function openPrinterSetup(role = 'caisse'){
   modal('<div></div>'); $('modalBody').style.maxWidth = '560px'; draw();
 }
 function printKitchenHtml(o){
-  const w = window.open('', '_blank'); if (!w) return toast("Autorisez l'ouverture de fenêtres pour imprimer.", true);
+  const w = openDocWin(); if (!w) return toast("Autorisez l'ouverture de fenêtres pour imprimer.", true);
   w.document.write(`<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Bon ${esc(o.ref)}</title><style>body{font:15px/1.4 ui-monospace,Menlo,monospace;max-width:300px;margin:12px auto;padding:0 8px}h1{text-align:center;font-size:22px;margin:0}.b{font-size:18px;font-weight:700;margin:6px 0}.m{font-size:12px}${printCss('ticket')}</style></head><body>
     <h1>${o.outlet === 'bar' ? 'BAR' : 'CUISINE'}</h1><p style="text-align:center">Bon n° ${esc(o.ref)} · ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</p>
     ${o.table ? `<div class="b">Table : ${esc(o.table)}</div>` : ''}${o.server ? `<div>Serveur : ${esc(o.server)}</div>` : ''}<hr>

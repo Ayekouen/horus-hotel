@@ -1052,7 +1052,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.11.05-1';
+const APP_VERSION = '2026.11.05-2';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -1447,8 +1447,8 @@ async function boot(){
   const QP = new URLSearchParams(location.search); const LEGAL_Q = QP.get('legal'); if (LEGAL_Q) return renderLegalPage(LEGAL_Q);
   if (QP.get('avis')) return renderReviewPage(QP.get('avis'));
   /* Les établissements n'ont plus de page publique propre : tout passe par Nuittea.com (pages conservées dans le code). */
-  if (QP.has('annuaire')) return location.replace('https://naya-ci.netlify.app/#/sejours');
-  if (PUBLIC_SLUG) return location.replace('https://naya-ci.netlify.app/#/hotel/' + encodeURIComponent(PUBLIC_SLUG));
+  if (QP.has('annuaire')) return location.replace('https://naya-ci.netlify.app/sejours');
+  if (PUBLIC_SLUG) return location.replace('https://naya-ci.netlify.app/hotel/' + encodeURIComponent(PUBLIC_SLUG));
   const { data: { session } } = await sb.auth.getSession();
   S.session = session;
   if (!session) { renderAuth(); renderProfiles(); show('auth'); setTimeout(() => { const f = $('email').value ? $('password') : $('email'); if (f) f.focus(); }, 50); return; }
@@ -2146,7 +2146,7 @@ async function renderAdmin(){
       ${(N.rows || []).length ? `<tr><td colspan="5" class="r"><strong>Total dû</strong></td><td class="r"><strong>${fcfa(nayaDue)}</strong></td></tr>` : ''}</tbody></table></div></div>
       <div class="card"><h3 style="font-size:20px;margin-bottom:10px">Établissements inscrits sur Nuittea</h3>
       <div class="tablewrap"><table class="table"><thead><tr><th>Établissement</th><th>État</th><th>Commission</th><th><span class="sr-only">Actions</span></th></tr></thead><tbody>
-      ${listedEst.map(e => `<tr><td><strong>${esc(e.name)}</strong><div class="muted" style="font-size:12px">${esc(e.org)}${e.slug ? ` · <a href="${NAYA_URL}/#/hotel/${encodeURIComponent(e.slug)}" target="_blank" rel="noopener">voir la fiche</a>` : ''}</div></td>
+      ${listedEst.map(e => `<tr><td><strong>${esc(e.name)}</strong><div class="muted" style="font-size:12px">${esc(e.org)}${e.slug ? ` · <a href="${NAYA_URL}/hotel/${encodeURIComponent(e.slug)}" target="_blank" rel="noopener">voir la fiche</a>` : ''}</div></td>
         <td>${e.listed ? '<span class="pill st-active">En ligne</span>' : '<span class="pill st-cancelled">Retiré</span>'}</td>
         <td><div class="row" style="gap:6px"><input type="number" min="0" max="50" step="0.5" id="com-${esc(e.id)}" value="${e.commission_pct ?? 10}" aria-label="Commission ${esc(e.name)} en pourcentage" style="max-width:90px"> %<button class="small" data-setcom="${esc(e.id)}">OK</button></div></td>
         <td><button class="small ${e.listed ? 'ghost' : 'primary'}" data-listing="${esc(e.id)}" data-on="${e.listed ? '0' : '1'}">${e.listed ? 'Retirer de Nuittea' : 'Remettre en ligne'}</button></td></tr>`).join('') || '<tr><td colspan="4" class="muted">Aucun établissement ne s’est encore inscrit.</td></tr>'}</tbody></table></div></div>`;
@@ -2750,7 +2750,7 @@ async function renderNaya(){
         ${owner ? `<button class="${L.listed ? 'ghost' : 'primary'}" id="nyToggle">${L.listed ? 'Retirer de Nuittea' : 'Publier sur Nuittea'}</button>` : ''}</div>
         ${L.listed ? `<label class="row" style="gap:8px;margin:12px 0 0;font-weight:600;flex-wrap:nowrap;color:var(--ink)"><input type="checkbox" id="nyAuto" ${L.auto_confirm ? 'checked' : ''} ${owner ? '' : 'disabled'} style="width:20px;min-height:20px"> Confirmer automatiquement les réservations Nuittea</label>
           <p class="muted" style="font-size:12px;margin:4px 0 0">Sinon, elles arrivent « en attente » dans Réservations → Demandes en ligne, et vous les confirmez.</p>
-          ${slug ? `<p style="font-size:13px;margin:10px 0 0">Votre fiche : <a href="${NAYA_URL}/#/hotel/${esc(slug)}" target="_blank" rel="noopener">${NAYA_URL.replace("https://", "")}/#/hotel/${esc(slug)}</a></p>` : ''}` : (owner ? `<p class="muted" style="font-size:12px;margin:10px 0 0">En publiant, vous acceptez la commission indiquée et les conditions partenaires Nuittea. Pensez à ajouter des photos de vos chambres.</p>` : '')}
+          ${slug ? `<p style="font-size:13px;margin:10px 0 0">Votre fiche : <a href="${NAYA_URL}/hotel/${esc(slug)}" target="_blank" rel="noopener">${NAYA_URL.replace("https://", "")}/hotel/${esc(slug)}</a></p>` : ''}` : (owner ? `<p class="muted" style="font-size:12px;margin:10px 0 0">En publiant, vous acceptez la commission indiquée et les conditions partenaires Nuittea. Pensez à ajouter des photos de vos chambres.</p>` : '')}
       </div>
       <div class="row between" style="margin-bottom:8px;gap:8px"><h3 style="font-size:18px">Réservations Nuittea · ${mLabel}</h3><div class="row" style="gap:6px"><button class="small ghost" id="nyPrev" aria-label="Mois précédent">←</button><button class="small ghost" id="nyNext" aria-label="Mois suivant">→</button></div></div>
       <div class="grid" style="grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:12px">
@@ -5475,7 +5475,7 @@ async function drawSales(){
 }
 
 /* ================= Ma page publique (espace propriétaire) ================= */
-const publicUrl = (slug) => 'https://naya-ci.netlify.app/#/hotel/' + encodeURIComponent(slug);
+const publicUrl = (slug) => 'https://naya-ci.netlify.app/hotel/' + encodeURIComponent(slug);
 const slugify = (t) => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 48);
 
 const THEMES = {

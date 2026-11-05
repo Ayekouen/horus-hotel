@@ -721,7 +721,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 
 /* ---- Direction B « Net et professionnel » (boutons, onglets, retours) ---- */
 :root{--b-r:10px;--b-ink:#111827;--b-line:#D0D5DD}
-:is(section[id^="v-"],#modal,.dtop,#onboard,#auth) :is(button,.btn):not(.gstep):not(.loc-sug button):not([role=tab]):not(.toggle button):not(.ghead):not(.leaflet-control *):not(.ck *):not(.lv-chip):not(.lv-tile):not(.xitem):not(.pcard){
+:is(section[id^="v-"],#modal,.dtop,#onboard,#auth) :is(button,.btn):not(.gstep):not(.loc-sug button):not([role=tab]):not(.toggle button):not(.ghead):not(.leaflet-control *):not(.ck *):not(.lv-chip):not(.lv-tile):not(.xitem):not(.pcard):not(.ccard){
   border-radius:var(--b-r)!important;font-weight:600!important;letter-spacing:0!important;transition:background-color .12s,border-color .12s,box-shadow .12s,transform .06s!important;
   background:#fff!important;color:var(--b-ink)!important;border:1px solid var(--b-line)!important;box-shadow:0 1px 2px rgba(16,24,40,.05)!important}
 :is(section[id^="v-"],#modal,.dtop,#onboard,#auth) :is(button,.btn):not(.gstep):not([role=tab]):not(.toggle button):hover{background:#F9FAFB!important;border-color:#98A2B3!important}
@@ -816,6 +816,7 @@ section.refreshing{position:relative}section.refreshing::before{content:"";posit
 .pcard img,.pcard .pph{width:100%;aspect-ratio:4/3;object-fit:cover;background:var(--bg);display:grid;place-items:center;font-size:30px;font-weight:800;color:var(--muted);margin-bottom:6px}
 .pcard .pn,.pcard .pc,.pcard .pp,.pcard .ps{padding:0 12px}.pcard .pn{font-weight:700}.pcard .pc,.pcard .ps{font-size:12px;color:var(--muted)}.pcard .pp{font-weight:800}.pcard .pp s{font-weight:500;opacity:.55}
 .pcard .pbadge{position:absolute;top:8px;left:8px;background:var(--red);color:#fff;font-size:11px;font-weight:800;padding:2px 8px;border-radius:999px}
+.ccard:not(#_a):not(#_b){background:var(--card,#fff);border:1px solid var(--line);color:inherit;font:inherit;min-height:0;padding:14px}.ccard:hover{border-color:var(--green)}
 .xst{display:grid;grid-template-columns:56px 1fr;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
 .xst .ph{width:56px;height:56px;border-radius:10px;object-fit:cover;background:var(--bg);display:grid;place-items:center;color:var(--muted);font-size:11px;text-align:center}
 .xgrid .xitem:not(#_a):not(#_b).on{border-color:var(--green);background:var(--green-l)}
@@ -1142,7 +1143,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.11.05-19';
+const APP_VERSION = '2026.11.05-20';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -2029,6 +2030,10 @@ function printInvoice(i){
   w.document.close();
 }
 
+/* Affichage en grille ou en liste, mémorisé par écran sur l'appareil */
+const viewMode = (k, def = 'grid') => { try { return localStorage.getItem('hh_vm_' + k) || def; } catch (_) { return def; } };
+const viewToggle = (k, def) => { const m = viewMode(k, def); return `<div class="row vmt" style="gap:4px" role="group" aria-label="Affichage"><button type="button" class="small ${m === 'grid' ? 'primary' : 'ghost'}" data-vm="${k}|grid" aria-pressed="${m === 'grid'}">Grille</button><button type="button" class="small ${m === 'list' ? 'primary' : 'ghost'}" data-vm="${k}|list" aria-pressed="${m === 'list'}">Liste</button></div>`; };
+function bindViewToggle(el, redraw){ el.querySelectorAll('[data-vm]').forEach(b => b.onclick = () => { const [k, m] = b.dataset.vm.split('|'); try { localStorage.setItem('hh_vm_' + k, m); } catch (_) {} redraw(); }); }
 /* ---------- Chambres : fiches visuelles ---------- */
 const AMENITIES = ['Climatisation','Wi-Fi','Télévision','Eau chaude','Réfrigérateur','Salle de bain privée','Balcon','Coffre-fort','Bureau','Cuisine équipée','Ventilateur','Parking','Petit-déjeuner inclus','Vue piscine'];
 const BEDS = { simple:'Lit simple', double:'Lit double', queen:'Grand lit (160)', king:'Très grand lit (180+)', jumeaux:'Deux lits', familial:'Familial' };
@@ -2060,8 +2065,14 @@ async function renderChambres(){
     <div class="row" style="margin-bottom:16px">
       <select id="fType" aria-label="Type de chambre" style="width:auto"><option value="">Tous les types</option>${types.map(t => `<option ${t === f.type ? 'selected' : ''}>${esc(t)}</option>`).join('')}</select>
       <select id="fSt" aria-label="État de la chambre" style="width:auto"><option value="">Tous les états</option>${opt(HKS, f.st)}<option value="inactive" ${f.st === 'inactive' ? 'selected' : ''}>Désactivées</option></select>
+      <span style="flex:1"></span>${viewToggle('chambres')}
     </div>
     ${shown.length === 0 ? `<div class="card" style="text-align:center;padding:40px 20px"><h3 style="font-size:22px">Aucune chambre</h3><p class="muted">Ajoutez vos chambres une par une ou plusieurs d’un coup (ex. 101 à 120).</p>${canEdit ? '<button class="primary" id="addRooms2">Ajouter des chambres</button>' : ''}</div>` : `
+    ${viewMode('chambres') === 'list' ? `<div class="card" style="padding:0"><div class="tablewrap"><table class="table"><thead><tr><th>Chambre</th><th>Type</th><th>Aujourd’hui</th><th>Capacité</th><th class="r">Prix</th><th>État</th><th><span class="sr-only">Actions</span></th></tr></thead><tbody>
+      ${shown.map(r => { const lv = LIVE[(LV[r.id] || {}).st || 'free']; return `<tr style="${r.is_active ? '' : 'opacity:.55'}"><td><strong style="font-size:16px">${esc(r.number)}</strong>${(r.photos || []).length ? ` <span class="muted" style="font-size:12px">· ${r.photos.length} photo${r.photos.length > 1 ? 's' : ''}</span>` : ''}</td><td>${esc(r.room_type || 'Chambre')}</td>
+        <td><span class="pill" style="background:${lv[1]};color:${lv[2]}">${lv[0]}</span><div class="muted" style="font-size:12px">${lvInfo(r)}</div></td><td>${r.capacity ? r.capacity + ' pers.' : '—'}</td><td class="r">${r.base_rate != null ? money(r.base_rate) : '—'}</td>
+        <td>${r.is_active ? `<select data-hk="${r.id}" aria-label="État de la chambre ${esc(r.number)}" class="${hkCls[r.housekeeping_status]}" style="min-height:34px;width:auto;border:none;font-weight:700;font-size:13px;border-radius:999px;padding:0 10px">${opt(HKS, r.housekeeping_status)}</select>` : '<span class="pill st-cancelled">Désactivée</span>'}</td>
+        <td>${canEdit ? `<button class="small ghost" data-edit="${r.id}">Modifier</button>` : ''}</td></tr>`; }).join('')}</tbody></table></div></div>` : `
     <div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px">
       ${shown.map(r => { const ph = (r.photos || [])[0];
         return `<article class="card" style="padding:0;overflow:hidden;display:flex;flex-direction:column;border:2px solid ${LIVE[(LV[r.id] || {}).st || 'free'][1]};${r.is_active ? '' : 'background:var(--bg);border-style:dashed'}">
@@ -2080,7 +2091,8 @@ async function renderChambres(){
               ${canEdit ? `<button class="small ghost" data-edit="${r.id}">Modifier</button>` : ''}
             </div>
           </div></article>`; }).join('')}
-    </div>`}`;
+    </div>`}`}`;
+  bindViewToggle(el, renderChambres);
   $('fType').onchange = (e) => { S._chf = { ...f, type: e.target.value }; renderChambres(); };
   el.querySelectorAll('[data-live]').forEach(b => b.onclick = () => { S._chf = { ...f, live: f.live === b.dataset.live ? '' : b.dataset.live }; renderChambres(); });
   $('fSt').onchange = (e) => { S._chf = { ...f, st: e.target.value }; renderChambres(); };
@@ -3422,10 +3434,14 @@ async function renderClients(){
   const q = (S._cq || '').toLowerCase();
   const rows = (data || []).filter(g => !q || (g.full_name + ' ' + (g.phone || '') + ' ' + (g.email || '')).toLowerCase().includes(q));
   el.innerHTML = head('Clients', `<button class="primary" id="cNew">Nouveau client</button>`) + `
-    <div class="card" style="margin-bottom:14px"><label for="cQ">Recherche</label><input id="cQ" value="${esc(S._cq || '')}" placeholder="Nom, téléphone, e-mail"></div>
-    <div class="card">${rows.length === 0 ? '<p class="muted">Aucun client.</p>' : `<div class="tablewrap"><table class="table"><thead><tr><th>Nom</th><th>Téléphone</th><th>Pièce d'identité</th><th>Nationalité</th><th><span class="sr-only">Actions</span></th></tr></thead><tbody>
+    <div class="card row" style="margin-bottom:14px;align-items:flex-end;gap:10px"><div style="flex:1 1 220px"><label for="cQ">Recherche</label><input id="cQ" value="${esc(S._cq || '')}" placeholder="Nom, téléphone, e-mail"></div>${viewToggle('clients', 'list')}</div>
+    ${rows.length && viewMode('clients', 'list') === 'grid' ? `<div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px">${rows.map(g => `<button type="button" class="card ccard" data-guest="${g.id}" style="display:flex;gap:12px;align-items:center;text-align:left;cursor:pointer;margin:0">
+        <span style="width:46px;height:46px;border-radius:50%;background:var(--green-l);color:var(--green-d, var(--green));display:grid;place-items:center;font-weight:800;flex:none">${esc((g.full_name || '?').split(/\s+/).slice(0, 2).map(x => x[0] || '').join('').toUpperCase())}</span>
+        <span style="min-width:0"><strong style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(g.full_name)}</strong><span class="muted" style="font-size:13px;display:block">${esc(g.phone || g.email || '—')}</span>${g.nationality || g.id_type ? `<span class="muted" style="font-size:12px">${esc([g.nationality, g.id_type ? g.id_type.toUpperCase() : ''].filter(Boolean).join(' · '))}</span>` : ''}</span></button>`).join('')}</div>` :
+    `<div class="card">${rows.length === 0 ? '<p class="muted">Aucun client.</p>' : `<div class="tablewrap"><table class="table"><thead><tr><th>Nom</th><th>Téléphone</th><th>Pièce d'identité</th><th>Nationalité</th><th><span class="sr-only">Actions</span></th></tr></thead><tbody>
       ${rows.map(g => `<tr><td><strong>${esc(g.full_name)}</strong><div class="muted" style="font-size:12px">${esc(g.email || '')}</div></td><td>${esc(g.phone || '—')}</td><td>${g.id_type ? esc(g.id_type.toUpperCase()) + ' ' + esc(g.id_number || '') : '—'}</td><td>${esc(g.nationality || '—')}</td><td><button class="small ghost" data-guest="${g.id}">Fiche</button></td></tr>`).join('')}
-    </tbody></table></div>`}</div>`;
+    </tbody></table></div>`}</div>`}`;
+  bindViewToggle(el, renderClients);
   $('cQ').onchange = (e) => { S._cq = e.target.value; renderClients(); };
   $('cNew').onclick = () => guestForm({});
   el.querySelectorAll('[data-guest]').forEach(b => b.onclick = () => guestForm(rows.find(g => g.id === b.dataset.guest)));

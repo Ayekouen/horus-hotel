@@ -1052,7 +1052,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.11.04-4';
+const APP_VERSION = '2026.11.05-1';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -2361,12 +2361,13 @@ function upgradeBtn(){
   return `<button data-go="tarifs" style="background:linear-gradient(135deg,#E9A27A,var(--green));border:0;color:#fff;display:inline-flex;align-items:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"></path></svg>${trial ? 'Choisir ma formule' : 'Passer à ' + esc(next.name)}</button>`;
 }
 /* Chiffre d'affaires encaissé par période (accueil) */
-const CA_PERIODS = [['today', 'Aujourd’hui'], ['yesterday', 'Hier'], ['before', 'Avant-hier'], ['7d', '7 jours'], ['mtd', 'Mois en cours'], ['1m', '1 mois'], ['3m', '3 mois'], ['6m', '6 mois']];
+const CA_PERIODS = [['today', 'Aujourd’hui'], ['yesterday', 'Hier'], ['before', 'Avant-hier'], ['7d', '7 jours'], ['mtd', 'Mois en cours'], ['1m', '30 jours'], ['3m', '3 mois'], ['6m', '6 mois']];
 function caRange(k){ const t = today();
   if (k === 'yesterday') return [addDays(t, -1), t]; if (k === 'before') return [addDays(t, -2), addDays(t, -1)];
   if (k === '7d') return [addDays(t, -6), addDays(t, 1)];
   if (k === 'mtd') return [t.slice(0, 8) + '01', addDays(t, 1)];
-  const m = { '1m': 1, '3m': 3, '6m': 6 }[k]; if (m) { const d = new Date(t + 'T00:00:00'); d.setMonth(d.getMonth() - m); return [iso(d), addDays(t, 1)]; }
+  if (k === '1m') return [addDays(t, -29), addDays(t, 1)];
+  const m = { '3m': 3, '6m': 6 }[k]; if (m) { const d = new Date(t + 'T00:00:00'); d.setMonth(d.getMonth() - m); return [iso(d), addDays(t, 1)]; }
   return [t, addDays(t, 1)]; }
 async function drawCA(k){
   const box = $('caCard'); if (!box) return; S._caP = k = k || S._caP || 'today'; try { localStorage.setItem('hh_ca_p', k); } catch (_) {}
@@ -2532,7 +2533,7 @@ async function dashGuide(R){
   const rem = [];
   const pend = (R || []).filter(r => r.status === 'pending');
   if (pend.length) { const h = Math.round((Date.now() - new Date(pend[0].created_at)) / 36e5); rem.push(['var(--green)', `${plur(pend.length, 'demande', 'demandes')} en ligne en attente${h >= 1 ? ' depuis ' + h + ' h' : ''}`, 'Traiter', 'reservations', 'requests']); }
-  if (cashRole && !sess.data) rem.push(['#C9A227', 'La caisse n’est pas encore ouverte aujourd’hui', 'Ouvrir', 'caisse']);
+  if (cashRole && !sess.data && !can(['owner','admin','manager','accountant'])) rem.push(['#C9A227', 'La caisse n’est pas encore ouverte aujourd’hui', 'Ouvrir', 'caisse']);
   const arrRooms = new Set((R || []).filter(r => r.check_in === t && ['pending','confirmed'].includes(r.status)).map(r => r.room_id));
   S.rooms.filter(r => moduleOn('menage') && arrRooms.has(r.id) && ['dirty','cleaning'].includes(r.housekeeping_status)).forEach(r => rem.push(['#6E5A4A', `Chambre ${esc(r.number)} à nettoyer avant l’arrivée du jour`, 'Chambres', 'chambres']));
   const unpaidOut = (R || []).filter(r => r.status === 'checked_in' && r.check_out === t && r.balance > 0);
@@ -2612,8 +2613,10 @@ async function afterCheckIn(id, refresh){
   const { data: r } = await sb.from('reservation_balances').select('*').eq('id', id).maybeSingle();
   refresh && refresh();
   if (!r) return toast('Client enregistré en chambre.');
+  let g = null; if (r.guest_id && ID_EDIT()) { const { data } = await sb.from('guests').select('*').eq('id', r.guest_id).maybeSingle(); g = data; }
   nextStep('Check-in effectué', `${esc(r.guest_name)} est en chambre ${esc(r.room_number)} jusqu’au ${dfr(r.check_out)}. ${r.balance > 0 ? `Prochaine étape : remettre la clé et encaisser le solde de <strong>${money(r.balance)}</strong>.` : 'Le séjour est réglé : il ne reste qu’à remettre la clé.'}`,
-    r.balance > 0 ? [{ label: 'Encaisser ' + money(r.balance), fn: () => openEncaisser(r, refresh) }] : []);
+    [...(r.balance > 0 ? [{ label: 'Encaisser ' + money(r.balance), fn: () => openEncaisser(r, refresh) }] : []),
+     ...(g && ID_EDIT() && !g.id_front_path ? [{ label: 'Photographier la pièce', fn: () => guestForm(g) }] : [])]);
 }
 function afterCheckOut(r, refresh){
   refresh && refresh();

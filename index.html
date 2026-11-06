@@ -1143,7 +1143,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.11.05-21';
+const APP_VERSION = '2026.11.05-22';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -2099,9 +2099,10 @@ async function renderChambres(){
   [$('addRooms'), $('addRooms2')].forEach(b => { if (b) b.onclick = () => openRoomForm(null, renderChambres, types); });
   el.querySelectorAll('[data-edit]').forEach(b => b.onclick = () => openRoomForm(rooms.find(r => r.id === b.dataset.edit), renderChambres, types));
   el.querySelectorAll('[data-hk]').forEach(sel => sel.onchange = async () => {
-    const { error } = await sb.from('rooms').update({ housekeeping_status: sel.value }).eq('id', sel.dataset.hk);
-    if (error) toast(errMsg(error), true); else toast('État mis à jour.');
-    renderChambres();
+    const rm = rooms.find(x => x.id === sel.dataset.hk) || {};
+    const { error, queued } = await runOrQueue({ kind: 'update', table: 'rooms', id: sel.dataset.hk, values: { housekeeping_status: sel.value } }, `Ménage · chambre ${rm.number || ''} : ${HKS[sel.value] || sel.value}`);
+    if (error) toast(errMsg(error), true); else toast(queued ? 'Hors connexion : état enregistré, envoyé au retour du réseau.' : 'État mis à jour.');
+    if (!queued) renderChambres();
   });
 }
 
@@ -2884,7 +2885,7 @@ function bindResaActions(el, refresh){
   el.querySelectorAll('[data-walkin]').forEach(b => b.onclick = () => openResaForm({ walkin: true }, refresh));
   loadDashResult();
   el.querySelectorAll('[data-open]').forEach(b => b.onclick = () => openResa(b.dataset.open, refresh));
-  el.querySelectorAll('[data-checkin]').forEach(b => b.onclick = async () => { b.disabled = true; const { error } = await sb.rpc('check_in_reservation', { p_reservation: b.dataset.checkin }); if (error) { b.disabled = false; return toast(errMsg(error), true); } afterCheckIn(b.dataset.checkin, refresh); });
+  el.querySelectorAll('[data-checkin]').forEach(b => b.onclick = async () => { b.disabled = true; const { error, queued } = await runOrQueue({ kind: 'rpc', fn: 'check_in_reservation', args: { p_reservation: b.dataset.checkin } }, 'Arrivée du client'); if (error) { b.disabled = false; return toast(errMsg(error), true); } if (queued) { toast('Hors connexion : arrivée enregistrée, envoyée au retour du réseau.'); return; } afterCheckIn(b.dataset.checkin, refresh); });
   el.querySelectorAll('[data-checkout]').forEach(b => b.onclick = () => openResa(b.dataset.checkout, refresh, true));
 }
 
@@ -3248,9 +3249,9 @@ async function openResa(id, refresh, focusCheckout){
     if (error) { e.submitter.disabled = false; if (/caisse ouverte/i.test(error.message || '')) return askOpenCash(() => openResa(id, refresh), 'La caisse du jour n’est pas encore ouverte. Ouvrez-la, puis enregistrez de nouveau le paiement.'); return toast(errMsg(error), true); } toast('Paiement enregistré.'); openResa(id, refresh); };
   const a = (x, fn) => { const b = $(x); if (b) b.onclick = fn; };
   a('aConfirm', async () => { const { error } = await sb.from('reservations').update({ status: 'confirmed' }).eq('id', r.id); if (error) return toast(errMsg(error), true); done('Réservation confirmée. Prévenez le client par téléphone ou WhatsApp.'); });
-  a('aIn', async () => { const { error } = await sb.rpc('check_in_reservation', { p_reservation: r.id }); if (error) return toast(errMsg(error), true); closeModal(); afterCheckIn(r.id, refresh); });
+  a('aIn', async () => { const { error, queued } = await runOrQueue({ kind: 'rpc', fn: 'check_in_reservation', args: { p_reservation: r.id } }, `Arrivée · ${r.guest_name} · ch. ${r.room_number}`); if (error) return toast(errMsg(error), true); closeModal(); if (queued) return toast('Hors connexion : arrivée enregistrée, envoyée au retour du réseau.'); afterCheckIn(r.id, refresh); });
   a('aOut', async () => { if (r.balance > 0 && !$('aOut').dataset.confirm) { $('aOut').dataset.confirm = 1; $('aOut').textContent = `Solde ${money(r.balance)} impayé — confirmer le départ`; return; }
-    const { error } = await sb.rpc('check_out_reservation', { p_reservation: r.id }); if (error) return toast(errMsg(error), true); closeModal(); afterCheckOut(r, refresh); });
+    const { error, queued } = await runOrQueue({ kind: 'rpc', fn: 'check_out_reservation', args: { p_reservation: r.id } }, `Départ · ${r.guest_name} · ch. ${r.room_number}`); if (error) return toast(errMsg(error), true); closeModal(); if (queued) return toast('Hors connexion : départ enregistré, envoyé au retour du réseau.'); afterCheckOut(r, refresh); });
   a('aInv', async () => { const { data, error } = await sb.rpc('issue_guest_invoice', { p_reservation: r.id }); if (error) return toast(errMsg(error), true); const { data: inv } = await sb.from('guest_invoices').select('*').eq('id', data).single(); printGuestInvoice(inv); });
   a('aEdit', () => openResaForm(r, refresh));
   a('aCancel', async () => { if (!$('aCancel').dataset.confirm) { $('aCancel').dataset.confirm = 1; $('aCancel').textContent = 'Confirmer l’annulation'; return; }
@@ -3799,7 +3800,8 @@ function openEncaisser(b, done){
     $('ekGo').disabled = true;
     const group = crypto.randomUUID();
     const label = b.status === 'checked_in' || b.status === 'checked_out' ? 'Paiement séjour' : 'Acompte';
-    const { error } = await sb.from('cash_movements').insert(L.map(l => ({ establishment_id: b.establishment_id || S.est, reservation_id: b.id, kind: 'payment', method: l.method, amount: +l.amount, reference: (l.reference || '').trim() || null, label, payment_group: group })));
+    const { error, queued } = await runOrQueue({ kind: 'insert', table: 'cash_movements', rows: L.map(l => ({ establishment_id: b.establishment_id || S.est, reservation_id: b.id, kind: 'payment', method: l.method, amount: +l.amount, reference: (l.reference || '').trim() || null, label, payment_group: group })) }, `Encaissement · ${b.guest_name} · ${money(t)}`);
+    if (queued) toast('Hors connexion : encaissement enregistré, envoyé au retour du réseau.', false);
     if (error) { $('ekGo').disabled = false; if (/caisse ouverte/i.test(error.message || '')) return askOpenCash(() => openEncaisser(b, done), 'La caisse du jour n’est pas encore ouverte. Ouvrez-la pour encaisser ce paiement en espèces.'); return toast(errMsg(error), true); }
     const rest = bal - t, phone = waPhone(b.guest_phone), change = st.mode === 'cash' && +st.received > t ? +st.received - t : 0;
     const est = S.ests.find(x => x.id === S.est) || {};
@@ -3924,7 +3926,9 @@ async function openExtras(refresh, cart){
       document.querySelectorAll('[data-xres]').forEach(b => b.onclick = () => { const l2 = xHold(), h = l2.splice(+b.dataset.xres, 1)[0]; xHoldSave(l2); st.cart = { ...st.cart, ...h.cart }; draw(); });
       document.querySelectorAll('[data-xdel]').forEach(b => b.onclick = () => { const l2 = xHold(); l2.splice(+b.dataset.xdel, 1); xHoldSave(l2); toast('Vente en attente supprimée.'); draw(); }); });
     g('xGo', async () => { const btn = $('xGo'); btn.disabled = true; const dest = $('xDest').value, resa = dest === 'pay' ? null : dest;
-      const { data, error } = await sb.rpc('extra_sale_record', { p_est: S.est, p_items: Object.entries(st.cart).map(([item_id, qty]) => ({ item_id, qty })), p_reservation: resa, p_method: resa ? null : $('xMeth').value, p_reference: null });
+      const args = { p_est: S.est, p_items: Object.entries(st.cart).map(([item_id, qty]) => ({ item_id, qty })), p_reservation: resa, p_method: resa ? null : $('xMeth').value, p_reference: null };
+      const { data, error, queued } = await runOrQueue({ kind: 'rpc', fn: 'extra_sale_record', args }, `Vente annexe · ${money(total)}${resa ? ' sur la note' : ''}`);
+      if (queued) { closeModal(); toast('Hors connexion : vente enregistrée, envoyée au retour du réseau.'); if (!resa) printExtraReceipt('HL-' + Date.now().toString(36).slice(-5).toUpperCase(), lines, total, $('xMeth') ? $('xMeth').value : 'cash'); return; }
       if (error) { btn.disabled = false; if (/caisse ouverte/i.test(error.message || '')) return askOpenCash(() => openExtras(refresh, st.cart), 'La caisse du jour n’est pas encore ouverte. Ouvrez-la, puis validez de nouveau la vente.'); return toast(errMsg(error), true); }
       closeModal(); toast(resa ? 'Ajouté à la note du séjour.' : 'Vente encaissée.'); if (!resa && data) printExtraReceipt(data, lines, total, $('xMeth') ? $('xMeth').value : 'cash'); refresh && refresh(); });
   };
@@ -4073,7 +4077,7 @@ async function renderProduits(){
       <span class="pp">${promo(i) ? `<s>${money(i.price)}</s> ` : ''}${money(xPrice(i))}</span><span class="ps">${i.stock === null ? '' : i.stock <= 0 ? '<b style="color:var(--red)">Épuisé</b>' : (isLow(i) ? '<b style="color:var(--red)">' : '<span>') + i.stock + ' en stock' + (isLow(i) ? '</b>' : '</span>')}${sold[i.id] ? ' · ' + sold[i.id] + ' vendus/30 j' : ''}</span></button>`;
     const row = (i) => `<tr style="${i.is_active ? '' : 'opacity:.5'}"><td><div class="row" style="gap:10px;flex-wrap:nowrap">${ph(i, '40px')}<div><strong>${esc(i.label)}</strong><div class="muted" style="font-size:12px">${XCAT[i.category]}${i.subcategory ? ' · ' + esc(i.subcategory) : ''}</div></div></div></td>
       <td class="r">${money(xPrice(i))}</td><td class="r">${i.unit_cost != null ? money(i.unit_cost) : '—'}</td><td class="r">${margin(i) !== null ? margin(i) + ' %' : '—'}</td><td class="r">${i.stock ?? '—'}</td><td class="r">${sold[i.id] || 0}</td>
-      <td>${mgr ? `<label class="toggle-mini"><input type="checkbox" data-pact="${i.id}" ${i.is_active ? 'checked' : ''} aria-label="Actif"></label> <button type="button" class="small ghost" data-pedit="${i.id}">Modifier</button>` : ''}</td></tr>`;
+      <td>${mgr ? `<label class="toggle-mini"><input type="checkbox" data-pact="${i.id}" ${i.is_active ? 'checked' : ''} aria-label="Actif"></label> <button type="button" class="small ghost" data-pedit="${i.id}">Modifier</button> <button type="button" class="small ghost" data-pin="${i.id}">+ Entrée</button>` : ''}</td></tr>`;
     body = `${tips.length && mgr ? `<div class="card" style="margin-bottom:12px;border-left:4px solid var(--amber)"><div style="font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:4px">Suggestions</div>${tips.slice(0, 4).map(t => `<p style="margin:3px 0;font-size:14px">${t}</p>`).join('')}</div>` : ''}
       <div class="row" style="gap:8px;margin-bottom:10px"><input id="pQ" type="search" placeholder="Rechercher un produit ou un code-barres" value="${esc(S._pQ || '')}" style="flex:2 1 220px">
         <div class="row" style="gap:4px"><button type="button" class="small ${view === 'grid' ? 'primary' : 'ghost'}" data-pview="grid">Grille</button><button type="button" class="small ${view === 'list' ? 'primary' : 'ghost'}" data-pview="list">Liste</button></div></div>
@@ -4113,6 +4117,7 @@ async function renderProduits(){
   el.querySelectorAll('[data-pview]').forEach(b => b.onclick = () => { try { localStorage.setItem('hh_pview', b.dataset.pview); } catch (_) {} renderProduits(); });
   if ($('pQ')) { let t; $('pQ').oninput = () => { clearTimeout(t); t = setTimeout(() => { S._pQ = $('pQ').value; renderProduits().then(() => { const q = $('pQ'); if (q) { q.focus(); q.setSelectionRange(q.value.length, q.value.length); } }); }, 250); }; }
   el.querySelectorAll('[data-pedit]').forEach(b => b.onclick = () => mgr ? openXProductForm(items.find(i => i.id === b.dataset.pedit), { sold, rev, rank }) : null);
+  el.querySelectorAll('[data-pin]').forEach(b => b.onclick = () => { const it = items.find(i => i.id === b.dataset.pin); openStockMove(it, 'in', () => { closeModal(); renderProduits(); }, () => closeModal()); });
   el.querySelectorAll('[data-pact]').forEach(c => c.onchange = async () => { const { error } = await sb.from('extra_items').update({ is_active: c.checked }).eq('id', c.dataset.pact); if (error) toast(errMsg(error), true); renderProduits(); });
   if ($('pNew')) $('pNew').onclick = () => openXProductForm(null, { sold, rev, rank });
   el.querySelectorAll('#pStarter').forEach(b => b.onclick = () => openStarter(items));
@@ -4123,6 +4128,30 @@ async function renderProduits(){
   el.querySelectorAll('[data-cstart]').forEach(b => b.onclick = async () => { b.disabled = true; const { data, error } = await sb.rpc('extra_count_start', { p_est: S.est, p_category: b.dataset.cstart || null }); if (error) { b.disabled = false; return toast(errMsg(error), true); } openCount(data); });
   el.querySelectorAll('[data-copen]').forEach(b => b.onclick = () => openCount(b.dataset.copen));
   if ($('rcNew')) $('rcNew').onclick = () => openReception(items.filter(i => i.is_active));
+}
+function openStockMove(it, k, done, back){
+  const KM = { in: ['Entrée en stock', 'Quantité reçue', true], loss: ['Perte', 'Quantité perdue (casse, péremption…)', false], adjust: ['Inventaire', 'Quantité comptée en réserve', false] }, [t, lab, cost] = KM[k];
+  modal(`<h2 style="font-size:22px;margin:0 0 4px">${t}</h2><p class="muted" style="margin:0 0 12px">${esc(it.label)} · stock actuel ${it.stock ?? 'non suivi'}</p>
+    <form id="mvF"><div class="row"><div class="field" style="flex:1 1 140px"><label for="mvQ">${lab}</label><input id="mvQ" type="number" min="${k === 'adjust' ? 0 : 1}" step="1" required inputmode="numeric"></div>
+    ${cost ? `<div class="field" style="flex:1 1 140px"><label for="mvC">Prix d’achat unitaire (F)</label><input id="mvC" type="number" min="0" value="${it.unit_cost != null ? Number(it.unit_cost) : ''}" placeholder="Facultatif"></div>` : ''}</div>
+    <div class="field"><label for="mvN">Note</label><input id="mvN" maxlength="200" placeholder="${k === 'in' ? 'Fournisseur, n° de bon…' : 'Motif'}"></div>
+    <div class="row"><button class="primary">Enregistrer</button><button type="button" class="ghost" id="mvBack">Retour</button></div></form>`);
+  $('mvBack').onclick = back; setTimeout(() => $('mvQ') && $('mvQ').focus(), 50);
+  $('mvF').onsubmit = async (e) => { e.preventDefault(); const c = $('mvC') ? $('mvC').value.trim() : '';
+    const { error } = await sb.rpc('extra_stock_move', { p_item: it.id, p_kind: k, p_qty: parseInt($('mvQ').value, 10), p_unit_cost: c === '' ? null : +c, p_note: $('mvN').value });
+    if (error) return toast(errMsg(error), true); toast('Stock mis à jour.'); done(); };
+}
+async function openStockHist(it, back){
+  const [m1, m2] = await Promise.all([
+    sb.from('extra_stock_moves').select('*').eq('item_id', it.id).order('created_at', { ascending: false }).limit(60),
+    sb.from('extra_sales').select('qty, created_at, status').eq('item_id', it.id).order('created_at', { ascending: false }).limit(60)]);
+  const L = { in: 'Entrée', loss: 'Perte', adjust: 'Inventaire' };
+  const ev = [...(m1.data || []).map(x => ({ at: x.created_at, t: L[x.kind], q: (x.kind === 'loss' ? '−' : x.kind === 'in' ? '+' : '= ') + x.qty, after: x.stock_after, n: x.note || '' })),
+              ...(m2.data || []).filter(x => x.status !== 'cancelled').map(x => ({ at: x.created_at, t: 'Vente', q: '−' + x.qty, after: null, n: '' }))].sort((a, c) => c.at.localeCompare(a.at)).slice(0, 60);
+  modal(`<div class="row between" style="margin-bottom:10px;flex-wrap:nowrap"><h2 style="font-size:22px">${esc(it.label)} · historique</h2><button type="button" class="small ghost" id="hBack">Retour</button></div>
+    ${ev.length ? `<div class="tablewrap" style="max-height:60vh;overflow:auto"><table class="table"><thead><tr><th>Date</th><th>Mouvement</th><th class="r">Qté</th><th class="r">Stock après</th><th>Note</th></tr></thead><tbody>${ev.map(x => `<tr><td>${new Date(x.at).toLocaleString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</td><td>${x.t}</td><td class="r">${x.q}</td><td class="r">${x.after ?? ''}</td><td>${esc(x.n)}</td></tr>`).join('')}</tbody></table></div>` : '<p class="muted">Aucun mouvement.</p>'}`);
+  $('modalBody').style.maxWidth = '680px';
+  $('hBack').onclick = back;
 }
 async function openXProductForm(it, stats){
   const i = it || { category: 'boissons', is_active: true, sell_pos: true };
@@ -4153,7 +4182,9 @@ async function openXProductForm(it, stats){
         <label class="row" style="gap:8px;font-weight:500"><input type="checkbox" id="pfPos" style="width:auto" ${i.sell_pos !== false ? 'checked' : ''}> Vendu à la caisse</label>
         <label class="row" style="gap:8px;font-weight:500"><input type="checkbox" id="pfMb" style="width:auto" ${i.in_minibar ? 'checked' : ''}> Fait partie du minibar</label>
         <label class="row" style="gap:8px;font-weight:500"><input type="checkbox" id="pfOn" style="width:auto" ${i.online ? 'checked' : ''}> Proposé en option à la réservation sur Nuittea.com</label></details>
-      <div class="row"><button class="primary" style="flex:1">Enregistrer</button>${it ? `<button type="button" class="ghost" id="pfStock">Mouvements de stock</button>` : ''}</div></form>`);
+      ${it ? `<div style="border-top:1px solid var(--line);padding-top:10px;margin-bottom:12px"><div style="font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:6px">Stock · ${it.stock === null ? 'non suivi' : it.stock + ' en stock'}</div>
+        <div class="row" style="gap:6px"><button type="button" class="small" data-pmv="in">Entrée</button><button type="button" class="small ghost" data-pmv="loss">Perte</button><button type="button" class="small ghost" data-pmv="adjust">Inventaire</button><button type="button" class="small ghost" id="pfHist">Historique</button></div></div>` : ''}
+      <div class="row"><button class="primary" style="flex:1">Enregistrer</button></div></form>`);
   $('modalBody').style.maxWidth = '640px';
   const mg = () => { const p = +$('pfP').value, a = $('pfA').value === '' ? null : +$('pfA').value; $('pfM').textContent = a !== null && p > 0 ? Math.round((p - a) / p * 100) + ' % · ' + money(p - a) : '—'; $('pfM').style.color = a !== null && p > 0 && (p - a) / p < 0.2 ? 'var(--red)' : ''; };
   $('pfP').oninput = mg; $('pfA').oninput = mg; mg();
@@ -4161,7 +4192,9 @@ async function openXProductForm(it, stats){
   let file = null;
   $('pfFile').onchange = () => { file = $('pfFile').files[0]; if (file) $('pfPh').innerHTML = `<img src="${URL.createObjectURL(file)}" alt="" style="width:96px;height:96px;object-fit:cover;border-radius:12px">`; };
   if ($('pfScan')) $('pfScan').onclick = () => scanBarcode((code) => { $('pfB').value = code; });
-  if ($('pfStock')) $('pfStock').onclick = () => openExtraItems(() => openXProductForm(it, stats));
+  const back = () => openXProductForm(it, stats);
+  document.querySelectorAll('[data-pmv]').forEach(b => b.onclick = () => openStockMove(it, b.dataset.pmv, async () => { const { data } = await sb.from('extra_items').select('*').eq('id', it.id).single(); if (S.view === 'produits') renderProduits(); openXProductForm(data || it, stats); }, back));
+  if ($('pfHist')) $('pfHist').onclick = () => openStockHist(it, back);
   $('pfF').onsubmit = async (e) => { e.preventDefault();
     const num = (id) => { const x = $(id) && $(id).value.trim(); return x === '' || x == null ? null : Math.max(0, +x); };
     const row = { label: $('pfL').value.trim(), description: $('pfD').value.trim() || null, category: $('pfC').value, subcategory: $('pfS').value.trim() || null, barcode: $('pfB').value.trim() || null,
@@ -5354,16 +5387,17 @@ const isNetErr = (e) => !navigator.onLine || /fetch|network|Failed to fetch|Netw
 function cacheSet(k, v){ try { localStorage.setItem('hh_c_' + k, JSON.stringify(v)); } catch (_) {} }
 function cacheGet(k){ try { return JSON.parse(localStorage.getItem('hh_c_' + k) || 'null'); } catch (_) { return null; } }
 function offBar(){
-  let b = $('offBar'); const q = offQueue().filter(x => x.org === S.org);
-  const show = !navigator.onLine || q.length || NET.cachedAt;
+  let b = $('offBar'); const q = offQueue().filter(x => x.org === S.org), ob = outbox().filter(x => x.org === S.org);
+  const show = !navigator.onLine || q.length || ob.length || NET.cachedAt;
   if (!show) { if (b) b.remove(); return; }
   if (!b) { b = document.createElement('div'); b.id = 'offBar'; b.setAttribute('role', 'status'); b.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:70;padding:6px 12px;text-align:center;font-size:13px;font-weight:700'; document.body.appendChild(b); }
   b.style.background = navigator.onLine ? '#FFF4E0' : '#2B1E16'; b.style.color = navigator.onLine ? '#9A5B00' : '#FBF6EE';
   const when = NET.cachedAt ? ' (données du ' + new Date(NET.cachedAt).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' }) + ')' : '';
   b.innerHTML = navigator.onLine
     ? (q.length ? `${plur(q.length, 'vente faite', 'ventes faites')} hors connexion en cours d’envoi… <button type="button" class="small ghost" id="offSync" style="min-height:26px;margin-left:6px">Envoyer</button>` : `Connexion instable : affichage des dernières données enregistrées${when}.`)
-    : `Hors connexion — consultation des données enregistrées sur cet appareil${when}. La caisse restaurant/bar continue de fonctionner${q.length ? ` · ${plur(q.length, 'vente', 'ventes')} en attente d’envoi` : ''}.`;
-  const s = $('offSync'); if (s) s.onclick = syncOffline;
+    : `Hors connexion — consultation des données enregistrées sur cet appareil${when}. Encaissements, arrivées, départs, ménage et ventes annexes sont enregistrés et envoyés au retour du réseau${q.length ? ` · ${plur(q.length, 'vente', 'ventes')} en attente d’envoi` : ''}.`;
+  if (ob.length) { b.insertAdjacentHTML('beforeend', ` · <button type="button" class="small ghost" id="offOb" style="min-height:26px;margin-left:6px">${plur(ob.length, 'action en attente', 'actions en attente')}${ob.some(x => x.failed) ? ' (dont refusées)' : ''}</button>`); $('offOb').onclick = openOutbox; }
+  const s = $('offSync'); if (s) s.onclick = () => { syncOffline(); syncOutbox(); };
 }
 async function syncOffline(){
   if (OFF.syncing || !navigator.onLine) return; const q = offQueue(); if (!q.length) return offBar();
@@ -5397,6 +5431,49 @@ async function preloadViews(){
 const PRELOAD = { done: null };
 window.addEventListener('offline', offBar);
 setInterval(() => { if (navigator.onLine && offQueue().length) syncOffline(); }, 60000);
+/* File d'attente hors connexion : actions courantes enregistrées sur l'appareil puis envoyées dans l'ordre au retour du réseau.
+   Le serveur les vérifie comme les autres (droits, caisse ouverte, journal). */
+const OUTBOX = 'hh_outbox';
+const outbox = () => { try { return JSON.parse(localStorage.getItem(OUTBOX) || '[]'); } catch (_) { return []; } };
+const outboxSave = (l) => { try { localStorage.setItem(OUTBOX, JSON.stringify(l)); } catch (_) {} };
+function outboxPush(op, label){ const l = outbox(); l.push({ id: crypto.randomUUID(), org: S.org, at: new Date().toISOString(), label, op }); outboxSave(l); offBar(); syncPill && syncPill(); }
+async function outboxRun(op){
+  if (op.kind === 'rpc') return sb.rpc(op.fn, op.args);
+  if (op.kind === 'insert') return sb.from(op.table).insert(op.rows);
+  if (op.kind === 'update') return sb.from(op.table).update(op.values).eq('id', op.id);
+  return { error: { message: 'Action inconnue' } };
+}
+/* Exécute une action ; sans réseau, la met en file d'attente. Retourne { error, queued } */
+async function runOrQueue(op, label){
+  if (!navigator.onLine) { outboxPush(op, label); return { error: null, queued: true }; }
+  const r = await outboxRun(op);
+  if (r.error && isNetErr(r.error)) { outboxPush(op, label); return { error: null, queued: true }; }
+  return { error: r.error || null, data: r.data, queued: false };
+}
+async function syncOutbox(){
+  if (OUTBOX_S.busy || !navigator.onLine) return; const l = outbox(); if (!l.some(x => !x.failed)) return;
+  OUTBOX_S.busy = true; let ok = 0, ko = 0;
+  for (const it of l) {
+    if (it.failed || it.done) continue;
+    const r = await outboxRun(it.op);
+    if (r.error) { if (isNetErr(r.error)) break; it.failed = true; it.error = errMsg(r.error); ko++;}
+    else { it.done = true; ok++; }
+  }
+  outboxSave(outbox().map(x => l.find(y => y.id === x.id) || x).filter(x => !x.done)); OUTBOX_S.busy = false; offBar();
+  if (ok) toast(`${plur(ok, 'action faite hors connexion envoyée', 'actions faites hors connexion envoyées')}.`);
+  if (ko) toast(`${plur(ko, 'action hors connexion refusée', 'actions hors connexion refusées')} par le serveur : voir « En attente d’envoi ».`, true);
+  if (ok && S.org && S.view) go(S.view);
+}
+const OUTBOX_S = { busy: false };
+function openOutbox(){
+  const l = outbox().filter(x => x.org === S.org);
+  modal(`<h2 style="font-size:22px;margin:0 0 10px">En attente d’envoi</h2>${l.length ? l.map(x => `<div class="row between" style="padding:8px 0;border-bottom:1px solid var(--line);flex-wrap:nowrap;gap:8px"><span style="min-width:0"><strong>${esc(x.label)}</strong><div class="muted" style="font-size:12px">${new Date(x.at).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })}${x.failed ? ` · <b style="color:var(--red)">refusée : ${esc(x.error || '')}</b>` : ' · en attente'}</div></span>${x.failed ? `<button type="button" class="small ghost" data-obx="${x.id}">Retirer</button>` : ''}</div>`).join('') : '<p class="muted">Rien en attente.</p>'}
+    <div class="row" style="margin-top:12px"><button type="button" class="primary" id="obSync" ${navigator.onLine ? '' : 'disabled'}>Envoyer maintenant</button><button type="button" class="ghost" data-close>Fermer</button></div>`);
+  $('obSync').onclick = async () => { await syncOutbox(); openOutbox(); };
+  document.querySelectorAll('[data-obx]').forEach(b => b.onclick = () => { outboxSave(outbox().filter(x => x.id !== b.dataset.obx)); openOutbox(); offBar(); });
+}
+window.addEventListener('online', () => setTimeout(syncOutbox, 1500));
+setInterval(() => { if (navigator.onLine && outbox().some(x => !x.failed)) syncOutbox(); }, 45000);
 function offlineSale(payload, display){
   const l = offQueue(); const ref = 'HL-' + Date.now().toString(36).slice(-5).toUpperCase();
   l.push({ ref, org: S.org, est: S.est, at: new Date().toISOString(), payload, display }); offSave(l); offBar();

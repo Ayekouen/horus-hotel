@@ -1143,7 +1143,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.11.05-22';
+const APP_VERSION = '2026.11.08-01';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -1641,10 +1641,13 @@ async function loadCommon(){
   const [ov, pl, pr] = await Promise.all([
     sb.rpc('get_subscription_overview', { p_org: S.org }),
     sb.from('plans').select('*').eq('is_active', true).eq('is_public', true).order('sort_order'),
-    sb.from('payment_providers').select('code,name,kind').eq('is_active', true).order('sort_order')
+    sb.from('payment_providers').select('code,name,kind,public_config').eq('is_active', true).order('sort_order')
   ]);
   if (ov.error) toast(errMsg(ov.error), true);
-  S.overview = ov.data; S.plans = pl.data || []; S.providers = pr.data || [];
+  S.overview = ov.data; S.plans = pl.data || [];
+  // Paiement en ligne en mode test : visible seulement par l'administrateur de la plateforme
+  S.providers = (pr.data || []).filter(p => !(p.code === 'geniuspay' && (p.public_config || {}).environment === 'sandbox' && !S.isAdmin));
+  checkGeniusReturn();
   await loadOrgPrefs(); applyRoleNav(); refreshClock(); offBar(); syncOffline();
   renderBanner();
   refreshAlertBadge();
@@ -1924,9 +1927,10 @@ function renderTarifs(){
   if (q) q.onclick = () => modal(`<h2 style="font-size:24px;margin-bottom:10px">Formule ${esc(ent.name)}</h2><p class="muted">La formule ${esc(ent.name)} est établie sur devis selon le nombre d'établissements, de villes et les intégrations souhaitées. Votre demande est à adresser à l'administrateur de la plateforme, qui activera la formule après accord.</p><button class="primary" data-close>Fermer</button>`);
 }
 
-/* Paiement en ligne : désactivé tant que l'agrégateur n'est pas branché (boutons réservés). */
-const PAY_ONLINE = false;
+/* Paiement en ligne disponible dès que Genius Pay est actif (en test : administrateur de la plateforme seulement) */
+let PAY_ONLINE = false;
 function openCheckout(slug, cycle){
+  PAY_ONLINE = S.providers.some(p => p.code === 'geniuspay');
   if (!['owner','admin'].includes(S.member.role)) return toast("Seul le propriétaire ou un administrateur peut gérer l'abonnement.", true);
   const p = S.plans.find(x => x.slug === slug); if (!p) return;
   let months = 1;
@@ -1948,6 +1952,14 @@ function openCheckout(slug, cycle){
     const method = $('payMethod').value;
     const { data, error } = await sb.rpc('start_subscription_checkout', { p_org: S.org, p_plan_slug: slug, p_cycle: cycle, p_method: method, p_months: months });
     if (error) { g.disabled = false; return toast(errMsg(error), true); }
+    if (method === 'geniuspay') {
+      g.textContent = 'Ouverture de la page de paiement…';
+      const { data: gpr, error: ge } = await sb.functions.invoke('geniuspay', { body: { action: 'subscription', payment_id: data, return_url: location.href.split('#')[0].split('?')[0] } });
+      const msg = ge ? await fnErr(ge) : (gpr && gpr.error);
+      if (msg || !gpr || !gpr.url) { g.disabled = false; g.textContent = 'Payer'; return toast(msg || 'Paiement en ligne indisponible.', true); }
+      try { sessionStorage.setItem('hh_gp', data); } catch (_) {}
+      location.href = gpr.url; return;
+    }
     const ref = String(data).slice(0, 8).toUpperCase();
     modal(`<h2 style="font-size:24px">Demande enregistrée</h2>
       <p>Référence de paiement : <strong>${ref}</strong> — montant : <strong>${fcfa(amt())}</strong>.</p>
@@ -1957,6 +1969,21 @@ function openCheckout(slug, cycle){
   };
 }
 
+/* Retour de la page de paiement Genius Pay : le serveur redemande le statut avant toute validation */
+async function fnErr(e){ try { const j = await e.context.json(); return j.error || e.message; } catch (_) { return e.message || 'Erreur'; } }
+async function checkGeniusReturn(){
+  const q = new URLSearchParams(location.search), id = q.get('gp'); if (!id || checkGeniusReturn.done) return; checkGeniusReturn.done = true;
+  history.replaceState(null, '', location.pathname + location.hash);
+  modal(`<h2 style="font-size:22px">Vérification du paiement…</h2><p class="muted">Nous confirmons votre paiement auprès de Genius Pay.</p>`);
+  for (let k = 0; k < 6; k++) {
+    const { data, error } = await sb.functions.invoke('geniuspay', { body: { action: 'verify', payment_id: id } });
+    if (error) { const m = await fnErr(error); return modal(`<h2 style="font-size:22px">Paiement</h2><p>${esc(m)}</p><button class="primary" data-close>Fermer</button>`); }
+    if (data.status === 'succeeded') { modal(`<h2 style="font-size:22px">Paiement confirmé</h2><p>Merci, votre abonnement est prolongé. La facture est disponible dans « Mon abonnement ».</p><button class="primary" data-close>Continuer</button>`); await loadCommon(); if (S.view === 'abonnement') renderAbonnement(); return; }
+    if (data.status === 'failed' || data.status === 'cancelled') return modal(`<h2 style="font-size:22px">Paiement non abouti</h2><p>Le paiement a échoué ou a été annulé. Aucun montant n’a été validé ; vous pouvez réessayer.</p><button class="primary" data-close>Fermer</button>`);
+    await new Promise(r => setTimeout(r, 4000));
+  }
+  modal(`<h2 style="font-size:22px">Paiement en cours de traitement</h2><p>Genius Pay n’a pas encore confirmé le paiement. Votre abonnement sera prolongé automatiquement dès la confirmation.</p><button class="primary" data-close>Fermer</button>`);
+}
 /* ---------- Mon abonnement ---------- */
 async function renderAbonnement(){
   const el = $('v-abonnement'); keepOrSkel(el);
@@ -3251,7 +3278,10 @@ async function openResa(id, refresh, focusCheckout){
   a('aConfirm', async () => { const { error } = await sb.from('reservations').update({ status: 'confirmed' }).eq('id', r.id); if (error) return toast(errMsg(error), true); done('Réservation confirmée. Prévenez le client par téléphone ou WhatsApp.'); });
   a('aIn', async () => { const { error, queued } = await runOrQueue({ kind: 'rpc', fn: 'check_in_reservation', args: { p_reservation: r.id } }, `Arrivée · ${r.guest_name} · ch. ${r.room_number}`); if (error) return toast(errMsg(error), true); closeModal(); if (queued) return toast('Hors connexion : arrivée enregistrée, envoyée au retour du réseau.'); afterCheckIn(r.id, refresh); });
   a('aOut', async () => { if (r.balance > 0 && !$('aOut').dataset.confirm) { $('aOut').dataset.confirm = 1; $('aOut').textContent = `Solde ${money(r.balance)} impayé — confirmer le départ`; return; }
-    const { error, queued } = await runOrQueue({ kind: 'rpc', fn: 'check_out_reservation', args: { p_reservation: r.id } }, `Départ · ${r.guest_name} · ch. ${r.room_number}`); if (error) return toast(errMsg(error), true); closeModal(); if (queued) return toast('Hors connexion : départ enregistré, envoyé au retour du réseau.'); afterCheckOut(r, refresh); });
+    const doOut = async () => { const { error, queued } = await runOrQueue({ kind: 'rpc', fn: 'check_out_reservation', args: { p_reservation: r.id } }, `Départ · ${r.guest_name} · ch. ${r.room_number}`); if (error) return toast(errMsg(error), true); closeModal(); if (queued) return toast('Hors connexion : départ enregistré, envoyé au retour du réseau.'); afterCheckOut(r, refresh); };
+    if (navigator.onLine && !$('aOut').dataset.mb) { const { data: mb } = await sb.from('extra_items').select('id,label,price,minibar_qty,photo_url,promo_price,promo_from,promo_to,happy_price,happy_start,happy_end,stock').eq('establishment_id', r.establishment_id || S.est).eq('in_minibar', true).eq('is_active', true).order('label');
+      if ((mb || []).length) return openMinibar(r, mb, doOut); }
+    doOut(); });
   a('aInv', async () => { const { data, error } = await sb.rpc('issue_guest_invoice', { p_reservation: r.id }); if (error) return toast(errMsg(error), true); const { data: inv } = await sb.from('guest_invoices').select('*').eq('id', data).single(); printGuestInvoice(inv); });
   a('aEdit', () => openResaForm(r, refresh));
   a('aCancel', async () => { if (!$('aCancel').dataset.confirm) { $('aCancel').dataset.confirm = 1; $('aCancel').textContent = 'Confirmer l’annulation'; return; }
@@ -4129,6 +4159,24 @@ async function renderProduits(){
   el.querySelectorAll('[data-copen]').forEach(b => b.onclick = () => openCount(b.dataset.copen));
   if ($('rcNew')) $('rcNew').onclick = () => openReception(items.filter(i => i.is_active));
 }
+/* Relevé du minibar au départ : les consommations sont portées sur la note et sorties du stock */
+function openMinibar(r, items, next){
+  const q = {};
+  const draw = () => { const t = items.reduce((a, i) => a + (q[i.id] || 0) * xPrice(i), 0);
+    modal(`<h2 style="font-size:22px;margin:0 0 4px">Relevé du minibar</h2><p class="muted" style="margin:0 0 12px">Chambre ${esc(r.room_number)} · ${esc(r.guest_name)} · cochez ce qui a été consommé.</p>
+      <div style="max-height:52vh;overflow:auto">${items.map(i => `<div class="row" style="gap:10px;padding:8px 0;border-bottom:1px solid var(--line);flex-wrap:nowrap">${i.photo_url ? `<img src="${esc(i.photo_url)}" alt="" style="width:40px;height:40px;border-radius:8px;object-fit:cover">` : ''}<span style="flex:1;min-width:0"><strong>${esc(i.label)}</strong><div class="muted" style="font-size:12px">${money(xPrice(i))} · ${i.minibar_qty} prévu${i.minibar_qty > 1 ? 's' : ''}</div></span>
+        <button type="button" class="small ghost" data-mm="${i.id}" aria-label="Moins">−</button><strong style="min-width:22px;text-align:center">${q[i.id] || 0}</strong><button type="button" class="small ghost" data-mp="${i.id}" aria-label="Plus">+</button></div>`).join('')}</div>
+      <p style="margin:12px 0"><strong>À porter sur la note : ${money(t)}</strong></p>
+      <div class="row"><button type="button" class="primary" id="mbOk" style="flex:1">${t ? 'Porter sur la note et continuer' : 'Rien consommé · continuer'}</button><button type="button" class="ghost" data-close>Annuler</button></div>`);
+    document.querySelectorAll('[data-mp]').forEach(b => b.onclick = () => { const i = items.find(x => x.id === b.dataset.mp); q[i.id] = Math.min((q[i.id] || 0) + 1, Math.max(i.minibar_qty, 1) * 3); draw(); });
+    document.querySelectorAll('[data-mm]').forEach(b => b.onclick = () => { q[b.dataset.mm] = Math.max(0, (q[b.dataset.mm] || 0) - 1); draw(); });
+    $('mbOk').onclick = async () => { const lines = Object.entries(q).filter(([, n]) => n > 0).map(([item_id, qty]) => ({ item_id, qty }));
+      if (lines.length) { $('mbOk').disabled = true; const { error } = await sb.rpc('extra_sale_record', { p_est: r.establishment_id || S.est, p_items: lines, p_reservation: r.id, p_method: null, p_reference: null });
+        if (error) { $('mbOk').disabled = false; return toast(errMsg(error), true); } toast('Minibar porté sur la note.'); r.balance = Number(r.balance || 0) + t; }
+      next(); };
+  };
+  draw();
+}
 function openStockMove(it, k, done, back){
   const KM = { in: ['Entrée en stock', 'Quantité reçue', true], loss: ['Perte', 'Quantité perdue (casse, péremption…)', false], adjust: ['Inventaire', 'Quantité comptée en réserve', false] }, [t, lab, cost] = KM[k];
   modal(`<h2 style="font-size:22px;margin:0 0 4px">${t}</h2><p class="muted" style="margin:0 0 12px">${esc(it.label)} · stock actuel ${it.stock ?? 'non suivi'}</p>
@@ -4180,8 +4228,10 @@ async function openXProductForm(it, stats){
         <div class="row" style="margin-top:8px">${it ? '' : `<div class="field" style="flex:1 1 120px"><label for="pfQ">Stock initial</label><input id="pfQ" type="number" min="0" placeholder="Non suivi"></div>`}
           <div class="field" style="flex:1 1 120px"><label for="pfAl">Alerte à</label><input id="pfAl" type="number" min="0" value="${v(i.alert_qty)}" placeholder="3"></div></div>
         <label class="row" style="gap:8px;font-weight:500"><input type="checkbox" id="pfPos" style="width:auto" ${i.sell_pos !== false ? 'checked' : ''}> Vendu à la caisse</label>
-        <label class="row" style="gap:8px;font-weight:500"><input type="checkbox" id="pfMb" style="width:auto" ${i.in_minibar ? 'checked' : ''}> Fait partie du minibar</label>
-        <label class="row" style="gap:8px;font-weight:500"><input type="checkbox" id="pfOn" style="width:auto" ${i.online ? 'checked' : ''}> Proposé en option à la réservation sur Nuittea.com</label></details>
+        <label class="row" style="gap:8px;font-weight:500"><input type="checkbox" id="pfMb" style="width:auto" ${i.in_minibar ? 'checked' : ''}> Fait partie du minibar · quantité par chambre <input type="number" id="pfMbQ" min="0" max="50" value="${i.minibar_qty ?? 1}" style="width:70px;min-height:34px" aria-label="Quantité dans chaque minibar"></label>
+        <label class="row" style="gap:8px;font-weight:500"><input type="checkbox" id="pfOn" style="width:auto" ${i.online ? 'checked' : ''}> Proposé en option à la réservation sur Nuittea.com</label>
+        <label class="row" style="gap:8px;font-weight:500;margin-left:26px"><input type="checkbox" id="pfOnN" style="width:auto" ${i.online_per_night ? 'checked' : ''}> Compté par nuit (ex. petit-déjeuner)</label></details>
+      ${it ? `<details style="margin-bottom:10px" id="pfRcD"><summary style="cursor:pointer;font-weight:700">Recette (ingrédients consommés à chaque vente)</summary><div id="pfRc" style="margin-top:8px"><p class="muted">Chargement…</p></div></details>` : ''}
       ${it ? `<div style="border-top:1px solid var(--line);padding-top:10px;margin-bottom:12px"><div style="font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:6px">Stock · ${it.stock === null ? 'non suivi' : it.stock + ' en stock'}</div>
         <div class="row" style="gap:6px"><button type="button" class="small" data-pmv="in">Entrée</button><button type="button" class="small ghost" data-pmv="loss">Perte</button><button type="button" class="small ghost" data-pmv="adjust">Inventaire</button><button type="button" class="small ghost" id="pfHist">Historique</button></div></div>` : ''}
       <div class="row"><button class="primary" style="flex:1">Enregistrer</button></div></form>`);
@@ -4193,6 +4243,18 @@ async function openXProductForm(it, stats){
   $('pfFile').onchange = () => { file = $('pfFile').files[0]; if (file) $('pfPh').innerHTML = `<img src="${URL.createObjectURL(file)}" alt="" style="width:96px;height:96px;object-fit:cover;border-radius:12px">`; };
   if ($('pfScan')) $('pfScan').onclick = () => scanBarcode((code) => { $('pfB').value = code; });
   const back = () => openXProductForm(it, stats);
+  if (it && $('pfRc')) (async () => {
+    const [rR, aR] = await Promise.all([sb.from('extra_recipes').select('ingredient_id, qty').eq('item_id', it.id), sb.from('extra_items').select('id,label,stock').eq('establishment_id', S.est).eq('is_active', true).neq('id', it.id).order('label')]);
+    const all = aR.data || [], st = { lines: (rR.data || []).map(x => ({ id: x.ingredient_id, qty: Number(x.qty) })) };
+    const draw = () => { $('pfRc').innerHTML = `${st.lines.map((l, k) => { const g = all.find(a => a.id === l.id) || {}; return `<div class="row" style="gap:6px;padding:4px 0;flex-wrap:nowrap"><span style="flex:1">${esc(g.label || '?')}${g.stock == null ? ' <span class="muted" style="font-size:12px">(stock non suivi)</span>' : ''}</span><input type="number" min="0.1" step="0.1" value="${l.qty}" data-rcq="${k}" style="width:80px;min-height:34px" aria-label="Quantité"><button type="button" class="small ghost" data-rcx="${k}" aria-label="Retirer">✕</button></div>`; }).join('') || '<p class="muted" style="font-size:13px;margin:0 0 6px">Aucun ingrédient. Exemple : un petit-déjeuner consomme 2 œufs, 1 pain, 1 café.</p>'}
+      <div class="row" style="gap:6px;margin-top:6px"><select id="pfRcA" style="flex:1"><option value="">+ Ajouter un ingrédient…</option>${all.filter(a => !st.lines.some(l => l.id === a.id)).map(a => `<option value="${a.id}">${esc(a.label)}</option>`).join('')}</select><button type="button" class="small" id="pfRcS">Enregistrer la recette</button></div>`;
+      $('pfRcA').onchange = () => { if ($('pfRcA').value) { st.lines.push({ id: $('pfRcA').value, qty: 1 }); draw(); } };
+      document.querySelectorAll('[data-rcq]').forEach(x => x.oninput = () => { st.lines[x.dataset.rcq].qty = +x.value || 0; });
+      document.querySelectorAll('[data-rcx]').forEach(x => x.onclick = () => { st.lines.splice(+x.dataset.rcx, 1); draw(); });
+      $('pfRcS').onclick = async () => { const { error } = await sb.rpc('extra_recipe_set', { p_item: it.id, p_lines: st.lines.filter(l => l.qty > 0).map(l => ({ ingredient_id: l.id, qty: l.qty })) }); if (error) return toast(errMsg(error), true); toast('Recette enregistrée.'); };
+    };
+    draw(); if (st.lines.length) $('pfRcD').open = true;
+  })();
   document.querySelectorAll('[data-pmv]').forEach(b => b.onclick = () => openStockMove(it, b.dataset.pmv, async () => { const { data } = await sb.from('extra_items').select('*').eq('id', it.id).single(); if (S.view === 'produits') renderProduits(); openXProductForm(data || it, stats); }, back));
   if ($('pfHist')) $('pfHist').onclick = () => openStockHist(it, back);
   $('pfF').onsubmit = async (e) => { e.preventDefault();
@@ -4200,7 +4262,7 @@ async function openXProductForm(it, stats){
     const row = { label: $('pfL').value.trim(), description: $('pfD').value.trim() || null, category: $('pfC').value, subcategory: $('pfS').value.trim() || null, barcode: $('pfB').value.trim() || null,
       price: num('pfP') || 0, unit_cost: num('pfA'), promo_price: num('pfPP'), promo_from: $('pfPF').value || null, promo_to: $('pfPT').value || null,
       happy_price: num('pfHP'), happy_start: $('pfHS').value || null, happy_end: $('pfHE').value || null,
-      alert_qty: $('pfAl').value === '' ? null : parseInt($('pfAl').value, 10), sell_pos: $('pfPos').checked, in_minibar: $('pfMb').checked, online: $('pfOn').checked };
+      alert_qty: $('pfAl').value === '' ? null : parseInt($('pfAl').value, 10), sell_pos: $('pfPos').checked, in_minibar: $('pfMb').checked, minibar_qty: Math.max(0, Math.min(50, parseInt($('pfMbQ').value, 10) || 1)), online: $('pfOn').checked, online_per_night: $('pfOnN').checked };
     if (row.promo_from && row.promo_to && row.promo_to < row.promo_from) return toast('La fin de la promotion précède son début.', true);
     const btn = e.submitter; if (btn) btn.disabled = true;
     let id = it && it.id, error;
@@ -4890,7 +4952,7 @@ async function renderEquipe(){
         <button class="small" type="button" data-fiche="${esc(m.member_id)}">Fiche</button>
         <button class="small ghost" type="button" data-active="${esc(m.member_id)}" data-on="${m.is_active}" data-staff="${m.username ? 1 : ''}">${m.is_active ? 'Suspendre' : 'Réactiver'}</button></div>` : ''}
     </div>`;
-  el.innerHTML = head('Équipe', `<span class="pill st-trial">${u.users ?? members.filter(m => m.is_active).length} / ${u.max_users ?? '∞'} utilisateurs</span>`) + readOnlyNote() + `
+  el.innerHTML = head('Équipe', `<span class="pill st-trial">${u.users ?? members.filter(m => m.is_active).length} / ${u.max_users ?? '∞'} utilisateurs</span><button type="button" class="small" id="eqSec">Sécurité</button>`) + readOnlyNote() + `
     <div class="card" style="margin-bottom:16px;background:var(--ink);color:#FBF6EE;display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between">
       <div><div style="font-size:13px;opacity:.8">Code hôtel · à donner à vos employés</div><div style="font-family:var(--display);font-size:30px;font-weight:800;letter-spacing:1px">${esc(code || '—')}</div>
       <div style="font-size:13px;opacity:.8">Connexion : onglet « Personnel » → code hôtel + identifiant + code à 4 chiffres</div></div>
@@ -4908,6 +4970,7 @@ async function renderEquipe(){
     ${(inv.data || []).length ? `<h3 style="font-size:16px;margin:14px 0 6px">Invitations en attente</h3>${inv.data.map(i => `<div class="row between" style="padding:8px 0;border-bottom:1px solid var(--line)"><span>${esc(i.email)} · <strong>${esc(ROLE_LABEL[i.role])}</strong></span><span class="row"><button class="small" type="button" data-copyinv="${esc(i.id)}">Copier le message</button><button class="small ghost" type="button" data-revoke="${esc(i.id)}">Annuler</button></span></div>`).join('')}` : ''}
     </details>`;
   $('addStaff').onclick = () => openStaffForm(isOwner, renderEquipe);
+  $('eqSec').onclick = () => openSecurity();
   const bindCards = () => el.querySelectorAll('[data-fiche]').forEach(b => b.onclick = () => openMemberSheet(members.find(x => x.member_id === b.dataset.fiche)));
   bindCards();
   if ($('eqQ')) { const f = () => { const q = $('eqQ').value.trim().toLowerCase(), r = $('eqR').value; const list = members.filter(m => (!r || m.role === r) && (!q || [m.display_name, m.username, m.email].some(x => (x || '').toLowerCase().includes(q)))); $('eqGrid').innerHTML = list.length ? list.map(card).join('') : '<p class="muted">Aucun employé ne correspond.</p>'; bindCards(); bindRows(); }; $('eqQ').oninput = f; $('eqR').onchange = f; }
@@ -4938,6 +5001,32 @@ async function renderEquipe(){
   }; bindRows();
 }
 const PAGE_LABEL = { produits:'Produits et stock', dashboard:'Tableau de bord', reservations:'Réservations', planning:'Planning', naya:'Nuittea.com', passes:'Pass', clients:'Clients', chambres:'Chambres', inventaire:'Inventaire', pointage:'Pointage', caisse:'Caisse', resto:'Restaurant et bar', depenses:'Dépenses', factures:'Factures', rapports:'Analyse', controle:'Contrôle', mapage:'Page publique' };
+/* Page Sécurité : connexions, blocages, déconnexion de tous les appareils, rappels */
+async function openSecurity(){
+  modal('<p class="muted">Chargement…</p>');
+  const { data, error } = await sb.rpc('security_overview', { p_org: S.org });
+  if (error) return modal(`<h2 style="font-size:22px">Sécurité</h2><p class="muted">${esc(errMsg(error))}</p>`);
+  const L = data || [], now = Date.now(), d30 = 30 * 864e5;
+  const ago = (t) => { if (!t) return 'jamais'; const m = Math.round((now - new Date(t)) / 60000); return m < 60 ? `il y a ${Math.max(1, m)} min` : m < 1440 ? `il y a ${Math.round(m / 60)} h` : `il y a ${Math.round(m / 1440)} j`; };
+  const dev = (ua) => !ua ? '' : /iphone|ipad/i.test(ua) ? 'iPhone / iPad' : /android/i.test(ua) ? 'Android' : /windows/i.test(ua) ? 'Ordinateur Windows' : /mac os/i.test(ua) ? 'Mac' : 'Autre appareil';
+  const locked = L.filter(m => m.locked_until), idle = L.filter(m => m.is_active && m.role !== 'owner' && (!m.last_sign_in || now - new Date(m.last_sign_in) > d30)), pin = L.filter(m => m.is_active && m.username && m.must_change);
+  const tips = [
+    ...locked.map(m => `<b>${esc(m.name)}</b> est bloqué jusqu’à ${new Date(m.locked_until).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })} après des codes erronés.`),
+    ...idle.map(m => `<b>${esc(m.name)}</b> ne s’est pas connecté depuis plus de 30 jours : désactivez le compte s’il ne travaille plus chez vous.`),
+    ...pin.map(m => `<b>${esc(m.name)}</b> n’a jamais changé le code donné à la création.`)];
+  modal(`<div class="row between" style="margin-bottom:10px;flex-wrap:nowrap"><h2 style="font-size:22px">Sécurité</h2><button type="button" class="small ghost" data-close>Fermer</button></div>
+    ${tips.length ? `<div class="card" style="border-left:4px solid var(--amber);margin-bottom:12px">${tips.map(t => `<p style="margin:3px 0;font-size:14px">${t}</p>`).join('')}</div>` : '<div class="card" style="border-left:4px solid var(--green);margin-bottom:12px"><p style="margin:0">Aucun point d’attention.</p></div>'}
+    <div class="tablewrap" style="max-height:55vh;overflow:auto"><table class="table"><thead><tr><th>Membre</th><th>Dernière connexion</th><th>Appareils</th><th></th></tr></thead><tbody>
+    ${L.map(m => `<tr style="${m.is_active ? '' : 'opacity:.5'}"><td><strong>${esc(m.name)}</strong><div class="muted" style="font-size:12px">${esc(ROLE_LABEL[m.role] || m.role)}${m.username ? ' · ' + esc(m.username) : ''}${m.locked_until ? ' · <b style="color:var(--red)">bloqué</b>' : m.failures ? ` · ${m.failures} échec(s)` : ''}</div></td>
+      <td>${ago(m.last_sign_in)}${m.last_seen ? `<div class="muted" style="font-size:12px">actif ${ago(m.last_seen)}${dev(m.user_agent) ? ' · ' + dev(m.user_agent) : ''}</div>` : ''}</td>
+      <td>${m.sessions || 0}</td>
+      <td style="white-space:nowrap">${m.locked_until ? `<button type="button" class="small primary" data-unl="${m.member_id}">Débloquer</button> ` : ''}${m.sessions ? `<button type="button" class="small ghost" data-sout="${m.member_id}">Déconnecter</button>` : ''}</td></tr>`).join('')}</tbody></table></div>
+    <p class="muted" style="font-size:12px;margin:8px 0 0">« Déconnecter » ferme la session sur tous les appareils du membre ; l’accès déjà ouvert expire au plus tard dans l’heure. Chaque action est inscrite au journal.</p>`);
+  $('modalBody').style.maxWidth = '760px';
+  document.querySelectorAll('[data-unl]').forEach(b => b.onclick = async () => { const { error: e } = await sb.rpc('security_unlock', { p_member: b.dataset.unl }); if (e) return toast(errMsg(e), true); toast('Compte débloqué.'); openSecurity(); });
+  document.querySelectorAll('[data-sout]').forEach(b => b.onclick = async () => { if (!b.dataset.c) { b.dataset.c = 1; b.textContent = 'Confirmer'; return; }
+    const { data: n, error: e } = await sb.rpc('security_signout_all', { p_member: b.dataset.sout }); if (e) return toast(errMsg(e), true); toast(plur(n || 0, 'appareil déconnecté', 'appareils déconnectés') + '.'); openSecurity(); });
+}
 function openMemberSheet(m){
   const base = ROLE_VIEWS[m.role] || [];
   const o = m.access_overrides || {}, op = o.pages || {}, oa = o.actions || {};

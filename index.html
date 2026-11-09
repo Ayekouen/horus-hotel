@@ -1143,7 +1143,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.11.08-01';
+const APP_VERSION = '2026.11.09-01';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -2206,6 +2206,16 @@ function admFlag(c){
   if (idle === null || idle > 14) return ['Inactif', 'st-cancelled'];
   return ['OK', 'st-active'];
 }
+async function gpHookStatus(setup){
+  const t = $('gpHookTxt'), btn = $('gpHookBtn'); if (!t) return;
+  if (setup) { btn.disabled = true; t.textContent = 'Création du webhook chez Genius Pay…'; }
+  const { data, error } = await sb.functions.invoke('geniuspay', { body: { action: setup ? 'webhook_setup' : 'webhook_status' } });
+  if (!$('gpHookTxt')) return;
+  btn.disabled = false;
+  if (error) { t.textContent = await fnErr(error); btn.classList.remove('hidden'); btn.onclick = () => gpHookStatus(true); return; }
+  if (data.active) { t.innerHTML = `<span style="color:#1E8E5A;font-weight:600">Notifications actives</span>${data.webhook_id ? ' · webhook n° ' + esc(data.webhook_id) : ''}${data.created_at ? ' · depuis le ' + new Date(data.created_at).toLocaleDateString('fr-FR') : ''}. Les paiements sont validés même si le client ne revient pas sur le site.`; btn.classList.add('hidden'); if (setup) toast('Notifications Genius Pay activées.'); }
+  else { t.textContent = 'Inactives : un paiement n\'est validé que si le client revient sur le site après avoir payé.'; btn.classList.remove('hidden'); btn.onclick = () => gpHookStatus(true); }
+}
 async function renderAdmin(){
   const el = $('v-admin'); keepOrSkel(el);
   const tab = S._admTab || 'apercu';
@@ -2377,7 +2387,8 @@ async function renderAdmin(){
       </tbody></table></div>` : `<p class="muted">Aucun lieu dans cette liste.</p>`}</div>`;
   }
 
-  el.innerHTML = `<div class="eyebrow">Administrateur plateforme</div><h1 style="font-size:34px;margin:4px 0 16px">Tableau de bord</h1>${tabs}${tab !== 'apercu' ? '<button class="small ghost adm-back" data-go="apercu">‹ Retour au centre de contrôle</button>' : ''}${body}`;
+  el.innerHTML = `<div class="eyebrow">Administrateur plateforme</div><h1 style="font-size:34px;margin:4px 0 16px">Tableau de bord</h1>${tabs}${tab !== 'apercu' ? '<button class="small ghost adm-back" data-go="apercu">‹ Retour au centre de contrôle</button>' : ''}${tab === 'apercu' ? '<div class="card" id="gpHook" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:16px"><div style="flex:1;min-width:220px"><b>Notifications Genius Pay</b><div class="muted" id="gpHookTxt" style="font-size:13px">Vérification…</div></div><button class="small primary hidden" id="gpHookBtn">Activer les notifications Genius Pay</button></div>' : ''}${body}`;
+  if (tab === 'apercu') gpHookStatus();
   el.querySelectorAll('[data-go]').forEach(b => b.onclick = () => { S._admTab = b.dataset.go; if (b.dataset.fil) S._admFilter = b.dataset.fil; S._admPlan = b.dataset.plan || ''; S._admQ = b.dataset.q || ''; renderAdmin().then(() => { window.scrollTo({ top: 0 }); const q = $('subSearch'); if (q && S._admQ) { q.value = S._admQ; q.dispatchEvent(new Event('input')); } }); });
   el.querySelectorAll('[data-admplan]').forEach(b => b.onclick = () => { S._admPlan = b.dataset.admplan; renderAdmin(); });
   el.querySelectorAll('[data-admtab]').forEach(b => b.onclick = () => { S._admTab = b.dataset.admtab; renderAdmin(); });

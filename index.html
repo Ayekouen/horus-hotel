@@ -782,8 +782,10 @@ section[id^="v-"] .card{border-radius:12px}
 .ca-days summary::after{content:"";width:8px;height:8px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg);margin:0 4px 4px 8px;opacity:.6}
 .ca-days[open] summary::after{transform:rotate(-135deg);margin-bottom:-2px}
 .ca-days summary span{margin-left:auto;font-weight:500;opacity:.7}
+#view-chambres .lv-legend,section .lv-legend{position:sticky;top:var(--stk,0px);z-index:6;background:var(--bg);padding:8px 0;margin-top:-8px}
+.lv-legend{--stk:56px}@media (min-width:900px){.lv-legend{--stk:68px}}
 .lv-head{position:sticky;top:var(--stk,0px);z-index:6;background:var(--card,#fff);margin:-6px -8px 12px!important;padding:8px;border-radius:12px}
-@media (min-width:900px){.lv-head{--stk:64px}}@media (max-width:899px){.lv-head{--stk:56px}}
+@media (min-width:900px){.lv-head{--stk:68px}}@media (max-width:899px){.lv-head{--stk:56px}}
 .ca-dl{max-height:260px;overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;font-size:13px;font-variant-numeric:tabular-nums;margin-top:4px}
 .ca-dr{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px;padding:6px 4px 6px 0;border-bottom:1px solid rgba(127,127,127,.15)}
 .ca-dr span:nth-child(2),.ca-dr span:nth-child(3){text-align:right}
@@ -1224,7 +1226,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.11.09-18';
+const APP_VERSION = '2026.11.09-19';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}

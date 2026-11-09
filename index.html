@@ -227,6 +227,9 @@ html[data-theme="clair"] .auth{background:radial-gradient(1200px 600px at 10% -1
 html[data-theme="clair"] .auth .card{padding:32px;border-radius:24px;box-shadow:0 20px 50px rgba(17,24,39,.10)}
 html[data-theme="clair"] #authTabs{background:#EEF1F6!important;border-radius:14px!important}
 html[data-theme="clair"] #authTabs button{border-radius:10px!important;box-shadow:none}
+/* Menu latéral et en-tête figés : seul le contenu défile */
+@media (min-width:900px){ nav.side{position:sticky!important;top:0;height:100vh;align-self:flex-start;overflow-y:auto} .dtop{position:sticky;top:0;z-index:30;background:var(--bg)} }
+@media (max-width:899px){ .mtop{position:sticky;top:0;z-index:30} }
 /* Éléments du menu latéral jamais écrasés quand le menu dépasse la hauteur de l'écran (il défile) */
 @media (min-width:900px){ nav.side > *, nav.side .ngroup > *{flex-shrink:0!important} }
 /* Barre latérale réduite (icônes seules), choix mémorisé */
@@ -633,7 +636,7 @@ html[data-theme="foret"] .auth{background:radial-gradient(900px 500px at 15% -10
 /* Planning : glisser-déposer */
 .pmove{cursor:grab;touch-action:none;user-select:none}
 .pmove.pdragging{cursor:grabbing;z-index:5;box-shadow:0 8px 20px rgba(0,0,0,.18);opacity:.95;transition:none}
-.pgrip{position:absolute;right:0;top:0;bottom:0;width:12px;cursor:ew-resize;border-left:2px solid rgba(0,0,0,.12);border-radius:0 8px 8px 0}
+.pgrip{position:absolute;right:0;top:0;bottom:0;width:12px;cursor:ew-resize;border-left:2px solid rgba(0,0,0,.12);border-radius:0 8px 8px 0}.pgrip.pgl{right:auto;left:0;border-left:0;border-right:2px solid rgba(0,0,0,.12);border-radius:8px 0 0 8px}
 body.adminonly #estSwitch{display:none!important}
 html nav.side [data-view="passes"]{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='13' r='8'/%3E%3Cpath d='M12 9v4l2 2M9 2h6'/%3E%3C/svg%3E")}
 html nav.side [data-view="naya"]{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20'/%3E%3C/svg%3E")}
@@ -892,6 +895,12 @@ section.refreshing{position:relative}section.refreshing::before{content:"";posit
       <p class="muted" style="margin:12px 0 0;font-size:13px">Code oublié ? Demandez au responsable de l’établissement.</p><p style="margin:14px 0 0;font-size:14px"><a href="#" data-amode-link="mail">← Je suis le propriétaire</a></p>
     </form>
     <div id="mailBox">
+    <div id="oauthBox" class="hidden" style="margin-bottom:14px">
+      <button type="button" class="ghost" data-oauth="google" style="width:100%;gap:10px;margin-bottom:8px" hidden><svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>Continuer avec Google</button>
+      <button type="button" class="ghost" data-oauth="facebook" style="width:100%;gap:10px" hidden><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="#1877F2" d="M24 12a12 12 0 1 0-13.9 11.9v-8.4H7.1V12h3V9.4c0-3 1.8-4.7 4.5-4.7 1.3 0 2.7.2 2.7.2v3h-1.5c-1.5 0-2 .9-2 1.9V12h3.4l-.5 3.5h-2.9v8.4A12 12 0 0 0 24 12z"/></svg>Continuer avec Facebook</button>
+      <p class="muted" style="font-size:12px;margin:8px 0 0;text-align:center">En continuant, vous acceptez les CGU, les CGV et la politique de confidentialité.</p>
+      <div class="row" style="align-items:center;gap:10px;margin:12px 0 0;flex-wrap:nowrap"><span style="flex:1;height:1px;background:var(--line)"></span><span class="muted" style="font-size:12px">ou par e-mail</span><span style="flex:1;height:1px;background:var(--line)"></span></div>
+    </div>
     <form id="authForm" method="post" action="#" name="login">
       <div class="field"><label for="email">Adresse e-mail</label><input id="email" name="username" type="email" required autocomplete="username" inputmode="email" autocapitalize="none" spellcheck="false"></div>
       <div class="field"><label for="password">Mot de passe</label><div style="position:relative"><input id="password" name="password" type="password" required minlength="8" autocomplete="current-password" style="padding-right:96px"><button type="button" id="pwToggle" class="small ghost" style="position:absolute;right:4px;top:4px;min-height:36px;border:0" aria-label="Afficher le mot de passe">Afficher</button></div></div>
@@ -1116,7 +1125,48 @@ const FEAT = { notifications:'Notifications', daily_summary:'Résumé quotidien 
 
 function toast(msg, err=false){ document.querySelectorAll('.is-busy').forEach(b => { b.classList.remove('is-busy'); b.removeAttribute('aria-busy'); }); const t=$('toast'); t.textContent=msg; t.className='toast'+(err?' err':''); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.add('hidden'), 5000); }
 function errMsg(e){ const m = (e && (e.message || e.error_description)) || 'Une erreur est survenue.'; if (typeof isNetErr === 'function' && isNetErr(e)) return 'Hors connexion : cette action sera possible dès le retour du réseau. Vous pouvez continuer à consulter vos données.'; return /momo_ref/.test(m) ? 'Saisissez le numéro de transaction Mobile Money (4 caractères minimum).' : m; }
-function modal(html){ $('modalBody').style.maxWidth = ''; $('modalBody').innerHTML = html; $('modal').classList.remove('hidden'); $('modalBody').scrollTop = 0; document.body.classList.add('modal-open'); }
+function modal(html){ $('modalBody').style.maxWidth = ''; $('modalBody').innerHTML = html; $('modal').classList.remove('hidden'); $('modalBody').scrollTop = 0; document.body.classList.add('modal-open'); try { enhanceLists($('modalBody')); } catch (_) {} }
+// Listes de choix sur les champs libres : suggestions (saisie libre possible) pour éviter fautes et doublons
+const LISTS = {
+  pays: ['Côte d’Ivoire','Burkina Faso','Mali','Guinée','Sénégal','Ghana','Togo','Bénin','Niger','Nigeria','Liberia','Sierra Leone','Guinée-Bissau','Gambie','Cap-Vert','Mauritanie','Cameroun','Gabon','Congo','RD Congo','Tchad','Centrafrique','Maroc','Tunisie','Algérie','Égypte','Afrique du Sud','Kenya','Rwanda','Éthiopie','Madagascar','France','Belgique','Suisse','Canada','États-Unis','Royaume-Uni','Allemagne','Italie','Espagne','Portugal','Liban','Chine','Inde','Turquie','Brésil'],
+  perte: ['Casse','Péremption','Vol','Consommation du personnel','Erreur d’inventaire','Offert à un client','Produit abîmé'],
+  pointage: ['Oubli de pointage','Erreur de saisie','Mission extérieure','Panne du téléphone','Arrivée validée par le gérant'],
+  annulEnc: ['Erreur de montant','Erreur de moyen de paiement','Client remboursé','Encaissement en double','Mauvais client'],
+  banques: ['SGCI','SIB','Ecobank','NSIA Banque','BOA','Coris Bank','BICICI','BNI','Société Générale','Banque Atlantique','Orange Money','Wave','MTN Money'],
+  depenses: ['Électricité (CIE)','Eau (SODECI)','Salaires','Loyer','Internet','Carburant groupe électrogène','Gaz','Produits d’entretien','Blanchisserie','Réparation','Fournitures de bureau','Transport','Impôts et taxes']
+};
+let LIST_CACHE = {};
+async function dynList(key){
+  if (LIST_CACHE[key] && LIST_CACHE[key].at > Date.now() - 300000) return LIST_CACHE[key].v;
+  const uniq = (a) => [...new Map(a.filter(Boolean).map(x => [String(x).trim().toLowerCase(), String(x).trim()])).values()].filter(Boolean);
+  let v = [];
+  try {
+    if (key === 'fournisseurs') { const [a, b] = await Promise.all([sb.from('extra_receptions').select('supplier').eq('organization_id', S.org).limit(300), sb.from('products').select('supplier').eq('organization_id', S.org).not('supplier', 'is', null).limit(300)]); v = uniq([...(a.data || []), ...(b.data || [])].map(x => x.supplier)); }
+    if (key === 'depenses') { const [a, b] = await Promise.all([sb.from('expenses').select('label').eq('organization_id', S.org).order('created_at', { ascending: false }).limit(300), sb.from('recurring_charges').select('label').eq('organization_id', S.org).limit(100)]); v = uniq([...(a.data || []), ...(b.data || [])].map(x => x.label).concat(LISTS.depenses)); }
+  } catch (_) {}
+  LIST_CACHE[key] = { at: Date.now(), v }; return v;
+}
+function attachList(inp, values){
+  if (!inp || inp.getAttribute('list') || !values || !values.length) return;
+  const id = 'dl_' + inp.id; let dl = document.getElementById(id);
+  if (!dl) { dl = document.createElement('datalist'); dl.id = id; document.body.appendChild(dl); }
+  dl.innerHTML = values.map(v => `<option value="${esc(v)}">`).join('');
+  inp.setAttribute('list', id); inp.setAttribute('autocomplete', 'off');
+}
+function enhanceLists(root){
+  if (!root) return;
+  const q = (id) => root.querySelector('#' + id);
+  attachList(q('gNat'), LISTS.pays);
+  ['pfN', 'tcWhy'].forEach(id => attachList(q(id), LISTS.pointage));
+  ['seNote', 'smN'].forEach(id => { const i = q(id); if (i && i.required) attachList(i, LISTS.perte); });
+  const mv = q('mvN'); if (mv && /Motif/.test(mv.placeholder || '')) attachList(mv, LISTS.perte);
+  const rv = q('rvR'); if (rv && rv.required) attachList(rv, LISTS.annulEnc);
+  attachList(q('smR'), LISTS.banques);
+  if (S.org) {
+    const fs = ['pfSup', 'rvS', 'seSup'].map(q).filter(Boolean); if (fs.length) dynList('fournisseurs').then(v => fs.forEach(i => attachList(i, v)));
+    const ds = ['xL', 'rcL'].map(q).filter(Boolean); if (ds.length) dynList('depenses').then(v => ds.forEach(i => attachList(i, v)));
+  }
+}
 function closeModal(){ if ($('modal').dataset.locked) return; $('modal').classList.add('hidden'); document.body.classList.remove('modal-open'); }
 $('modal').addEventListener('click', e => { if (e.target.id === 'modal' || e.target.closest('[data-close]')) closeModal(); });
 /* Rapidité : un écran déjà affiché reste visible pendant sa mise à jour (pas d'écran de chargement à chaque retour) */
@@ -1159,7 +1209,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.11.09-13';
+const APP_VERSION = '2026.11.09-17';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -1683,6 +1733,15 @@ $('navAna').classList.add('hidden'); $('navAna').onclick = () => go('rapports');
 $('navReviews').onclick = () => openReviews();
 document.querySelectorAll('nav.side .ghead').forEach(h => { const g = h.parentElement; try { if (localStorage.getItem('hh_grp_' + g.dataset.group) === '0') g.classList.add('collapsed'); } catch (_) {}
   h.onclick = () => { g.classList.toggle('collapsed'); h.setAttribute('aria-expanded', !g.classList.contains('collapsed')); try { localStorage.setItem('hh_grp_' + g.dataset.group, g.classList.contains('collapsed') ? '0' : '1'); } catch (_) {} }; });
+// Connexion par Google / Facebook : boutons affichés seulement si le fournisseur est activé dans Supabase
+(async function(){ try {
+  const r = await fetch(SUPABASE_URL + '/auth/v1/settings', { headers: { apikey: SUPABASE_KEY } }); const st = await r.json(); const ext = (st && st.external) || {};
+  let any = false; document.querySelectorAll('[data-oauth]').forEach(b => { if (ext[b.dataset.oauth]) { b.hidden = false; any = true; }
+    b.onclick = async () => { b.disabled = true; try { localStorage.setItem('hh_legal_ok', LEGAL_VERSION); } catch (_) {}
+      const { error } = await sb.auth.signInWithOAuth({ provider: b.dataset.oauth, options: { redirectTo: location.origin + location.pathname } });
+      if (error) { b.disabled = false; toast(errMsg(error), true); } }; });
+  if (any) $('oauthBox').classList.remove('hidden');
+} catch (_) {} })();
 $('navSearch').onclick = () => openPalette();
 ['mAcc', 'dAcc'].forEach(id => { const b = $(id); if (b) b.onclick = () => openAccount(); });
 function drawAcc(){ ['mAcc', 'dAcc'].forEach(id => { const b = $(id); if (b) b.innerHTML = S.member ? accAvatar(30) : ''; }); }
@@ -2147,7 +2206,13 @@ const viewMode = (k, def = 'grid') => { try { return localStorage.getItem('hh_vm
 const viewToggle = (k, def) => { const m = viewMode(k, def); return `<div class="row vmt" style="gap:4px" role="group" aria-label="Affichage"><button type="button" class="small ${m === 'grid' ? 'primary' : 'ghost'}" data-vm="${k}|grid" aria-pressed="${m === 'grid'}">Grille</button><button type="button" class="small ${m === 'list' ? 'primary' : 'ghost'}" data-vm="${k}|list" aria-pressed="${m === 'list'}">Liste</button></div>`; };
 function bindViewToggle(el, redraw){ el.querySelectorAll('[data-vm]').forEach(b => b.onclick = () => { const [k, m] = b.dataset.vm.split('|'); try { localStorage.setItem('hh_vm_' + k, m); } catch (_) {} redraw(); }); }
 /* ---------- Chambres : fiches visuelles ---------- */
-const AMENITIES = ['Climatisation','Wi-Fi','Télévision','Eau chaude','Réfrigérateur','Salle de bain privée','Balcon','Coffre-fort','Bureau','Cuisine équipée','Ventilateur','Parking','Petit-déjeuner inclus','Vue piscine'];
+const AMENITIES = ['Climatisation','Wi-Fi','Télévision','Eau chaude','Réfrigérateur','Balcon','Coffre-fort','Bureau','Cuisine équipée','Ventilateur','Parking','Petit-déjeuner inclus','Vue piscine'];
+const ROOM_TYPES = ['Standard','Double','Twin (deux lits)','Studio','Chambre salon','Suite','Suite junior','Appartement','Villa','Familiale','Dortoir'];
+// Format des numéros : « CH-01 » → préfixe « CH- » et 2 chiffres ; « 101 » → sans préfixe, 3 chiffres
+function roomMask(sample){ const m = String(sample || 'CH-01').trim().match(/^(.*?)(\d+)(\D*)$/); return m ? { pre: m[1], width: m[2].length, start: +m[2], post: m[3] } : { pre: String(sample) + '-', width: 2, start: 1, post: '' }; }
+const fmtRoom = (mk, n) => mk.pre + String(n).padStart(mk.width, '0') + mk.post;
+function nextFreeNumbers(mk, count, from){ const taken = new Set((S.rooms || []).map(r => String(r.number).trim().toLowerCase())); const out = []; let n = from != null ? from : 1; while (out.length < count && n < 100000) { const v = fmtRoom(mk, n); if (!taken.has(v.toLowerCase())) out.push(v); n++; } return out; }
+function defaultMask(){ const rs = (S.rooms || []).filter(r => /\d/.test(r.number)); if (!rs.length) return 'CH-01'; const f = rs.slice().sort((a, b) => String(a.created_at || '').localeCompare(String(b.created_at || '')))[0]; const mk = roomMask(f.number); return fmtRoom(mk, 1); }
 const BEDS = { simple:'Lit simple', double:'Lit double', queen:'Grand lit (160)', king:'Très grand lit (180+)', jumeaux:'Deux lits', familial:'Familial' };
 const natSort = (a, b) => String(a.number).localeCompare(String(b.number), 'fr', { numeric: true });
 async function uploadRoomPhoto(file, roomKey){
@@ -2158,11 +2223,28 @@ async function uploadRoomPhoto(file, roomKey){
   if (error) throw error;
   return sb.storage.from('public-media').getPublicUrl(path).data.publicUrl;
 }
+// Vue de l'agent de ménage : chambres à faire, « Commencer » puis « Terminé » (la chambre redevient propre aussitôt, sans validation)
+function renderMenageAgent(el, rooms){
+  const todo = rooms.filter(r => ['dirty', 'cleaning'].includes(r.housekeeping_status)), done = rooms.filter(r => ['clean', 'ready'].includes(r.housekeeping_status));
+  const card = (r) => `<div class="card" style="margin:0;padding:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <div style="flex:1;min-width:120px"><div style="font-family:var(--display);font-weight:800;font-size:26px;line-height:1">${esc(r.number)}</div><div class="muted" style="font-size:13px">${esc(r.room_type || '')}${r.floor ? ' · étage ' + esc(r.floor) : ''}</div>
+        <span class="pill ${r.housekeeping_status === 'cleaning' ? 'st-trial' : 'st-pending'}" style="margin-top:6px;display:inline-block">${HKS[r.housekeeping_status]}</span></div>
+      ${r.housekeeping_status === 'dirty' ? `<button type="button" class="ghost" data-mg="${r.id}|cleaning" style="min-height:52px">Commencer</button>` : ''}
+      <button type="button" class="primary" data-mg="${r.id}|clean" style="min-height:52px;min-width:130px">Terminé</button></div>`;
+  el.innerHTML = `<h1 style="font-size:30px;margin:0 0 4px">Ménage</h1><p class="muted" style="margin:0 0 16px">${todo.length ? plur(todo.length, 'chambre à faire', 'chambres à faire') : 'Toutes les chambres sont propres.'}</p>
+    <div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px">${todo.map(card).join('')}</div>
+    ${done.length ? `<h3 style="font-size:16px;margin:22px 0 8px">Propres (${done.length})</h3><p class="muted" style="font-size:14px">${done.map(r => esc(r.number)).join(' · ')}</p>` : ''}`;
+  el.querySelectorAll('[data-mg]').forEach(b => b.onclick = async () => { const [id, st] = b.dataset.mg.split('|'); const rm = rooms.find(x => x.id === id) || {}; b.disabled = true;
+    const { error, queued } = await runOrQueue({ kind: 'update', table: 'rooms', id, values: { housekeeping_status: st } }, `Ménage · chambre ${rm.number || ''} : ${HKS[st]}`);
+    if (error) { b.disabled = false; return toast(errMsg(error), true); }
+    toast(st === 'clean' ? `Chambre ${rm.number} propre : elle est de nouveau disponible.` : `Chambre ${rm.number} : nettoyage commencé.`); if (!queued) renderChambres(); });
+}
 async function renderChambres(){
   const el = $('v-chambres'); keepOrSkel(el);
   await loadEst();
   const { data: all } = await sb.from('rooms').select('*').eq('establishment_id', S.est).order('number');
   const rooms = (all || []).sort(natSort);
+  if (S.member && S.member.role === 'housekeeping') return renderMenageAgent(el, rooms.filter(r => r.is_active));
   const LV = await roomLiveToday(rooms);
   const u = (S.overview && S.overview.usage) || {};
   const canEdit = can(['owner','admin','manager']);
@@ -2218,35 +2300,45 @@ async function renderChambres(){
   });
 }
 
-async function openRoomForm(room, refresh, types){
+async function openRoomForm(room, refresh, types, copy){
   if (!room && !can(['owner','admin','manager'])) return;
   if (room && !can(['owner','admin','manager'])) return toast('Modification réservée au gérant ou au propriétaire.', true);
-  types = types || [...new Set(S.rooms.map(r => r.room_type).filter(Boolean))];
-  const r = room || { amenities: [], photos: [], capacity: 2 };
+  types = [...new Set(ROOM_TYPES.concat(types || [], S.rooms.map(r => r.room_type).filter(Boolean)))];
+  const r = room || copy || { amenities: [], photos: [], capacity: 2 };
+  const extraAm = [...new Set((S.rooms || []).flatMap(x => x.amenities || []).concat(r.amenities || []).filter(a => !AMENITIES.includes(a) && a !== 'Salle de bain privée'))];
+  const mask0 = defaultMask(), mk0 = roomMask(mask0), free0 = nextFreeNumbers(mk0, 10);
   let photos = [...(r.photos || [])];
   const pending = [];
-  modal(`<h2 style="font-size:24px;margin-bottom:12px">${room ? 'Chambre ' + esc(room.number) : 'Ajouter des chambres'}</h2>
+  modal(`<h2 style="font-size:24px;margin-bottom:12px">${room ? 'Chambre ' + esc(room.number) : copy ? 'Dupliquer la chambre' : 'Ajouter des chambres'}</h2>
     <form id="rmF" style="max-height:72vh;overflow-y:auto;padding-right:4px">
       ${room ? '' : `<div class="toggle" role="group" aria-label="Mode d'ajout" style="margin-bottom:14px"><button type="button" class="on" data-mode="one">Une chambre</button><button type="button" data-mode="many">Plusieurs d’un coup</button></div>`}
-      <div class="row" id="numOne"><div class="field" style="flex:1 1 140px"><label for="rNum">Numéro ou nom</label><input id="rNum" required value="${esc(r.number || '')}" placeholder="Ex. 101, Villa Bambou"></div>
+      <div class="row" id="numOne"><div class="field" style="flex:1 1 140px"><label for="rNum">Numéro ou nom</label><input id="rNum" required value="${esc(room ? r.number || '' : free0[0] || '')}" placeholder="Ex. ${esc(mask0)}, Villa Bambou"></div>
         <div class="field" style="flex:1 1 100px"><label for="rFloor">Étage</label><input id="rFloor" value="${esc(r.floor || '')}" placeholder="Ex. 1"></div></div>
-      <div class="row hidden" id="numMany"><div class="field" style="flex:1 1 90px"><label for="rFrom">Du n°</label><input id="rFrom" type="number" min="0" value="101"></div><div class="field" style="flex:1 1 90px"><label for="rTo">Au n°</label><input id="rTo" type="number" min="0" value="110"></div><div class="field" style="flex:1 1 90px"><label for="rPre">Préfixe (option)</label><input id="rPre" maxlength="10" placeholder="Ex. A-"></div></div>
-      <div class="row"><div class="field" style="flex:2 1 180px"><label for="rType">Type de chambre</label><input id="rType" list="rTypes" value="${esc(r.room_type || '')}" placeholder="Ex. Double, Suite, Studio"><datalist id="rTypes">${types.map(t => `<option value="${esc(t)}"></option>`).join('')}</datalist></div>
+      <div class="hidden" id="numMany"><div class="row"><div class="field" style="flex:1 1 120px"><label for="rmMask">Format du numéro</label><input id="rmMask" maxlength="14" value="${esc(mask0)}" placeholder="CH-01, 101, A1"></div><div class="field" style="flex:1 1 80px"><label for="rmFrom">À partir de</label><input id="rmFrom" type="number" min="0" value="${mk0.start}"></div><div class="field" style="flex:1 1 80px"><label for="rmCount">Nombre</label><input id="rmCount" type="number" min="1" max="200" value="10"></div></div>
+        <p class="muted" id="rPrev" style="font-size:13px;margin:-6px 0 12px"></p></div>
+      <div class="row"><div class="field" style="flex:2 1 180px"><label for="rType">Type de chambre</label><input id="rType" list="rTypes" autocomplete="off" value="${esc(r.room_type || '')}" placeholder="Choisir ou saisir un type"><datalist id="rTypes">${types.map(t => `<option value="${esc(t)}"></option>`).join('')}</datalist></div>
         <div class="field" style="flex:1 1 130px"><label for="rRate">Prix par nuit (F)</label><input id="rRate" type="number" min="0" required value="${r.base_rate ?? ''}"></div></div>
       <div class="row"><div class="field" style="flex:1 1 100px"><label for="rCap">Personnes max</label><input id="rCap" type="number" min="1" max="20" value="${r.capacity ?? 2}"></div>
         <div class="field" style="flex:1 1 150px"><label for="rBed">Literie</label><select id="rBed"><option value="">—</option>${opt(BEDS, r.bed_type)}</select></div>
         <div class="field" style="flex:1 1 90px"><label for="rSize">Surface (m²)</label><input id="rSize" type="number" min="1" max="1000" value="${r.size_m2 ?? ''}"></div></div>
       <fieldset style="border:1px solid var(--line);border-radius:14px;padding:12px;margin:0 0 14px"><legend style="font-size:13px;font-weight:700;color:var(--muted);padding:0 6px">Équipements</legend>
-        <div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:6px">${AMENITIES.map(a => `<label style="display:flex;align-items:center;gap:8px;margin:0;font-weight:500;color:var(--ink);font-size:14px;min-height:32px"><input type="checkbox" value="${esc(a)}" class="amen" ${(r.amenities || []).includes(a) ? 'checked' : ''} style="width:18px;min-height:18px"> ${esc(a)}</label>`).join('')}</div></fieldset>
+        <div class="grid" id="amGrid" style="grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:6px">${AMENITIES.concat(extraAm).map(a => `<label style="display:flex;align-items:center;gap:8px;margin:0;font-weight:500;color:var(--ink);font-size:14px;min-height:32px"><input type="checkbox" value="${esc(a)}" class="amen" ${(r.amenities || []).includes(a) ? 'checked' : ''} style="width:18px;min-height:18px"> ${esc(a)}</label>`).join('')}</div><div class="row" style="margin-top:8px;flex-wrap:nowrap"><input id="amNew" maxlength="40" placeholder="Autre équipement (ex. Jacuzzi)" style="flex:1"><button type="button" class="small ghost" id="amAdd">+ Ajouter</button></div></fieldset>
       <div class="field"><label for="rDesc">Description (visible sur votre page publique)</label><textarea id="rDesc" rows="3" maxlength="1000" style="width:100%;border:1px solid #D9C8AE;border-radius:12px;padding:10px;font:inherit">${esc(r.description || '')}</textarea></div>
       <div class="field"><label>Photos (8 maximum, la première sert de couverture)</label>
         <div id="phList" class="row" style="gap:8px;align-items:flex-start"></div>
         <label style="display:inline-flex;align-items:center;gap:8px;margin-top:8px;cursor:pointer"><span class="pill st-active" style="padding:8px 14px">+ Ajouter des photos</span><input type="file" id="rPh" accept="image/jpeg,image/png,image/webp" multiple class="hidden"></label></div>
       <div class="row" style="margin-top:8px"><button class="primary" id="rmSave">${room ? 'Enregistrer' : 'Ajouter'}</button><button type="button" class="ghost" data-close>Annuler</button>
+        ${room ? `<button type="button" class="ghost" id="rmDup">Dupliquer</button>` : ''}
         ${room ? `<button type="button" class="ghost" id="rmToggle" style="margin-left:auto">${room.is_active ? 'Désactiver' : 'Réactiver'}</button>` : ''}</div>
     </form>`);
   $('modalBody').style.maxWidth = '660px';
   let mode = 'one';
+  const prev = () => { if (!$('rmMask')) return; const mk = roomMask($('rmMask').value || 'CH-01'); const nums = nextFreeNumbers(mk, Math.min(200, Math.max(1, +$('rmCount').value || 1)), +$('rmFrom').value || 0); $('rPrev').textContent = nums.length ? `Numéros créés : ${nums.slice(0, 6).join(', ')}${nums.length > 6 ? ' … ' + nums[nums.length - 1] : ''} (les numéros déjà pris sont sautés)` : ''; };
+  ['rmMask', 'rmFrom', 'rmCount'].forEach(id => { const i = $(id); if (i) i.oninput = prev; }); prev();
+  $('amAdd').onclick = () => { const v = $('amNew').value.trim(); if (!v) return; if (![...document.querySelectorAll('#rmF .amen')].some(c => c.value.toLowerCase() === v.toLowerCase())) $('amGrid').insertAdjacentHTML('beforeend', `<label style="display:flex;align-items:center;gap:8px;margin:0;font-weight:500;color:var(--ink);font-size:14px;min-height:32px"><input type="checkbox" value="${esc(v)}" class="amen" checked style="width:18px;height:18px;min-height:0"> ${esc(v)}</label>`); $('amNew').value = ''; };
+  $('amNew').onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); $('amAdd').click(); } };
+  const dup = $('rmDup'); if (dup) dup.onclick = () => openRoomForm(null, refresh, types, { ...room, number: '', id: undefined });
+  if (copy) setTimeout(() => { const b = document.querySelector('#rmF [data-mode="many"]'); if (b) { b.click(); $('rmCount').value = 1; const mk = roomMask(copy.number_mask || defaultMask()); $('rmFrom').value = mk.start; prev(); } }, 0);
   document.querySelectorAll('#rmF [data-mode]').forEach(b => b.onclick = () => { mode = b.dataset.mode; document.querySelectorAll('#rmF [data-mode]').forEach(x => x.classList.toggle('on', x === b)); $('numOne').classList.toggle('hidden', mode !== 'one'); $('numMany').classList.toggle('hidden', mode !== 'many'); $('rNum').required = mode === 'one'; });
   const drawPhotos = () => { $('phList').innerHTML = photos.map((u, i) => `<div style="position:relative"><img src="${esc(u)}" alt="Photo ${i + 1}" style="width:96px;height:72px;object-fit:cover;border-radius:10px;${i === 0 ? 'outline:3px solid var(--green)' : ''}"><button type="button" data-delp="${i}" aria-label="Retirer la photo ${i + 1}" style="position:absolute;top:2px;right:2px;min-height:24px;width:24px;padding:0;border-radius:50%;border:none;background:rgba(43,30,22,.8);color:#fff;font-size:12px">✕</button>${i > 0 ? `<button type="button" data-cover="${i}" style="position:absolute;bottom:2px;left:2px;min-height:22px;padding:0 6px;border:none;border-radius:999px;background:rgba(251,246,238,.92);font-size:10px">Couverture</button>` : ''}</div>`).join('') + pending.map(() => '<div style="width:96px;height:72px;border-radius:10px;background:var(--bg);display:grid;place-items:center;font-size:11px" class="muted">Envoi…</div>').join('') || '<span class="muted" style="font-size:13px">Aucune photo pour l’instant.</span>';
     $('phList').querySelectorAll('[data-delp]').forEach(b => b.onclick = () => { photos.splice(+b.dataset.delp, 1); drawPhotos(); });
@@ -2266,9 +2358,9 @@ async function openRoomForm(room, refresh, types){
     let rows;
     if (room) rows = null;
     else if (mode === 'many') {
-      const a = +$('rFrom').value, b = +$('rTo').value, pre = $('rPre').value.trim();
-      if (!(b >= a) || b - a > 199) return toast('Plage invalide (200 chambres maximum à la fois).', true);
-      rows = [...Array(b - a + 1)].map((_, i) => ({ ...base, number: pre + (a + i), floor: null }));
+      const cnt = +$('rmCount').value || 0; if (cnt < 1 || cnt > 200) return toast('Indiquez un nombre entre 1 et 200.', true);
+      const nums = nextFreeNumbers(roomMask($('rmMask').value || 'CH-01'), cnt, +$('rmFrom').value || 0);
+      rows = nums.map(n => ({ ...base, number: n, floor: null }));
     } else rows = [{ ...base, number: $('rNum').value.trim(), floor: $('rFloor').value.trim() || null }];
     $('rmSave').disabled = true;
     const { error } = room ? await sb.from('rooms').update({ ...base, number: $('rNum').value.trim(), floor: $('rFloor').value.trim() || null }).eq('id', room.id) : await sb.from('rooms').insert(rows);
@@ -2813,9 +2905,9 @@ async function renderDashboardCore(){
     ${(() => { const e = (S.ests || []).find(x => x.id === S.est); return e && !e.latitude && can(['owner','admin','manager']) ? `<div class="card" style="margin-bottom:16px;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap"><div><strong>Indiquez la position de votre établissement</strong><div class="muted" style="font-size:13px">Les voyageurs vous trouveront dans la recherche par quartier et « Autour de moi » sur Nuittea.com.</div></div><button class="small primary" data-go="mapage">Compléter ma localisation</button></div>` : ''; })()}
     <div class="card" style="margin-bottom:16px">
       <div class="row between" style="margin-bottom:12px"><h3 style="font-size:22px">Chambres en direct</h3><div class="row" style="gap:6px">${Object.entries(LIVE).map(([k, v]) => `<span class="pill" style="background:${v[1]};color:${v[2]}">${v[0]} · ${countSt(k)}</span>`).join('')}</div></div>
-      ${total ? `<div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:10px">${live.map(x => { const c = LIVE[x.st];
+      ${total ? `<div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:10px">${live.map(x => { const c = LIVE[x.st];
         return `<button type="button" class="lv-tile" data-room="${x.rm.id}" ${x.resa ? `data-open="${x.resa.id}"` : ''} style="cursor:pointer;border:none;font:inherit;text-align:left;width:100%;border-radius:16px;padding:12px;min-height:96px;background:${c[1]};color:${c[2]};display:flex;flex-direction:column;justify-content:space-between;gap:6px;outline-offset:2px" aria-label="Chambre ${esc(x.rm.number)} : ${c[0]}">
-          <span style="font-family:var(--display);font-weight:800;font-size:24px;line-height:1">${esc(x.rm.number)}</span>
+          <span style="font-family:var(--display);font-weight:800;font-size:${String(x.rm.number).length > 5 ? 17 : String(x.rm.number).length > 3 ? 20 : 24}px;line-height:1.1;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(x.rm.number)}">${esc(x.rm.number)}</span>
           <span style="font-size:12px;font-weight:600;opacity:.9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${x.resa ? esc(x.resa.guest_name) : esc(x.rm.room_type || c[0])}</span>
           <span style="font-size:11px;opacity:.8">${c[0]}</span></button>`; }).join('')}</div>` : '<p class="muted">Aucune chambre.</p>'}
     </div>
@@ -3499,14 +3591,20 @@ async function printGuestInvoice(i, fmt){
 async function renderPlanning(){
   const el = $('v-planning'); keepOrSkel(el);
   await loadEst();
-  const start = S._ps || addDays(today(), -1), days = 14, end = addDays(start, days);
+  // Vues : jour (3 jours larges), semaine (7 jours), mois (du 1er au dernier jour)
+  const PV = S._pv || 'week', mStart = (d) => d.slice(0, 8) + '01';
+  const start = PV === 'month' ? (S._ps ? mStart(S._ps) : mStart(today())) : (S._ps || (PV === 'day' ? today() : addDays(today(), -1)));
+  const days = PV === 'day' ? 3 : PV === 'month' ? new Date(+start.slice(0, 4), +start.slice(5, 7), 0).getDate() : 7, end = addDays(start, days);
+  const step = PV === 'day' ? 1 : PV === 'month' ? null : 7;
+  const fd = (d, y) => new Date(d + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', ...(y ? { year: 'numeric' } : {}) });
+  const period = PV === 'month' ? new Date(start + 'T00:00:00').toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }) : `du ${fd(start)} au ${fd(addDays(end, -1), true)}`;
   const { data } = await sb.from('reservations').select('id,room_id,guest_name,check_in,check_out,status').eq('establishment_id', S.est).not('status', 'in', '(cancelled,no_show)').lt('check_in', end).gt('check_out', start);
   const dates = [...Array(days)].map((_, i) => addDays(start, i));
-  const col = { pending:['var(--amber-l)', 'var(--amber)'], confirmed:['var(--green-l)', 'var(--green-d)'], checked_in:['var(--green)', '#fff'], checked_out:['var(--line)', 'var(--muted)'] };
-  const cell = 52, canMove = can(['owner','admin','manager','receptionist']);
+  const col = { pending:['#FEF3C7', '#92400E'], confirmed:['#DBEAFE', '#1E3A8A'], checked_in:['#16A34A', '#FFFFFF'], checked_out:['#E5E7EB', '#4B5563'] };
+  const cell = PV === 'day' ? 150 : PV === 'month' ? 40 : 96, canMove = can(['owner','admin','manager','receptionist']);
   const RES = data || [];
   const LV = await roomLiveToday(S.rooms);
-  el.innerHTML = head('Planning', `<button class="ghost small" id="pPrev">← 7 jours</button><button class="ghost small" id="pToday">Aujourd'hui</button><button class="ghost small" id="pNext">7 jours →</button><button class="primary small" data-newresa>Nouvelle réservation</button>`) + `
+  el.innerHTML = head('Planning', `<div class="toggle" role="group" aria-label="Vue" style="margin:0">${[['day', 'Jour'], ['week', 'Semaine'], ['month', 'Mois']].map(([k, l]) => `<button type="button" data-pv="${k}" class="${PV === k ? 'on' : ''}">${l}</button>`).join('')}</div><button class="ghost small" id="pPrev" aria-label="Période précédente">←</button><button class="ghost small" id="pToday">Aujourd'hui</button><button class="ghost small" id="pNext" aria-label="Période suivante">→</button><strong style="align-self:center;font-size:15px;text-transform:${PV === 'month' ? 'capitalize' : 'none'}">${period}</strong><button class="primary small" data-newresa>Nouvelle réservation</button>`) + `
     <div class="card" style="padding:0;overflow-x:auto"><div style="min-width:${110 + days * cell}px">
       <div style="display:grid;grid-template-columns:110px repeat(${days},${cell}px);position:sticky;top:0;background:#fff;border-bottom:1px solid var(--line)">
         <div style="padding:10px;font-size:12px;font-weight:700;color:var(--muted)">Chambre</div>
@@ -3518,12 +3616,14 @@ async function renderPlanning(){
           ${dates.map(d => `<button aria-label="Réserver ${esc(rm.number)} le ${d}" data-slot="${rm.id}|${d}" style="min-height:46px;border:none;border-left:1px solid #F4F1EA;border-radius:0;background:transparent;padding:0"></button>`).join('')}
           ${rs.map(x => { const a = Math.max(0, (new Date(x.check_in) - new Date(start)) / 864e5), b = Math.min(days, (new Date(x.check_out) - new Date(start)) / 864e5);
             const movable = x.status !== 'checked_out' && canMove;
-            return `<button data-open="${x.id}" data-bar="${x.id}" title="${esc(x.guest_name)} · ${dfr(x.check_in)} → ${dfr(x.check_out)}${movable ? ' · glissez pour déplacer' : ''}" class="pbar${movable ? ' pmove' : ''}" style="position:absolute;top:6px;height:34px;min-height:34px;left:${110 + a * cell + cell / 2}px;width:${Math.max(cell / 2, (b - a) * cell - 4)}px;background:${col[x.status][0]};color:${col[x.status][1]};border:none;border-radius:8px;font-size:12px;font-weight:700;padding:0 ${movable ? 14 : 8}px 0 8px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;text-align:left">${esc(x.guest_name)}${movable ? '<span class="pgrip" data-grip="1" aria-hidden="true"></span>' : ''}</button>`; }).join('')}
+            return `<button data-open="${x.id}" data-bar="${x.id}" title="${esc(x.guest_name)} · ${dfr(x.check_in)} → ${dfr(x.check_out)}${movable ? ' · glissez pour déplacer' : ''}" class="pbar${movable ? ' pmove' : ''}" style="position:absolute;top:6px;height:34px;min-height:34px;left:${110 + a * cell + cell / 2}px;width:${Math.max(cell / 2, (b - a) * cell - 4)}px;background:${col[x.status][0]};color:${col[x.status][1]};border:none;border-radius:8px;font-size:12px;font-weight:700;padding:0 ${movable ? 14 : 8}px 0 ${movable ? 14 : 8}px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;text-align:left">${movable && x.status !== 'checked_in' ? '<span class="pgrip pgl" data-grip="left" aria-hidden="true"></span>' : ''}${esc(x.guest_name)}${movable ? '<span class="pgrip" data-grip="right" aria-hidden="true"></span>' : ''}</button>`; }).join('')}
         </div>`; }).join('') || '<p class="muted" style="padding:16px">Aucune chambre.</p>'}
     </div></div>
     <div class="row" style="margin-top:10px;font-size:12px">${Object.entries(col).map(([k, c]) => `<span><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:${c[0]};vertical-align:middle"></span> ${RSTATUS[k]}</span>`).join('')}<span class="muted" style="margin-left:8px">Aujourd’hui :</span>${Object.entries(LV_DOT).map(([k, c]) => `<span><span class="lv-dot" style="background:${c}"></span>${LIVE[k][0]}</span>`).join('')}<span class="muted">· Cliquez sur une case vide pour réserver. Glissez une réservation pour changer de chambre ou de dates, tirez son bord droit pour changer le départ.</span></div>`;
-  $('pPrev').onclick = () => { S._ps = addDays(start, -7); renderPlanning(); };
-  $('pNext').onclick = () => { S._ps = addDays(start, 7); renderPlanning(); };
+  const shiftM = (k) => { const d = new Date(+start.slice(0, 4), +start.slice(5, 7) - 1 + k, 1); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-01'; };
+  $('pPrev').onclick = () => { S._ps = step ? addDays(start, -step) : shiftM(-1); renderPlanning(); };
+  $('pNext').onclick = () => { S._ps = step ? addDays(start, step) : shiftM(1); renderPlanning(); };
+  el.querySelectorAll('[data-pv]').forEach(b => b.onclick = () => { S._pv = b.dataset.pv; S._ps = null; renderPlanning(); });
   $('pToday').onclick = () => { S._ps = null; renderPlanning(); };
   el.querySelectorAll('[data-slot]').forEach(b => b.onclick = () => { const [room, d] = b.dataset.slot.split('|'); const rm = S.rooms.find(x => x.id === room); openResaForm({ room_id: room, check_in: d, check_out: addDays(d, 1), nightly_rate: rm ? rm.base_rate : '' }, renderPlanning); });
   bindResaActions(el, renderPlanning);
@@ -3537,7 +3637,7 @@ function planningDrag(el, RES, start, cell){
     bar.addEventListener('pointerdown', (e) => {
       if (e.button !== 0) return;
       const r = RES.find(x => x.id === bar.dataset.bar); if (!r) return;
-      drag = { bar, r, x0: e.clientX, y0: e.clientY, mode: e.target.dataset.grip ? 'resize' : 'move', on: false, row0: bar.closest('[data-prow]'), w0: bar.offsetWidth, dd: 0, room: r.room_id };
+      drag = { bar, r, x0: e.clientX, y0: e.clientY, mode: e.target.dataset.grip === 'left' ? 'left' : e.target.dataset.grip ? 'resize' : 'move', on: false, row0: bar.closest('[data-prow]'), w0: bar.offsetWidth, dd: 0, room: r.room_id };
       bar.setPointerCapture(e.pointerId);
     });
     bar.addEventListener('pointermove', (e) => {
@@ -3546,7 +3646,9 @@ function planningDrag(el, RES, start, cell){
       if (!drag.on && Math.hypot(dx, dy) < 6) return;
       drag.on = true; bar.classList.add('pdragging');
       drag.dd = Math.round(dx / cell);
+      // Bord droit : seule la date de départ bouge. Bord gauche : seule la date d'arrivée bouge (le bord droit reste en place).
       if (drag.mode === 'resize') { bar.style.width = Math.max(cell / 2, drag.w0 + drag.dd * cell) + 'px'; return; }
+      if (drag.mode === 'left') { const w = drag.w0 - drag.dd * cell; if (w < cell / 2) drag.dd = Math.floor((drag.w0 - cell / 2) / cell); bar.style.width = Math.max(cell / 2, drag.w0 - drag.dd * cell) + 'px'; bar.style.transform = `translateX(${drag.dd * cell}px)`; return; }
       if (drag.r.status === 'checked_in') drag.dd = 0;
       bar.style.visibility = 'hidden'; const under = document.elementFromPoint(e.clientX, e.clientY); bar.style.visibility = '';
       const row = under && under.closest('[data-prow]');
@@ -3562,7 +3664,7 @@ function planningDrag(el, RES, start, cell){
       justDragged = true; setTimeout(() => { justDragged = false; }, 300);
       bar.classList.remove('pdragging');
       const r = d.r; let ci = r.check_in, co = r.check_out, room = r.room_id;
-      if (d.mode === 'resize') co = addDays(r.check_out, d.dd); else { ci = addDays(r.check_in, d.dd); co = addDays(r.check_out, d.dd); room = d.room; }
+      if (d.mode === 'resize') co = addDays(r.check_out, d.dd); else if (d.mode === 'left') ci = addDays(r.check_in, d.dd); else { ci = addDays(r.check_in, d.dd); co = addDays(r.check_out, d.dd); room = d.room; }
       if (co <= ci || (ci === r.check_in && co === r.check_out && room === r.room_id)) { bar.style.transform = ''; bar.style.width = ''; return renderPlanning(); }
       const from = S.rooms.find(x => x.id === r.room_id), to = S.rooms.find(x => x.id === room);
       const nOld = Math.round((new Date(r.check_out) - new Date(r.check_in)) / 864e5), nNew = Math.round((new Date(co) - new Date(ci)) / 864e5);

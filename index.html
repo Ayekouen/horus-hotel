@@ -1144,7 +1144,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.11.09-07';
+const APP_VERSION = '2026.11.09-09';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -1648,7 +1648,7 @@ async function loadCommon(){
   S.overview = ov.data; S.plans = pl.data || [];
   // Paiement en ligne en mode test : visible seulement par l'administrateur de la plateforme
   S.providers = (pr.data || []).filter(p => !(p.code === 'geniuspay' && (p.public_config || {}).environment === 'sandbox' && !S.isAdmin));
-  checkGeniusReturn();
+  checkGeniusReturn(); openDeepLink();
   await loadOrgPrefs(); applyRoleNav(); refreshClock(); offBar(); syncOffline();
   renderBanner();
   refreshAlertBadge();
@@ -1738,11 +1738,11 @@ function openAccount(){
   const u = (S.session && S.session.user) || {}, own = can(['owner','admin']);
   const it = (k, t, d) => `<button type="button" class="st-it" data-ac="${k}"><span class="st-t">${t}${d ? `<span class="st-d">${d}</span>` : ''}</span><span class="st-ch" aria-hidden="true">›</span></button>`;
   modal(`<div class="row" style="gap:12px;flex-wrap:nowrap;margin-bottom:14px">${accAvatar(48)}<div style="min-width:0"><h2 style="font-size:20px;margin:0;overflow:hidden;text-overflow:ellipsis">${esc(accName())}</h2><div class="muted" style="font-size:13px">${esc(ROLE_LABEL && S.member ? (ROLE_LABEL[S.member.role] || '') : '')}${u.email && !(u.user_metadata || {}).staff ? ' · ' + esc(u.email) : ''}</div></div></div>
-    <div class="st-l">${it('pwd', (u.user_metadata || {}).staff ? 'Changer mon code' : 'Changer mon mot de passe')}${it('lang', 'Langue / Language')}${it('theme', 'Thème de l’application')}${own ? it('sub', 'Mon abonnement') : ''}${it('set', 'Tous les réglages')}${it('refresh', 'Actualiser l’application')}</div>
+    <div class="st-l">${it('pwd', (u.user_metadata || {}).staff ? 'Changer mon code' : 'Changer mon mot de passe')}${it('notif', 'Notifications', 'Réservations, paiements, alertes')}${it('lang', 'Langue / Language')}${it('theme', 'Thème de l’application')}${own ? it('sub', 'Mon abonnement') : ''}${it('set', 'Tous les réglages')}${it('refresh', 'Actualiser l’application')}</div>
     <button type="button" class="st-out" data-ac="out">Se déconnecter</button>`);
   $('modalBody').style.maxWidth = '460px';
-  const A = { pwd: () => $('navPwd').click(), lang: () => openLang(), theme: () => $('navTheme').click(), sub: () => go('abonnement'), set: () => openSettings(), refresh: () => refreshApp(), out: () => doLogout() };
-  document.querySelectorAll('#modalBody [data-ac]').forEach(b => b.onclick = () => { const k = b.dataset.ac; if (!['lang', 'theme', 'set', 'pwd'].includes(k)) closeModal(); A[k](); });
+  const A = { notif: () => openPushSettings(), pwd: () => $('navPwd').click(), lang: () => openLang(), theme: () => $('navTheme').click(), sub: () => go('abonnement'), set: () => openSettings(), refresh: () => refreshApp(), out: () => doLogout() };
+  document.querySelectorAll('#modalBody [data-ac]').forEach(b => b.onclick = () => { const k = b.dataset.ac; if (!['lang', 'theme', 'set', 'pwd', 'notif'].includes(k)) closeModal(); A[k](); });
 }
 document.querySelectorAll('#tabbar [data-tab]').forEach(b => b.onclick = () => openTab(b.dataset.tab));
 
@@ -1994,6 +1994,48 @@ function openCheckout(slug, cycle){
 
 /* Retour de la page de paiement Genius Pay : le serveur redemande le statut avant toute validation */
 async function fnErr(e){ try { const j = await e.context.json(); return j.error || e.message; } catch (_) { return e.message || 'Erreur'; } }
+// Liens ouverts depuis une notification : ?resa=<id> ou ?go=<page>
+function openDeepLink(){
+  const q = new URLSearchParams(location.search), rid = q.get('resa'), v = q.get('go');
+  if (!rid && !v) return;
+  history.replaceState(null, '', location.pathname);
+  setTimeout(() => { if (v && typeof allowed === 'function' && allowed(v)) go(v); if (rid && /^[0-9a-f-]{36}$/.test(rid)) openResa(rid, () => S.view === 'reservations' ? renderReservations() : renderDashboard()); }, 600);
+}
+const PUSH_KINDS = [['booking', 'Nouvelles réservations Nuittea.com'], ['payment', 'Paiements en ligne reçus'], ['cancel', 'Annulations par le client'], ['control', 'Alertes de contrôle (propriétaire)'], ['stock', 'Stock bas ou épuisé'], ['daily', 'Rappel du soir (caisse, départs)']];
+const b64u = (s) => { const p = '='.repeat((4 - s.length % 4) % 4), b = atob((s + p).replace(/-/g, '+').replace(/_/g, '/')); return Uint8Array.from([...b].map(c => c.charCodeAt(0))); };
+async function pushSub(){ try { const r = await navigator.serviceWorker.ready; return await r.pushManager.getSubscription(); } catch (_) { return null; } }
+async function openPushSettings(){
+  const ok = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+  const ios = /iPhone|iPad|iPod/.test(navigator.userAgent), inst = typeof isStandalone === 'function' && isStandalone();
+  const sub = ok ? await pushSub() : null;
+  let row = null; if (sub) { const { data } = await sb.from('push_subscriptions').select('id,prefs').eq('endpoint', sub.endpoint).maybeSingle(); row = data; }
+  const prefs = (row && row.prefs) || {};
+  const status = !ok ? (ios && !inst ? 'Sur iPhone, installez d’abord l’application sur l’écran d’accueil (Partager → Sur l’écran d’accueil), puis ouvrez-la depuis l’icône. iOS 16.4 ou plus récent est nécessaire.' : 'Ce navigateur ne permet pas les notifications. Utilisez Chrome, Edge ou Firefox.')
+    : Notification.permission === 'denied' ? 'Les notifications sont bloquées pour ce site dans les réglages du navigateur. Autorisez-les (icône à gauche de l’adresse), puis revenez ici.'
+    : row ? 'Activées sur cet appareil.' : 'Désactivées sur cet appareil.';
+  modal(`<button type="button" class="small ghost" id="psBack" style="border:0;padding-left:0">‹ Mon compte</button><h2 style="font-size:22px;margin:4px 0 6px">Notifications</h2>
+    <p class="muted" style="margin:0 0 12px">${status}</p>
+    ${row ? `<div class="st-l" style="margin-bottom:12px">${PUSH_KINDS.filter(([k]) => k !== 'control' || can(['owner','admin'])).map(([k, l]) => `<label class="row between" style="padding:10px 12px;flex-wrap:nowrap;margin:0;font-weight:500"><span>${l}</span><input type="checkbox" data-pk="${k}" ${prefs[k] !== false ? 'checked' : ''} style="width:22px;height:22px;min-height:0"></label>`).join('')}</div>
+      <div class="row"><button type="button" class="primary" id="psTest">Envoyer un test</button><button type="button" class="ghost" id="psOff">Désactiver sur cet appareil</button></div>`
+    : ok && Notification.permission !== 'denied' ? `<button type="button" class="primary" id="psOn" style="width:100%">Activer les notifications sur cet appareil</button>` : ''}
+    <p class="muted" style="font-size:12px;margin:12px 0 0">Chaque appareil s’active séparément. Vous ne recevez que ce que votre rôle permet de voir.</p>`);
+  $('modalBody').style.maxWidth = '480px';
+  $('psBack').onclick = () => openAccount();
+  if ($('psOn')) $('psOn').onclick = async () => { const b = $('psOn'); b.disabled = true; b.textContent = 'Activation…';
+    try {
+      if ((await Notification.requestPermission()) !== 'granted') throw new Error('Autorisation refusée.');
+      const { data: k, error: ke } = await sb.functions.invoke('push', { body: { action: 'key' } }); if (ke) throw new Error(await fnErr(ke));
+      const reg = await navigator.serviceWorker.ready;
+      const s2 = (await reg.pushManager.getSubscription()) || await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64u(k.key) });
+      const j = s2.toJSON();
+      const { error } = await sb.from('push_subscriptions').upsert({ user_id: S.session.user.id, organization_id: S.org, endpoint: j.endpoint, p256dh: j.keys.p256dh, auth: j.keys.auth, user_agent: navigator.userAgent.slice(0, 200) }, { onConflict: 'endpoint' });
+      if (error) throw new Error(errMsg(error));
+      toast('Notifications activées sur cet appareil.'); openPushSettings();
+    } catch (x) { b.disabled = false; b.textContent = 'Activer les notifications sur cet appareil'; toast(x.message || 'Activation impossible.', true); } };
+  document.querySelectorAll('[data-pk]').forEach(c => c.onchange = async () => { const p2 = { ...prefs, [c.dataset.pk]: c.checked }; Object.assign(prefs, p2); const { error } = await sb.from('push_subscriptions').update({ prefs: p2 }).eq('id', row.id); if (error) toast(errMsg(error), true); });
+  if ($('psTest')) $('psTest').onclick = async () => { const { data, error } = await sb.functions.invoke('push', { body: { action: 'test' } }); if (error) return toast(await fnErr(error), true); toast(data.sent ? 'Test envoyé : la notification arrive dans quelques secondes.' : 'Envoi impossible : réactivez les notifications.', !data.sent); };
+  if ($('psOff')) $('psOff').onclick = async () => { try { await sb.from('push_subscriptions').delete().eq('id', row.id); const s3 = await pushSub(); if (s3) await s3.unsubscribe(); } catch (_) {} toast('Notifications désactivées sur cet appareil.'); openPushSettings(); };
+}
 async function checkGeniusReturn(){
   const q = new URLSearchParams(location.search), id = q.get('gp'); if (!id || checkGeniusReturn.done) return; checkGeniusReturn.done = true;
   history.replaceState(null, '', location.pathname + location.hash);
@@ -4215,7 +4257,7 @@ async function renderProduits(){
   el.querySelectorAll('[data-pcat]').forEach(b => b.onclick = () => { S._pCat = b.dataset.pcat; renderProduits(); });
   el.querySelectorAll('[data-pview]').forEach(b => b.onclick = () => { try { localStorage.setItem('hh_pview', b.dataset.pview); } catch (_) {} renderProduits(); });
   if ($('pQ')) { let t; $('pQ').oninput = () => { clearTimeout(t); t = setTimeout(() => { S._pQ = $('pQ').value; renderProduits().then(() => { const q = $('pQ'); if (q) { q.focus(); q.setSelectionRange(q.value.length, q.value.length); } }); }, 250); }; }
-  el.querySelectorAll('[data-pedit]').forEach(b => b.onclick = () => mgr ? openXProductForm(items.find(i => i.id === b.dataset.pedit), { sold, rev, rank }) : null);
+  el.querySelectorAll('[data-pedit]').forEach(b => b.onclick = () => openXProductView(items.find(i => i.id === b.dataset.pedit), { sold, rev, rank }));
   el.querySelectorAll('[data-pin]').forEach(b => b.onclick = () => { const it = items.find(i => i.id === b.dataset.pin); openStockMove(it, 'in', () => { closeModal(); renderProduits(); }, () => closeModal()); });
   el.querySelectorAll('[data-pact]').forEach(c => c.onchange = async () => { const { error } = await sb.from('extra_items').update({ is_active: c.checked }).eq('id', c.dataset.pact); if (error) toast(errMsg(error), true); renderProduits(); });
   if ($('pNew')) $('pNew').onclick = () => openXProductForm(null, { sold, rev, rank });
@@ -4269,6 +4311,51 @@ async function openStockHist(it, back){
     ${ev.length ? `<div class="tablewrap" style="max-height:60vh;overflow:auto"><table class="table"><thead><tr><th>Date</th><th>Mouvement</th><th class="r">Qté</th><th class="r">Stock après</th><th>Note</th></tr></thead><tbody>${ev.map(x => `<tr><td>${new Date(x.at).toLocaleString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</td><td>${x.t}</td><td class="r">${x.q}</td><td class="r">${x.after ?? ''}</td><td>${esc(x.n)}</td></tr>`).join('')}</tbody></table></div>` : '<p class="muted">Aucun mouvement.</p>'}`);
   $('modalBody').style.maxWidth = '680px';
   $('hBack').onclick = back;
+}
+// Fiche produit en lecture, avec les actions (modifier, stock, désactiver, supprimer)
+function openXProductView(it, stats){
+  if (!it) return;
+  const st = stats || {}, mgr = can(['owner', 'admin', 'manager']), r = (st.rank || []).indexOf(it.id);
+  const p = xPrice(it), m = it.unit_cost != null && Number(it.price) > 0 ? Math.round((Number(it.price) - Number(it.unit_cost)) / Number(it.price) * 100) : null;
+  const line = (l, x) => x == null || x === '' ? '' : `<div class="row between" style="border-bottom:1px solid var(--line);padding:8px 0;flex-wrap:nowrap;gap:10px"><span class="muted">${l}</span><strong style="text-align:right">${x}</strong></div>`;
+  const where = [it.sell_pos && 'caisse', it.in_minibar && `minibar (${it.minibar_qty || 1} par chambre)`, it.online && ('option Nuittea.com' + (it.online_per_night ? ' par nuit' : ''))].filter(Boolean).join(' · ');
+  modal(`<div class="row between" style="margin-bottom:12px;flex-wrap:nowrap"><h2 style="font-size:22px;margin:0">Fiche produit</h2><button type="button" class="small ghost" data-close>Fermer</button></div>
+    <div class="row" style="gap:14px;align-items:flex-start;flex-wrap:nowrap;margin-bottom:12px">
+      ${it.photo_url ? `<img src="${esc(it.photo_url)}" alt="" style="width:110px;height:110px;object-fit:cover;border-radius:14px;flex:none">` : `<span style="width:110px;height:110px;border-radius:14px;background:var(--bg);display:grid;place-items:center;font-size:40px;font-weight:800;color:var(--muted);flex:none">${esc((it.label || '?')[0].toUpperCase())}</span>`}
+      <div style="min-width:0"><h3 style="font-size:20px;margin:0">${esc(it.label)}</h3><div class="muted" style="font-size:13px">${XCAT[it.category] || ''}${it.subcategory ? ' · ' + esc(it.subcategory) : ''}</div>
+        <div style="font-family:var(--display);font-weight:800;font-size:26px;margin-top:6px">${p !== Number(it.price) ? `<s class="muted" style="font-size:16px">${money(it.price)}</s> ` : ''}${money(p)}</div>
+        <span class="pill" style="font-size:12px;${it.is_active ? 'background:var(--green-l);color:var(--green-d)' : 'background:var(--ink);color:var(--card)'}">${it.is_active ? 'Actif' : 'Désactivé'}</span></div></div>
+    ${it.description ? `<p style="margin:0 0 10px">${esc(it.description)}</p>` : ''}
+    <div class="row" style="gap:8px;margin-bottom:10px">${[['Stock', it.stock == null ? 'non suivi' : it.stock], ['Vendus 30 j', st.sold && st.sold[it.id] || 0], ['Chiffre 30 j', money(st.rev && st.rev[it.id] || 0)], ['Classement', r >= 0 ? '#' + (r + 1) : '—']].map(([l, x]) => `<div class="card" style="flex:1 1 90px;margin:0;padding:8px 10px"><div class="muted" style="font-size:11.5px">${l}</div><strong>${x}</strong></div>`).join('')}</div>
+    <div style="font-size:14px;margin-bottom:14px">
+      ${line('Prix d’achat', it.unit_cost != null ? money(it.unit_cost) : 'non renseigné')}
+      ${line('Marge', m != null ? `<span style="color:${m < 0 ? 'var(--red)' : 'inherit'}">${m} % · ${money(Number(it.price) - Number(it.unit_cost))}</span>` : null)}
+      ${line('Promotion', it.promo_price != null ? `${money(it.promo_price)}${it.promo_from || it.promo_to ? ` · ${it.promo_from ? dfr(it.promo_from) : '…'} → ${it.promo_to ? dfr(it.promo_to) : '…'}` : ''}` : null)}
+      ${line('Happy hour', it.happy_price != null ? `${money(it.happy_price)} · ${(it.happy_start || '').slice(0, 5)} → ${(it.happy_end || '').slice(0, 5)}` : null)}
+      ${line('Alerte de stock', it.stock != null ? 'à ' + (it.alert_qty ?? 3) + ' unités' : null)}
+      ${line('Vendu en', where || 'nulle part')}
+      ${line('Code-barres', it.barcode ? esc(it.barcode) : null)}
+    </div>
+    ${mgr ? `<div class="row" style="gap:8px;flex-wrap:wrap">
+      <button type="button" class="primary" id="pvEdit">Modifier</button>
+      ${it.stock != null ? `<button type="button" class="ghost" data-pvm="in">Entrée de stock</button><button type="button" class="ghost" data-pvm="loss">Perte</button><button type="button" class="ghost" data-pvm="adjust">Inventaire</button>` : ''}
+      <button type="button" class="ghost" id="pvHist">Historique</button>
+      <button type="button" class="ghost" id="pvAct">${it.is_active ? 'Désactiver' : 'Réactiver'}</button>
+      <button type="button" class="ghost" id="pvDel" style="color:var(--red)">Supprimer</button></div>` : ''}`);
+  if (!mgr) return;
+  const back = () => openXProductView(it, stats);
+  const reload = async () => { const { data } = await sb.from('extra_items').select('*').eq('id', it.id).single(); if (S.view === 'produits') renderProduits(); openXProductView(data || it, stats); };
+  $('pvEdit').onclick = () => openXProductForm(it, stats);
+  document.querySelectorAll('[data-pvm]').forEach(b => b.onclick = () => openStockMove(it, b.dataset.pvm, reload, back));
+  $('pvHist').onclick = () => openStockHist(it, back);
+  $('pvAct').onclick = async () => { const { error } = await sb.from('extra_items').update({ is_active: !it.is_active }).eq('id', it.id); if (error) return toast(errMsg(error), true); toast(it.is_active ? 'Produit désactivé : il n’apparaît plus en caisse.' : 'Produit réactivé.'); reload(); };
+  $('pvDel').onclick = async () => { const b = $('pvDel'); if (!b.dataset.confirm) { b.dataset.confirm = 1; b.textContent = 'Confirmer la suppression définitive'; return; }
+    // Un produit déjà vendu ou mouvementé garde son historique : on propose de le désactiver
+    const [c1, c2] = await Promise.all([sb.from('extra_sales').select('id', { count: 'exact', head: true }).eq('item_id', it.id), sb.from('extra_stock_moves').select('id', { count: 'exact', head: true }).eq('item_id', it.id)]);
+    if ((c1.count || 0) + (c2.count || 0) > 0) { b.textContent = 'Supprimer'; delete b.dataset.confirm; return toast(`Ce produit a un historique (${plur(c1.count || 0, 'vente', 'ventes')}, ${plur(c2.count || 0, 'mouvement de stock', 'mouvements de stock')}) : le supprimer fausserait vos rapports. Désactivez-le plutôt.`, true); }
+    const { error } = await sb.from('extra_items').delete().eq('id', it.id);
+    if (error) { b.textContent = 'Supprimer'; delete b.dataset.confirm; return toast(/foreign key|violates|référenc/i.test(error.message || '') ? 'Ce produit a déjà des ventes ou des mouvements de stock : il ne peut pas être supprimé sans fausser l’historique. Désactivez-le plutôt.' : errMsg(error), true); }
+    closeModal(); toast('Produit supprimé.'); if (S.view === 'produits') renderProduits(); };
 }
 async function openXProductForm(it, stats){
   const i = it || { category: 'boissons', is_active: true, sell_pos: true };

@@ -667,7 +667,7 @@ html nav.side [data-view="naya"]{--ic:url("data:image/svg+xml,%3Csvg xmlns='http
 .syncpill.off{background:#2B1E16;color:#FBF6EE}.syncpill.busy{background:#FFF4E0;color:#9A5B00}.syncpill.busy::before{animation:bootp .9s ease-in-out infinite}
 @media (max-width:720px){.syncpill{position:fixed;top:8px;right:10px;z-index:65;margin:0;box-shadow:0 2px 8px rgba(0,0,0,.12)}}
 /* Téléphone : pas de défilement horizontal, montants sur une ligne */
-html,body{overflow-x:hidden;max-width:100%}
+html,body{overflow-x:clip;max-width:100%}
 td .sr-only,th .sr-only{position:absolute;left:0;top:0}
 .kpi .v{overflow-wrap:anywhere}
 @media (max-width:720px){.kpi .v{font-size:clamp(19px,5.6vw,26px)!important;white-space:nowrap;letter-spacing:-.02em}.kpi{padding:14px 16px!important;min-width:0}.grid.g5{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
@@ -782,6 +782,8 @@ section[id^="v-"] .card{border-radius:12px}
 .ca-days summary::after{content:"";width:8px;height:8px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg);margin:0 4px 4px 8px;opacity:.6}
 .ca-days[open] summary::after{transform:rotate(-135deg);margin-bottom:-2px}
 .ca-days summary span{margin-left:auto;font-weight:500;opacity:.7}
+.lv-head{position:sticky;top:var(--stk,0px);z-index:6;background:var(--card,#fff);margin:-6px -8px 12px!important;padding:8px;border-radius:12px}
+@media (min-width:900px){.lv-head{--stk:64px}}@media (max-width:899px){.lv-head{--stk:56px}}
 .ca-dl{max-height:260px;overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;font-size:13px;font-variant-numeric:tabular-nums;margin-top:4px}
 .ca-dr{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px;padding:6px 4px 6px 0;border-bottom:1px solid rgba(127,127,127,.15)}
 .ca-dr span:nth-child(2),.ca-dr span:nth-child(3){text-align:right}
@@ -1153,9 +1155,22 @@ function attachList(inp, values){
   dl.innerHTML = values.map(v => `<option value="${esc(v)}">`).join('');
   inp.setAttribute('list', id); inp.setAttribute('autocomplete', 'off');
 }
+function freeSelect(sel){
+  if (!sel || sel.dataset.free || sel.disabled) return; sel.dataset.free = '1';
+  const other = new Option('Autre… (saisir)', '__autre'); sel.add(other);
+  let inp = null, cust = null; const max = +sel.dataset.max || 40;
+  const cur = sel.dataset.value; if (cur && ![...sel.options].some(o => o.value === cur)) { cust = new Option(cur, cur); sel.insertBefore(cust, other); cust.selected = true; }
+  sel.addEventListener('change', () => {
+    if (sel.value !== '__autre') { if (inp && (!cust || sel.value !== cust.value)) { inp.remove(); inp = null; } return; }
+    if (!inp) { inp = document.createElement('input'); inp.maxLength = max; inp.placeholder = 'Saisissez votre choix'; inp.style.marginTop = '6px'; sel.after(inp);
+      inp.addEventListener('input', () => { const v = inp.value.trim(); if (!v) return; if (!cust) { cust = new Option(v, v); sel.insertBefore(cust, other); } cust.text = cust.value = v; cust.selected = true; }); }
+    inp.focus();
+  });
+}
 function enhanceLists(root){
   if (!root) return;
   const q = (id) => root.querySelector('#' + id);
+  ['rBed', 'pfUnit', 'rcC'].forEach(id => freeSelect(q(id)));
   attachList(q('gNat'), LISTS.pays);
   ['pfN', 'tcWhy'].forEach(id => attachList(q(id), LISTS.pointage));
   ['seNote', 'smN'].forEach(id => { const i = q(id); if (i && i.required) attachList(i, LISTS.perte); });
@@ -1209,7 +1224,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.11.09-17';
+const APP_VERSION = '2026.11.09-18';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -2278,7 +2293,7 @@ async function renderChambres(){
           <div class="lv-band" style="background:${LIVE[(LV[r.id] || {}).st || 'free'][1]};color:${LIVE[(LV[r.id] || {}).st || 'free'][2]}"><strong>${LIVE[(LV[r.id] || {}).st || 'free'][0]}</strong><span>${lvInfo(r)}</span></div>
           <div style="padding:14px 16px 16px;display:flex;flex-direction:column;gap:8px;flex:1">
             <div class="row between" style="flex-wrap:nowrap"><strong style="font-size:16px">${esc(r.room_type || 'Chambre')}</strong><strong style="color:var(--green)">${r.base_rate != null ? money(r.base_rate) : '—'}</strong></div>
-            <div class="muted" style="font-size:13px">${[r.capacity ? r.capacity + ' pers.' : '', BEDS[r.bed_type] || '', r.size_m2 ? r.size_m2 + ' m²' : '', r.floor ? 'Étage ' + esc(r.floor) : ''].filter(Boolean).join(' · ') || '&nbsp;'}</div>
+            <div class="muted" style="font-size:13px">${[r.capacity ? r.capacity + ' pers.' : '', (BEDS[r.bed_type] || esc(r.bed_type || '')), r.size_m2 ? r.size_m2 + ' m²' : '', r.floor ? 'Étage ' + esc(r.floor) : ''].filter(Boolean).join(' · ') || '&nbsp;'}</div>
             ${(r.amenities || []).length ? `<div class="row" style="gap:4px">${r.amenities.slice(0, 4).map(a => `<span class="pill" style="background:var(--bg);color:var(--muted);font-weight:600">${esc(a)}</span>`).join('')}${r.amenities.length > 4 ? `<span class="pill" style="background:var(--bg);color:var(--muted)">+${r.amenities.length - 4}</span>` : ''}</div>` : ''}
             <div class="row between" style="margin-top:auto;padding-top:6px;flex-wrap:nowrap">
               ${r.is_active ? `<select data-hk="${r.id}" aria-label="État de la chambre ${esc(r.number)}" class="${hkCls[r.housekeeping_status]}" style="min-height:36px;width:auto;border:none;font-weight:700;font-size:13px;border-radius:999px;padding:0 10px">${opt(HKS, r.housekeeping_status)}</select>` : '<span class="pill st-cancelled">Désactivée</span>'}
@@ -2319,7 +2334,7 @@ async function openRoomForm(room, refresh, types, copy){
       <div class="row"><div class="field" style="flex:2 1 180px"><label for="rType">Type de chambre</label><input id="rType" list="rTypes" autocomplete="off" value="${esc(r.room_type || '')}" placeholder="Choisir ou saisir un type"><datalist id="rTypes">${types.map(t => `<option value="${esc(t)}"></option>`).join('')}</datalist></div>
         <div class="field" style="flex:1 1 130px"><label for="rRate">Prix par nuit (F)</label><input id="rRate" type="number" min="0" required value="${r.base_rate ?? ''}"></div></div>
       <div class="row"><div class="field" style="flex:1 1 100px"><label for="rCap">Personnes max</label><input id="rCap" type="number" min="1" max="20" value="${r.capacity ?? 2}"></div>
-        <div class="field" style="flex:1 1 150px"><label for="rBed">Literie</label><select id="rBed"><option value="">—</option>${opt(BEDS, r.bed_type)}</select></div>
+        <div class="field" style="flex:1 1 150px"><label for="rBed">Literie</label><select id="rBed" data-value="${esc(r.bed_type || '')}"><option value="">—</option>${opt(BEDS, r.bed_type)}</select></div>
         <div class="field" style="flex:1 1 90px"><label for="rSize">Surface (m²)</label><input id="rSize" type="number" min="1" max="1000" value="${r.size_m2 ?? ''}"></div></div>
       <fieldset style="border:1px solid var(--line);border-radius:14px;padding:12px;margin:0 0 14px"><legend style="font-size:13px;font-weight:700;color:var(--muted);padding:0 6px">Équipements</legend>
         <div class="grid" id="amGrid" style="grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:6px">${AMENITIES.concat(extraAm).map(a => `<label style="display:flex;align-items:center;gap:8px;margin:0;font-weight:500;color:var(--ink);font-size:14px;min-height:32px"><input type="checkbox" value="${esc(a)}" class="amen" ${(r.amenities || []).includes(a) ? 'checked' : ''} style="width:18px;min-height:18px"> ${esc(a)}</label>`).join('')}</div><div class="row" style="margin-top:8px;flex-wrap:nowrap"><input id="amNew" maxlength="40" placeholder="Autre équipement (ex. Jacuzzi)" style="flex:1"><button type="button" class="small ghost" id="amAdd">+ Ajouter</button></div></fieldset>
@@ -2904,7 +2919,7 @@ async function renderDashboardCore(){
     <div id="nayaDueBanner"></div>
     ${(() => { const e = (S.ests || []).find(x => x.id === S.est); return e && !e.latitude && can(['owner','admin','manager']) ? `<div class="card" style="margin-bottom:16px;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap"><div><strong>Indiquez la position de votre établissement</strong><div class="muted" style="font-size:13px">Les voyageurs vous trouveront dans la recherche par quartier et « Autour de moi » sur Nuittea.com.</div></div><button class="small primary" data-go="mapage">Compléter ma localisation</button></div>` : ''; })()}
     <div class="card" style="margin-bottom:16px">
-      <div class="row between" style="margin-bottom:12px"><h3 style="font-size:22px">Chambres en direct</h3><div class="row" style="gap:6px">${Object.entries(LIVE).map(([k, v]) => `<span class="pill" style="background:${v[1]};color:${v[2]}">${v[0]} · ${countSt(k)}</span>`).join('')}</div></div>
+      <div class="row between lv-head" style="margin-bottom:12px"><h3 style="font-size:22px">Chambres en direct</h3><div class="row" style="gap:6px">${Object.entries(LIVE).map(([k, v]) => `<span class="pill" style="background:${v[1]};color:${v[2]}">${v[0]} · ${countSt(k)}</span>`).join('')}</div></div>
       ${total ? `<div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:10px">${live.map(x => { const c = LIVE[x.st];
         return `<button type="button" class="lv-tile" data-room="${x.rm.id}" ${x.resa ? `data-open="${x.resa.id}"` : ''} style="cursor:pointer;border:none;font:inherit;text-align:left;width:100%;border-radius:16px;padding:12px;min-height:96px;background:${c[1]};color:${c[2]};display:flex;flex-direction:column;justify-content:space-between;gap:6px;outline-offset:2px" aria-label="Chambre ${esc(x.rm.number)} : ${c[0]}">
           <span style="font-family:var(--display);font-weight:800;font-size:${String(x.rm.number).length > 5 ? 17 : String(x.rm.number).length > 3 ? 20 : 24}px;line-height:1.1;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(x.rm.number)}">${esc(x.rm.number)}</span>
@@ -3346,7 +3361,7 @@ async function openResaForm(pre, refresh){
         ${free.map(r => { const x = X[r.id] || {}, sel = st.room === r.id, small = r.capacity && r.capacity < st.adults;
           return `<button type="button" data-rm="${r.id}" style="text-align:left;padding:0;border-radius:18px;border:${sel ? '2.5px solid var(--green)' : '1px solid var(--line)'};background:#fff;overflow:hidden;color:inherit;font-weight:400;min-height:0;display:flex;flex-direction:column;justify-content:flex-start;align-items:stretch;width:100%">
             <div style="height:110px;${photo(r)}"></div><div style="padding:10px 12px"><div class="row between"><strong style="font-size:17px">${esc(r.number)}</strong>${sel ? '<span style="color:var(--green);font-weight:700;font-size:13px">Choisie ✓</span>' : ''}</div>
-            <div class="muted" style="font-size:12.5px">${esc([r.room_type, x.bed_type && BEDS[x.bed_type], ...(x.amenities || []).slice(0, 2), x.size_m2 && x.size_m2 + ' m²'].filter(Boolean).join(' · '))}</div>
+            <div class="muted" style="font-size:12.5px">${esc([r.room_type, x.bed_type && (BEDS[x.bed_type] || x.bed_type), ...(x.amenities || []).slice(0, 2), x.size_m2 && x.size_m2 + ' m²'].filter(Boolean).join(' · '))}</div>
             <div style="margin-top:4px;font-weight:700">${money(r.base_rate)} <span class="muted" style="font-weight:400">/ nuit</span></div>
             ${moduleOn('menage') && ['dirty','cleaning'].includes(r.housekeeping_status) ? '<div style="font-size:12px;color:var(--red);margin-top:2px">À nettoyer avant l’arrivée</div>' : ''}${small ? `<div style="font-size:12px;color:var(--red);margin-top:2px">Prévue pour ${plur(r.capacity, 'personne', 'personnes')}</div>` : ''}</div></button>`; }).join('')}
         ${off.map(r => `<div style="border-radius:18px;border:1px dashed #C9B596;background:var(--bg);padding:14px;color:var(--muted);font-size:14px"><strong style="color:var(--ink)">${esc(r.number)} · ${r.housekeeping_status === 'out_of_service' ? 'hors service' : 'occupée'}</strong><br>${r.housekeeping_status === 'out_of_service' ? 'Indisponible' : 'Déjà réservée sur ces dates'}</div>`).join('')}
@@ -4770,8 +4785,10 @@ async function openExpenseForm({ fromCaisse = false, due = null, onDone }){
     <div id="xW" class="hidden" style="background:#FFF4E5;border-radius:14px;padding:10px 14px;font-size:14px;color:#6B4A00;margin-bottom:12px">Montant supérieur au seuil fixé par le propriétaire : la dépense sera <strong>en attente de sa validation</strong>.</div>
     <div class="row"><button class="primary" id="xGo">Enregistrer</button><button type="button" class="ghost" data-close>Annuler</button></div></form>`);
   const drawCats = () => { const c = $('xC'); if (!c) return;
-    c.innerHTML = EXP_CATS[nature].map(x => `<button type="button" class="small ${x === cat ? 'primary' : 'ghost'}" data-cat="${esc(x)}">${esc(x)}</button>`).join('');
+    const cats = EXP_CATS[nature].includes(cat) || !cat ? EXP_CATS[nature] : EXP_CATS[nature].concat(cat);
+    c.innerHTML = cats.map(x => `<button type="button" class="small ${x === cat ? 'primary' : 'ghost'}" data-cat="${esc(x)}">${esc(x)}</button>`).join('') + `<input id="xCo" maxlength="60" placeholder="Autre poste…" style="width:150px;min-height:34px;padding:4px 10px">`;
     c.querySelectorAll('[data-cat]').forEach(b => b.onclick = () => { cat = b.dataset.cat; drawCats(); });
+    $('xCo').onchange = () => { const v = $('xCo').value.trim(); if (v) { cat = v; drawCats(); } };
     document.querySelectorAll('#xF [data-nat]').forEach(b => b.className = 'small ' + (b.dataset.nat === nature ? 'primary' : 'ghost')); };
   document.querySelectorAll('#xF [data-nat]').forEach(b => b.onclick = () => { nature = b.dataset.nat; cat = EXP_CATS[nature][0]; drawCats(); });
   drawCats();
@@ -4795,7 +4812,7 @@ async function openExpenseForm({ fromCaisse = false, due = null, onDone }){
 function openRecurringForm(r, done){
   modal(`<h2 style="font-size:24px;margin-bottom:12px">${r ? 'Modifier la charge fixe' : 'Nouvelle charge fixe'}</h2><form id="rcF">
     <div class="field"><label for="rcL">Libellé</label><input id="rcL" required maxlength="200" value="${esc(r ? r.label : '')}" placeholder="Ex. : loyer du bâtiment"></div>
-    <div class="row"><div class="field" style="flex:1 1 160px"><label for="rcC">Poste</label><select id="rcC">${EXP_CATS.fixed.map(c => `<option ${r && r.category === c ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select></div>
+    <div class="row"><div class="field" style="flex:1 1 160px"><label for="rcC">Poste</label><select id="rcC" data-max="60" data-value="${esc((r && r.category) || '')}">${EXP_CATS.fixed.map(c => `<option ${r && r.category === c ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select></div>
       <div class="field" style="flex:1 1 120px"><label for="rcA">Montant (F)</label><input id="rcA" type="number" min="1" required value="${r ? Number(r.amount) : ''}"></div>
       <div class="field" style="flex:0 1 110px"><label for="rcD">Jour du mois</label><input id="rcD" type="number" min="1" max="28" required value="${r ? r.day_of_month : 5}"></div></div>
     ${r ? `<label class="row" style="gap:8px;margin-bottom:12px"><input type="checkbox" id="rcOn" style="width:auto" ${r.is_active ? 'checked' : ''}> Active</label>` : ''}
@@ -6645,7 +6662,7 @@ function openProductForm(p, preset){
       <div class="row" style="gap:6px;margin-bottom:12px;flex-wrap:nowrap">${Object.entries(OUTLETS).map(([k, [l, ic]]) => `<label class="card" style="flex:1;padding:10px;margin:0;cursor:pointer;display:flex;gap:8px;align-items:center"><input type="radio" name="pfOut" value="${k}" ${p.outlet === k ? 'checked' : ''} style="width:18px;min-height:18px">${l}</label>`).join('')}</div>
       <div class="field"><label for="pfName">Nom du produit</label><input id="pfName" required maxlength="80" value="${esc(p.name || '')}" placeholder="ex. Poulet braisé, Flag 65cl"></div>
       <div class="row" style="gap:10px"><div class="field" style="flex:1 1 160px"><label for="pfCat">Catégorie</label><input id="pfCat" list="pfCats" maxlength="40" value="${esc(p.category || '')}" placeholder="ex. Plats, Bières"><datalist id="pfCats">${cats.map(c => `<option value="${esc(c)}">`).join('')}</datalist></div>
-        <div class="field" style="flex:1 1 110px"><label for="pfUnit">Unité</label><select id="pfUnit">${UNITS.map(u => `<option ${u === p.unit ? 'selected' : ''}>${u}</option>`).join('')}</select></div></div>
+        <div class="field" style="flex:1 1 110px"><label for="pfUnit">Unité</label><select id="pfUnit" data-max="20" data-value="${esc(p.unit || '')}">${UNITS.map(u => `<option ${u === p.unit ? 'selected' : ''}>${u}</option>`).join('')}</select></div></div>
       ${sec('Prix et promotions')}
       <div class="row" style="gap:10px"><div class="field" style="flex:1"><label for="pfSell">Prix normal *</label><input id="pfSell" inputmode="numeric" required value="${p.sale_price != null ? +p.sale_price : ''}" placeholder="0"></div>
         <div class="field" style="flex:1"><label for="pfPromo">Prix promotionnel</label><input id="pfPromo" inputmode="numeric" value="${p.promo_price != null ? +p.promo_price : ''}" placeholder="—"></div></div>
@@ -7134,7 +7151,7 @@ async function renderPublicPage(slug){
         ${types.length ? `<div class="grid g2">${types.map(t => `<div style="border:1px solid var(--line);border-radius:18px;overflow:hidden;background:var(--card);display:flex;flex-direction:column">
           ${(t.photos || []).length ? `<div style="display:flex;overflow-x:auto;scroll-snap-type:x mandatory;gap:2px">${t.photos.map((u, i) => `<img src="${esc(u)}" alt="${esc(t.type)}, photo ${i + 1}" loading="lazy" style="flex:0 0 100%;height:200px;object-fit:cover;scroll-snap-align:start">`).join('')}</div>` : `<div style="height:120px;background:linear-gradient(135deg,var(--green-l),var(--bg))"></div>`}
           <div style="padding:16px;display:flex;flex-direction:column;flex:1"><div class="row between" style="flex-wrap:nowrap"><h3 style="font-size:19px">${esc(t.type)}</h3>${(t.photos || []).length > 1 ? `<span class="muted" style="font-size:12px">${t.photos.length} photos ↔</span>` : ''}</div>
-          <p class="muted" style="margin:4px 0 8px;font-size:13px">${[t.capacity ? `Jusqu’à ${t.capacity} pers.` : '', BEDS[t.bed_type] || '', t.size_m2 ? t.size_m2 + ' m²' : ''].filter(Boolean).join(' · ')}</p>
+          <p class="muted" style="margin:4px 0 8px;font-size:13px">${[t.capacity ? `Jusqu’à ${t.capacity} pers.` : '', (BEDS[t.bed_type] || esc(t.bed_type || '')), t.size_m2 ? t.size_m2 + ' m²' : ''].filter(Boolean).join(' · ')}</p>
           ${t.description ? `<p style="margin:0 0 8px;font-size:14px">${esc(t.description)}</p>` : ''}
           ${(t.amenities || []).length ? `<div class="row" style="gap:4px;margin-bottom:10px">${t.amenities.map(a => `<span class="pill" style="background:var(--green-l);color:var(--green-d);font-weight:600">${esc(a)}</span>`).join('')}</div>` : ''}
           <div class="row between" style="margin-top:auto"><p style="margin:0">Dès <strong style="font-size:20px">${money(t.from_rate)}</strong> / nuit</p><a href="#reserver" data-pick="${esc(t.type)}" style="display:inline-flex;align-items:center;min-height:40px;padding:0 14px;border-radius:999px;background:var(--green);color:#fff;font-weight:700;text-decoration:none;font-size:14px">Choisir</a></div></div></div>`).join('')}</div>` : '<p class="muted">Aucun hébergement réservable en ligne pour le moment.</p>'}

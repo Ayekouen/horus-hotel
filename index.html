@@ -1143,7 +1143,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.11.09-02';
+const APP_VERSION = '2026.11.09-03';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -4089,6 +4089,8 @@ async function openExtraItems(back){
       <div class="row"><button class="primary">Enregistrer</button><button type="button" class="ghost" id="mvBack">Annuler</button></div></form>`);
     $('mvBack').onclick = again; setTimeout(() => $('mvQ').focus(), 50);
     $('mvF').onsubmit = async (e) => { e.preventDefault(); const c = $('mvC') ? $('mvC').value.trim() : '';
+    // Prix d'achat unitaire supérieur au prix de vente : souvent le total du bon saisi par erreur
+    if (c !== '' && Number(it.price) > 0 && +c > Number(it.price) && !$('mvF').dataset.ok) { $('mvF').dataset.ok = 1; return toast(`Prix d’achat unitaire (${money(+c)}) supérieur au prix de vente (${money(it.price)}). S’il s’agit du total du bon, saisissez le prix d’une seule unité. Sinon, validez de nouveau.`, true); }
       const { error: er } = await sb.rpc('extra_stock_move', { p_item: id, p_kind: k, p_qty: parseInt($('mvQ').value, 10), p_unit_cost: c === '' ? null : +c, p_note: $('mvN').value });
       if (er) return toast(errMsg(er), true); toast('Stock mis à jour.'); again(); }; });
   document.querySelectorAll('[data-xhist]').forEach(b => b.onclick = async () => { const it = items.find(x => x.id === b.dataset.xhist);
@@ -4129,7 +4131,7 @@ async function renderProduits(){
   const margin = (i) => i.unit_cost != null && Number(i.price) > 0 ? Math.round((Number(i.price) - Number(i.unit_cost)) / Number(i.price) * 100) : null;
   const rank = Object.entries(rev).sort((a, b) => b[1] - a[1]).map(([k]) => k);
   const ph = (i, sz) => i.photo_url ? `<img src="${esc(i.photo_url)}" alt="" loading="lazy" style="width:${sz};height:${sz};object-fit:cover;border-radius:10px;background:var(--bg)">` : `<span style="width:${sz};height:${sz};border-radius:10px;background:var(--bg);display:grid;place-items:center;color:var(--muted);font-weight:800">${esc((i.label || '?')[0].toUpperCase())}</span>`;
-  const TABS = [['catalogue', 'Catalogue · ' + active.length], ['stock', 'Stock' + (out.length + low.length ? ' · ' + (out.length + low.length) + ' à commander' : '')], ['inventaires', 'Inventaires'], ['receptions', 'Réceptions']];
+  const TABS = [['catalogue', 'Catalogue · ' + active.length + (items.length > active.length ? ` actif${active.length > 1 ? 's' : ''} sur ${items.length}` : '')], ['stock', 'Stock' + (out.length + low.length ? ' · ' + (out.length + low.length) + ' à commander' : '')], ['inventaires', 'Inventaires'], ['receptions', 'Réceptions']];
   let body = '';
   if (tab === 'catalogue') {
     const q = (S._pQ || '').toLowerCase(), cat = S._pCat || '', view = (() => { try { return localStorage.getItem('hh_pview') || 'grid'; } catch (_) { return 'grid'; } })();
@@ -4138,10 +4140,10 @@ async function renderProduits(){
     active.forEach(i => { const m = margin(i); if (m !== null && m < 20) tips.push(`<b>${esc(i.label)}</b> : marge de ${m} %, pensez à revoir le prix.`); });
     dormant.slice(0, 3).forEach(i => tips.push(`<b>${esc(i.label)}</b> : aucune vente depuis 30 jours (${i.stock} en stock).`));
     const promo = (i) => xPrice(i) !== Number(i.price);
-    const card = (i) => `<button type="button" class="pcard" data-pedit="${i.id}" style="${i.is_active ? '' : 'opacity:.5'}">${i.photo_url ? `<img src="${esc(i.photo_url)}" alt="" loading="lazy">` : `<span class="pph">${esc((i.label || '?')[0].toUpperCase())}</span>`}
+    const card = (i) => `<button type="button" class="pcard" data-pedit="${i.id}" style="${i.is_active ? '' : 'opacity:.55'}">${i.is_active ? '' : '<span class="pill" style="position:absolute;margin:6px;font-size:11px;background:var(--ink);color:var(--card);z-index:1">Désactivé</span>'}${i.photo_url ? `<img src="${esc(i.photo_url)}" alt="" loading="lazy">` : `<span class="pph">${esc((i.label || '?')[0].toUpperCase())}</span>`}
       ${promo(i) ? '<span class="pbadge">PROMO</span>' : ''}<span class="pn">${esc(i.label)}</span><span class="pc">${XCAT[i.category]}${i.subcategory ? ' · ' + esc(i.subcategory) : ''}</span>
       <span class="pp">${promo(i) ? `<s>${money(i.price)}</s> ` : ''}${money(xPrice(i))}</span><span class="ps">${i.stock === null ? '' : i.stock <= 0 ? '<b style="color:var(--red)">Épuisé</b>' : (isLow(i) ? '<b style="color:var(--red)">' : '<span>') + i.stock + ' en stock' + (isLow(i) ? '</b>' : '</span>')}${sold[i.id] ? ' · ' + sold[i.id] + ' vendus/30 j' : ''}</span></button>`;
-    const row = (i) => `<tr style="${i.is_active ? '' : 'opacity:.5'}"><td><div class="row" style="gap:10px;flex-wrap:nowrap">${ph(i, '40px')}<div><strong>${esc(i.label)}</strong><div class="muted" style="font-size:12px">${XCAT[i.category]}${i.subcategory ? ' · ' + esc(i.subcategory) : ''}</div></div></div></td>
+    const row = (i) => `<tr style="${i.is_active ? '' : 'opacity:.5'}"><td><div class="row" style="gap:10px;flex-wrap:nowrap">${ph(i, '40px')}<div><strong>${esc(i.label)}</strong>${i.is_active ? '' : ' <span class="pill" style="font-size:11px">Désactivé</span>'}<div class="muted" style="font-size:12px">${XCAT[i.category]}${i.subcategory ? ' · ' + esc(i.subcategory) : ''}</div></div></div></td>
       <td class="r">${money(xPrice(i))}</td><td class="r">${i.unit_cost != null ? money(i.unit_cost) : '—'}</td><td class="r">${margin(i) !== null ? margin(i) + ' %' : '—'}</td><td class="r">${i.stock ?? '—'}</td><td class="r">${sold[i.id] || 0}</td>
       <td>${mgr ? `<label class="toggle-mini"><input type="checkbox" data-pact="${i.id}" ${i.is_active ? 'checked' : ''} aria-label="Actif"></label> <button type="button" class="small ghost" data-pedit="${i.id}">Modifier</button> <button type="button" class="small ghost" data-pin="${i.id}">+ Entrée</button>` : ''}</td></tr>`;
     body = `${tips.length && mgr ? `<div class="card" style="margin-bottom:12px;border-left:4px solid var(--amber)"><div style="font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:4px">Suggestions</div>${tips.slice(0, 4).map(t => `<p style="margin:3px 0;font-size:14px">${t}</p>`).join('')}</div>` : ''}
@@ -4379,18 +4381,20 @@ function openReception(items){
     modal(`<h2 style="font-size:22px;margin:0 0 10px">Réception de marchandises</h2><form id="rvF">
       <div class="row"><div class="field" style="flex:2 1 180px"><label for="rvS">Fournisseur</label><input id="rvS" maxlength="80" value="${esc(st.sup || '')}" placeholder="Ex. : Solibra, grossiste…"></div><div class="field" style="flex:1 1 120px"><label for="rvR">N° de bon</label><input id="rvR" maxlength="60" value="${esc(st.ref || '')}" placeholder="Facultatif"></div></div>
       <div class="row" style="gap:6px;align-items:flex-end"><div style="flex:1 1 200px"><label for="rvI">Ajouter un article</label><select id="rvI"><option value="">Choisir…</option>${items.filter(i => !st.lines.some(l => l.id === i.id)).map(i => `<option value="${i.id}">${esc(i.label)}</option>`).join('')}</select></div></div>
-      <div style="margin:10px 0;max-height:40vh;overflow:auto">${st.lines.map((l, k) => `<div class="row" style="gap:6px;padding:6px 0;border-bottom:1px solid var(--line);flex-wrap:nowrap"><span style="flex:1;min-width:0">${esc(l.label)}</span><input type="number" min="1" data-rq="${k}" value="${l.qty || ''}" placeholder="Qté" style="width:72px;min-height:38px" aria-label="Quantité"><input type="number" min="0" data-rc="${k}" value="${l.cost ?? ''}" placeholder="Prix achat" style="width:100px;min-height:38px" aria-label="Prix d'achat"><button type="button" class="small ghost" data-rx="${k}" aria-label="Retirer">✕</button></div>`).join('') || '<p class="muted">Aucun article.</p>'}</div>
-      <p style="margin:0 0 10px"><strong id="rvT">Total : ${money(total)}</strong></p>
+      <div style="margin:10px 0;max-height:40vh;overflow:auto">${st.lines.map((l, k) => `<div class="row" style="gap:6px;padding:6px 0;border-bottom:1px solid var(--line);flex-wrap:nowrap"><span style="flex:1;min-width:0">${esc(l.label)}</span><input type="number" min="1" data-rq="${k}" value="${l.qty || ''}" placeholder="Qté" style="width:72px;min-height:38px" aria-label="Quantité"><input type="number" min="0" data-rc="${k}" value="${l.cost ?? ''}" placeholder="Prix unitaire" aria-label="Prix d’achat unitaire" style="width:100px;min-height:38px" aria-label="Prix d'achat"><button type="button" class="small ghost" data-rx="${k}" aria-label="Retirer">✕</button></div>`).join('') || '<p class="muted">Aucun article.</p>'}</div>
+      <p class="muted" style="font-size:12px;margin:0 0 4px">Quantité en unités vendues (bouteilles, pièces) · prix d’achat d’une seule unité.</p><p style="margin:0 0 10px"><strong id="rvT">Total : ${money(total)}</strong></p>
       <div class="row"><button class="primary">Enregistrer la réception</button><button type="button" class="ghost" data-close>Annuler</button></div>
       <p class="muted" style="font-size:12px;margin:6px 0 0">Le stock augmente et le prix d’achat devient le coût moyen. Pensez à enregistrer le paiement du fournisseur dans les dépenses.</p></form>`);
     const keep = () => { st.sup = $('rvS').value; st.ref = $('rvR').value; };
-    $('rvI').onchange = () => { keep(); const i = items.find(x => x.id === $('rvI').value); if (i) st.lines.push({ id: i.id, label: i.label, qty: null, cost: i.unit_cost != null ? Number(i.unit_cost) : null }); draw(); };
+    $('rvI').onchange = () => { keep(); const i = items.find(x => x.id === $('rvI').value); if (i) st.lines.push({ id: i.id, label: i.label, price: Number(i.price) || 0, qty: null, cost: i.unit_cost != null ? Number(i.unit_cost) : null }); draw(); };
     const tt = () => { $('rvT').textContent = 'Total : ' + money(st.lines.reduce((a, l) => a + (l.qty || 0) * (l.cost || 0), 0)); };
     document.querySelectorAll('[data-rq]').forEach(x => x.oninput = () => { st.lines[x.dataset.rq].qty = parseInt(x.value, 10) || null; tt(); });
     document.querySelectorAll('[data-rc]').forEach(x => x.oninput = () => { st.lines[x.dataset.rc].cost = x.value === '' ? null : +x.value; tt(); });
     document.querySelectorAll('[data-rx]').forEach(x => x.onclick = () => { keep(); st.lines.splice(+x.dataset.rx, 1); draw(); });
     $('rvF').onsubmit = async (e) => { e.preventDefault(); keep();
       if (!st.lines.length || st.lines.some(l => !l.qty)) return toast('Indiquez la quantité de chaque article.', true);
+      const odd = st.lines.filter(l => l.cost != null && l.price > 0 && l.cost > l.price);
+      if (odd.length && !$('rvF').dataset.ok) { $('rvF').dataset.ok = 1; return toast(`${odd.map(l => l.label).join(', ')} : prix d’achat unitaire supérieur au prix de vente. Saisissez le prix d’une seule unité (pas le total du bon), ou validez de nouveau si c’est voulu.`, true); }
       const { error } = await sb.rpc('extra_reception', { p_est: S.est, p_supplier: st.sup, p_reference: st.ref, p_lines: st.lines.map(l => ({ item_id: l.id, qty: l.qty, unit_cost: l.cost })) });
       if (error) return toast(errMsg(error), true); closeModal(); toast('Réception enregistrée, stock mis à jour.'); S._pTab = 'receptions'; renderProduits(); };
   };

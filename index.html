@@ -1143,7 +1143,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.11.09-05';
+const APP_VERSION = '2026.11.09-06';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -2509,6 +2509,8 @@ function openAdminClient(c, plans){
 }
 
 /* ================= Modules métier ================= */
+// Montant total dû d'un séjour = hébergement + ventes annexes portées sur la note (payé + reste)
+const gtot = (r) => r && r.paid != null && r.balance != null ? Number(r.paid) + Number(r.balance) : Number((r && r.total_amount) || 0);
 const RSTATUS = { pending:'En attente', confirmed:'Confirmée', checked_in:'En séjour', checked_out:'Partie', cancelled:'Annulée', no_show:'Non présentée' };
 const RSTCLS = { pending:'st-pending', confirmed:'st-trial', checked_in:'st-active', checked_out:'st-cancelled', cancelled:'st-expired', no_show:'st-expired' };
 const SOURCE = { direct:'Direct', telephone:'Téléphone', walk_in:'Walk-in', whatsapp:'WhatsApp', agence:'Agence', en_ligne:'En ligne', naya:'Nuittea' };
@@ -2900,9 +2902,9 @@ async function renderReservations(){
   };
   const col = (title, badge, badgeStyle, items, kind, empty) => `<section class="card"><div class="row between" style="margin-bottom:12px"><h3 style="font-size:20px">${title}</h3>${items.length ? `<span class="pill" style="${badgeStyle}">${badge}</span>` : ''}</div>${items.length ? items.map(r => card(r, kind)).join('') : `<p class="muted">${empty}</p>`}</section>`;
   const table = (rows, empty) => rows.length ? `<div class="tablewrap"><table class="table"><thead><tr><th>Client</th><th>Séjour</th><th>Ch.</th><th>Paiement</th><th>Statut</th><th><span class="sr-only">Actions</span></th></tr></thead><tbody>
-    ${rows.map(r => { const pct = r.total_amount > 0 ? Math.min(100, Math.round(r.paid * 100 / r.total_amount)) : 100;
+    ${rows.map(r => { const pct = gtot(r) > 0 ? Math.min(100, Math.round(r.paid * 100 / gtot(r))) : 100;
       return `<tr><td><strong>${esc(r.guest_name)}</strong><div class="muted" style="font-size:12px">${esc(r.guest_phone || '')}${r.guest_phone ? ' · ' : ''}${SOURCE[r.source] || ''}</div></td><td style="white-space:nowrap">${dfr(r.check_in)} → ${dfr(r.check_out)}<div class="muted" style="font-size:12px">${plur(r.nights, 'nuit', 'nuits')}</div></td><td>${esc(r.room_number)}</td>
-      <td style="min-width:170px"><div style="font-size:13px;white-space:nowrap">${money(r.paid)} / ${money(r.total_amount)}</div><div style="height:6px;border-radius:3px;background:#E9DCC8;margin-top:4px"><div style="width:${pct}%;height:6px;border-radius:3px;background:${pct >= 100 ? 'var(--ok)' : 'var(--green)'}"></div></div></td>
+      <td style="min-width:170px"><div style="font-size:13px;white-space:nowrap">${money(r.paid)} / ${money(gtot(r))}</div><div style="height:6px;border-radius:3px;background:#E9DCC8;margin-top:4px"><div style="width:${pct}%;height:6px;border-radius:3px;background:${pct >= 100 ? 'var(--ok)' : 'var(--green)'}"></div></div></td>
       <td><span class="pill ${RSTCLS[r.status]}">${RSTATUS[r.status]}</span></td>
       <td style="text-align:right;white-space:nowrap">${r.balance > 0 && !['cancelled','no_show'].includes(r.status) && can(['owner','admin','manager','receptionist','accountant']) ? `<button class="small primary" data-pay="${r.id}">Encaisser</button> ` : ''}<button class="small ghost" data-open="${r.id}">Ouvrir</button></td></tr>`; }).join('')}
     </tbody></table></div>` : `<p class="muted">${empty}</p>`;
@@ -3276,15 +3278,18 @@ async function openResa(id, refresh, focusCheckout){
     can(['owner','admin','manager','receptionist','accountant']) ? sb.from('cash_movements').select('created_at,kind,method,amount,label,reference').eq('reservation_id', id).order('created_at') : { data: [] }
   ]);
   if (!r) return toast('Réservation introuvable.', true);
+  const { data: xs } = await sb.from('extra_sales').select('created_at,label,qty,total').eq('reservation_id', id).eq('status', 'on_note').order('created_at');
+  const extrasTot = (xs || []).reduce((a, x) => a + Number(x.total), 0);
   const active = ['pending','confirmed','checked_in'].includes(r.status);
   modal(`<div class="row between"><h2 style="font-size:24px">${esc(r.guest_name)}</h2><span class="pill ${RSTCLS[r.status]}">${RSTATUS[r.status]}</span></div>
     <p class="muted" style="margin:4px 0 14px">Chambre ${esc(r.room_number)} · ${dfr(r.check_in)} → ${dfr(r.check_out)} · ${plur(r.nights, 'nuit', 'nuits')} · ${SOURCE[r.source]}${r.notes ? '<br>' + esc(r.notes) : ''}</p>
     <div class="grid" style="grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;text-align:center">
-      <div class="card" style="padding:12px"><div class="muted" style="font-size:12px">Total</div><strong>${money(r.total_amount)}</strong></div>
+      <div class="card" style="padding:12px"><div class="muted" style="font-size:12px">Total</div><strong>${money(gtot(r))}</strong>${extrasTot ? `<div class="muted" style="font-size:11px">séjour ${money(r.total_amount)} + annexes ${money(extrasTot)}</div>` : ''}</div>
       <div class="card" style="padding:12px"><div class="muted" style="font-size:12px">Payé</div><strong style="color:var(--ok)">${money(r.paid)}</strong></div>
       <div class="card" style="padding:12px"><div class="muted" style="font-size:12px">Solde</div><strong style="color:${r.balance > 0 ? 'var(--amber)' : 'var(--ok)'}">${money(r.balance)}</strong></div>
     </div>
-    ${(pays || []).length ? `<div style="font-size:13px;margin-bottom:14px">${pays.map(p => `<div class="row between" style="border-bottom:1px solid #F0ECE3;padding:6px 0"><span>${new Date(p.created_at).toLocaleDateString('fr-FR')} · ${esc(p.label)} · ${PMETHOD[p.method] || esc(p.method)}${p.reference ? ' · réf. ' + esc(p.reference) : ''}</span><strong>${p.kind === 'refund' ? '−' : ''}${money(p.amount)}</strong></div>`).join('')}</div>` : ''}
+    ${(xs || []).length ? `<div style="font-size:13px;margin-bottom:10px"><div style="font-weight:700;margin-bottom:4px">Sur la note</div>${xs.map(x => `<div class="row between" style="border-bottom:1px solid #F0ECE3;padding:6px 0"><span>${new Date(x.created_at).toLocaleDateString('fr-FR')} · ${x.qty} × ${esc(x.label)}</span><strong>${money(x.total)}</strong></div>`).join('')}</div>` : ''}
+    ${(pays || []).length ? `<div style="font-size:13px;margin-bottom:14px">${(xs || []).length ? '<div style="font-weight:700;margin-bottom:4px">Paiements</div>' : ''}${pays.map(p => `<div class="row between" style="border-bottom:1px solid #F0ECE3;padding:6px 0"><span>${new Date(p.created_at).toLocaleDateString('fr-FR')} · ${esc(p.label)} · ${PMETHOD[p.method] || esc(p.method)}${p.reference ? ' · réf. ' + esc(p.reference) : ''}</span><strong>${p.kind === 'refund' ? '−' : ''}${money(p.amount)}</strong></div>`).join('')}</div>` : ''}
     ${NET.cachedAt ? `<div class="banner b-danger" style="margin-bottom:12px"><span>Connexion instable : le solde affiché date du ${new Date(NET.cachedAt).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })} et peut avoir changé (paiement en ligne, autre caissier). L’encaissement sera vérifié au retour du réseau.</span></div>` : ''}
     ${active && r.balance > 0 && can(['owner','admin','manager','receptionist','accountant']) ? `<form id="payForm" class="row" style="align-items:flex-end;margin-bottom:14px">
       <div style="flex:1 1 110px"><label for="pAmt">Encaisser (F)</label><input id="pAmt" type="number" min="1" max="${r.balance}" value="${r.balance}" required></div>
@@ -3707,7 +3712,7 @@ async function renderCaisse(){
       <p class="muted" style="font-size:13px;margin:0 0 12px">Qui doit combien : séjours non soldés, du plus urgent au plus lointain.</p>
       <div class="row" style="gap:6px;margin-bottom:12px">${[['tous', 'Tous'], ['sejour', 'En séjour'], ['arrivee', 'Arrivés'], ['avenir', 'À venir'], ['parti', 'Partis']].map(([k, l]) => { const n = k === 'tous' ? bal.length : bal.filter(b => balGroup(b) === k).length; return n || k === 'tous' ? `<button class="small ${sf === k ? 'primary' : 'ghost'}" data-sf="${k}">${l} · ${n}</button>` : ''; }).join('')}</div>
       ${balRows.length ? `<div class="k-list">${balRows.map(b0 => { const i = bal.indexOf(b0), ps = payState(b0), g = balGroup(b0), wa = relance(b0); return `<div class="kj-row">
-          <div class="kj-m"><div class="kj-t">${esc(b0.guest_name)} <span class="pill ${ps[1]}" style="font-size:11px">${ps[0]}</span></div><div class="kj-d">Ch. ${esc(b0.room_number)} · ${dfr(b0.check_in)} → ${dfr(b0.check_out)} · payé ${money(b0.paid)} / ${money(b0.total_amount)}</div><div class="kj-d">${BALG[g]}</div></div>
+          <div class="kj-m"><div class="kj-t">${esc(b0.guest_name)} <span class="pill ${ps[1]}" style="font-size:11px">${ps[0]}</span></div><div class="kj-d">Ch. ${esc(b0.room_number)} · ${dfr(b0.check_in)} → ${dfr(b0.check_out)} · payé ${money(b0.paid)} / ${money(gtot(b0))}</div><div class="kj-d">${BALG[g]}</div></div>
           <div class="kj-r"><div class="kj-a" style="color:var(--red)">${money(b0.balance)}</div><div class="kj-btns"><button class="small primary" data-bal="${i}">${g === 'avenir' ? 'Acompte' : 'Encaisser'}</button>${wa ? `<a class="btn" style="min-height:34px;padding:0 10px;font-size:13px" href="${wa}" target="_blank" rel="noopener">Relancer</a>` : ''}</div></div></div>`; }).join('')}</div>` : '<p class="muted">Aucun solde en attente dans cette catégorie.</p>'}
     </div>
     <div class="card" style="margin-bottom:16px;min-width:0"><div class="row between" style="margin-bottom:10px;gap:10px"><h3 style="font-size:20px">Journal</h3>
@@ -3817,7 +3822,7 @@ function openEncaisser(b, done){
         <div class="row between" style="align-items:flex-start;flex-wrap:nowrap"><div><div style="font-size:12px;font-weight:800;letter-spacing:.14em;color:var(--muted)">À ENCAISSER</div>
           <button type="button" id="ekDet" style="min-height:0;padding:4px 0;border:0;background:none;color:var(--muted);font-weight:600;font-size:14px">${esc(b.guest_name)} · ch. ${esc(b.room_number)} ${st.open ? '▴' : '▾'}</button></div>
           <div style="font-family:var(--display);font-weight:800;font-size:30px;white-space:nowrap">${money(bal)}</div></div>
-        ${st.open ? `<div style="font-size:13px;color:var(--muted);border-top:1px dashed var(--line);margin-top:8px;padding-top:8px">${dfr(b.check_in)} → ${dfr(b.check_out)} · total ${money(b.total_amount)} · déjà payé ${money(b.paid)}</div>` : ''}
+        ${st.open ? `<div style="font-size:13px;color:var(--muted);border-top:1px dashed var(--line);margin-top:8px;padding-top:8px">${dfr(b.check_in)} → ${dfr(b.check_out)} · total ${money(gtot(b))}${gtot(b) > Number(b.total_amount) ? ' dont ' + money(gtot(b) - Number(b.total_amount)) + ' de ventes annexes' : ''} · déjà payé ${money(b.paid)}</div>` : ''}
       </div>
       <div style="font-size:12px;font-weight:800;letter-spacing:.12em;color:var(--muted);margin-bottom:8px">CE QUE LE CLIENT PAIE</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px" role="group" aria-label="Type de paiement">

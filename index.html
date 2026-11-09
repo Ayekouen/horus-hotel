@@ -227,6 +227,18 @@ html[data-theme="clair"] .auth{background:radial-gradient(1200px 600px at 10% -1
 html[data-theme="clair"] .auth .card{padding:32px;border-radius:24px;box-shadow:0 20px 50px rgba(17,24,39,.10)}
 html[data-theme="clair"] #authTabs{background:#EEF1F6!important;border-radius:14px!important}
 html[data-theme="clair"] #authTabs button{border-radius:10px!important;box-shadow:none}
+/* Barre latérale réduite (icônes seules), choix mémorisé */
+#navCollapse{display:none}
+@media (min-width:900px){
+  :is(html[data-theme="clair"],html[data-theme="foret"]) #navCollapse{display:flex!important;align-items:center;justify-content:center;width:32px!important;min-height:32px!important;padding:0!important;border-radius:8px!important;margin:0 0 6px auto;font-size:16px!important;color:var(--muted)!important}
+  :is(html[data-theme="clair"],html[data-theme="foret"]) body.navmini nav.side{width:68px!important;flex-basis:68px!important;padding:14px 8px!important;overflow-x:hidden}
+  :is(html[data-theme="clair"],html[data-theme="foret"]) body.navmini nav.side .brand{font-size:0!important;margin:2px auto 6px!important;justify-content:center}
+  :is(html[data-theme="clair"],html[data-theme="foret"]) body.navmini nav.side .org,:is(html[data-theme="clair"],html[data-theme="foret"]) body.navmini nav.side .ghead,:is(html[data-theme="clair"],html[data-theme="foret"]) body.navmini nav.side details,:is(html[data-theme="clair"],html[data-theme="foret"]) body.navmini nav.side #navEssToggle,:is(html[data-theme="clair"],html[data-theme="foret"]) body.navmini nav.side .spacer{display:none!important}
+  :is(html[data-theme="clair"],html[data-theme="foret"]) body.navmini nav.side button:not(#navCollapse){font-size:0!important;justify-content:center;padding:0!important;gap:0!important}
+  :is(html[data-theme="clair"],html[data-theme="foret"]) body.navmini nav.side .ngroup > button:not(.ghead){padding-left:0!important}
+  :is(html[data-theme="clair"],html[data-theme="foret"]) body.navmini nav.side button::before{margin:0!important}
+  :is(html[data-theme="clair"],html[data-theme="foret"]) body.navmini #navCollapse{margin:0 auto 6px}
+}
 /* Barre latérale */
 .mainwrap{flex:1;min-width:0;display:flex;flex-direction:column}
 .dtop{display:none}
@@ -913,6 +925,7 @@ section.refreshing{position:relative}section.refreshing::before{content:"";posit
 <a href="#mainContent" class="skip">Aller au contenu</a>
 <div id="app" class="shell hidden">
   <nav class="side" aria-label="Navigation principale">
+    <button type="button" id="navCollapse" aria-label="Réduire le menu" title="Réduire le menu">‹</button>
     <div class="brand">Nuittea<span class="bm">Manager</span></div>
     <div class="org" id="orgLabel"></div>
     <button data-view="dashboard">Accueil</button>
@@ -1144,7 +1157,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.11.09-09';
+const APP_VERSION = '2026.11.09-10';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -1751,6 +1764,10 @@ document.querySelectorAll('#tabbar [data-tab]').forEach(b => b.onclick = () => o
 (function(){ let full = false; try { full = localStorage.getItem('hh_nav_full') === '1'; } catch (_) {}
   const b = document.getElementById('navEssToggle'); const apply = () => { document.body.classList.toggle('navess', !full); if (b) { b.textContent = full ? 'Moins de fonctionnalités' : 'Plus de fonctionnalités'; b.setAttribute('aria-expanded', full); } };
   if (b) b.addEventListener('click', () => { full = !full; try { localStorage.setItem('hh_nav_full', full ? '1' : '0'); } catch (_) {} apply(); }); apply(); })();
+(function(){ let mini = false; try { mini = localStorage.getItem('hh_nav_mini') === '1'; } catch (_) {}
+  const b = $('navCollapse'); const apply = () => { document.body.classList.toggle('navmini', mini); if (b) { b.textContent = mini ? '›' : '‹'; const t = mini ? 'Agrandir le menu' : 'Réduire le menu'; b.title = t; b.setAttribute('aria-label', t); }
+    document.querySelectorAll('nav.side button[data-view]').forEach(x => { if (mini) x.title = x.textContent.trim(); else x.removeAttribute('title'); }); };
+  if (b) b.addEventListener('click', () => { mini = !mini; try { localStorage.setItem('hh_nav_mini', mini ? '1' : '0'); } catch (_) {} apply(); }); apply(); })();
 $('navInstall').onclick = () => installApp();
 if (isStandalone() || IN_APP) $('navInstall').classList.add('hidden');
 $('navEsts').onclick = () => openEstablishments();

@@ -1143,7 +1143,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.11.09-01';
+const APP_VERSION = '2026.11.09-02';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -2513,7 +2513,7 @@ const RSTATUS = { pending:'En attente', confirmed:'Confirmée', checked_in:'En s
 const RSTCLS = { pending:'st-pending', confirmed:'st-trial', checked_in:'st-active', checked_out:'st-cancelled', cancelled:'st-expired', no_show:'st-expired' };
 const SOURCE = { direct:'Direct', telephone:'Téléphone', walk_in:'Walk-in', whatsapp:'WhatsApp', agence:'Agence', en_ligne:'En ligne', naya:'Nuittea' };
 const srcOpts = (cur) => cur === 'naya' ? opt({ naya: 'Nuittea' }, 'naya') : opt(Object.fromEntries(Object.entries(SOURCE).filter(([k]) => k !== 'naya')), cur);
-const PMETHOD = { cash:'Espèces', orange_money:'Orange Money', mtn_money:'MTN MoMo', moov_money:'Moov Money', wave:'Wave', card:'Carte', bank_transfer:'Virement' };
+const PMETHOD = { cash:'Espèces', orange_money:'Orange Money', mtn_money:'MTN MoMo', moov_money:'Moov Money', wave:'Wave', card:'Carte', bank_transfer:'Virement', geniuspay:'Paiement en ligne' };
 const HKS = { clean:'Propre', dirty:'Sale', cleaning:'En nettoyage', ready:'Prête', out_of_service:'Hors service' };
 const money = (n) => { if (S.maskMoney && S.view === 'dashboard') return '••• ' + (((typeof CURRENCIES !== 'undefined' && CURRENCIES[S.currency]) || [0, 'F'])[1]); const c = (typeof CURRENCIES !== 'undefined' && CURRENCIES[S.currency]) || [0, 'F', 0]; const v = Number(n || 0); const t = new Intl.NumberFormat('fr-FR', { minimumFractionDigits: c[2] && v % 1 ? 2 : 0, maximumFractionDigits: c[2] }).format(c[2] ? v : Math.round(v)).replace(/[\u202f\u00a0 ]/g, '\u00a0'); return c[1] === '$' ? '$' + t : t + '\u00a0' + c[1]; };
 const iso = (d) => { const x = new Date(d); x.setMinutes(x.getMinutes() - x.getTimezoneOffset()); return x.toISOString().slice(0,10); };
@@ -2645,6 +2645,13 @@ function nayaBalanceCard(B, compact){
       ${compact ? '<button class="small primary" data-go="naya">Voir le détail</button>' : `<div style="font-size:13px;color:#3B4D46;text-align:right">Dû au total : ${money(B.earned)}<br>Déjà réglé : ${money(B.paid)}${B.last_payment ? '<br>Dernier règlement : ' + dfr(String(B.last_payment).slice(0, 10)) : ''}</div>`}</div>
     ${compact ? '' : `<div style="margin-top:10px;padding-top:10px;border-top:1px dashed rgba(0,0,0,.15)"><strong style="font-size:14px">Comment régler</strong>${ins}<div class="muted" style="font-size:12px;margin-top:6px">Indiquez le nom de votre établissement en référence. Le solde se met à jour dès que l’équipe Nuittea enregistre votre paiement.</div></div>`}</div>`;
 }
+// Retard d'une arrivée ou d'un départ (jours dépassés depuis la date prévue)
+function lateTag(r, kind){
+  const t = today(), d = kind === 'arr' ? r.check_in : kind === 'dep' ? r.check_out : null;
+  if (!d || d >= t) return '';
+  const n = Math.round((new Date(t) - new Date(d)) / 864e5);
+  return `<span class="pill" style="background:#FDE2E1;color:#9B1C1C;font-size:12px;margin:2px 0">${kind === 'arr' ? 'Arrivée' : 'Départ'} en retard de ${plur(n, 'jour', 'jours')}</span>`;
+}
 async function renderDashboard(){ if (!S._idPurged && S.org) { S._idPurged = true; setTimeout(idPurge, 4000); } await renderDashboardCore(); { const mb = $('maskBtn'); if (mb) mb.onclick = () => { S.maskMoney = !S.maskMoney; try { localStorage.setItem('hh_mask', S.maskMoney ? '1' : '0'); } catch (_) {} renderDashboard(); }; } if (S.view !== 'dashboard') return; drawCA(S._caP || (() => { try { return localStorage.getItem('hh_ca_p'); } catch (_) { return null; } })() || 'today');
   if (SHOW_COMMISSION_DUE && can(['owner','admin','manager']) && S.org) { const { data: B } = await sb.rpc('naya_commission_balance', { p_org: S.org }); const nb = $('nayaDueBanner'); if (nb) { nb.innerHTML = nayaBalanceCard(B, true); nb.querySelectorAll('[data-go]').forEach(x => x.onclick = () => go(x.dataset.go)); } }
 }
@@ -2657,6 +2664,16 @@ async function renderDashboardCore(){
     can(['owner','admin','manager','receptionist','accountant']) ? sb.from('cash_movements').select('amount,kind').eq('establishment_id', S.est).gte('created_at', t + 'T00:00:00') : { data: [] },
     sb.from('reservation_balances').select('id,guest_name,room_number,check_in,check_out,total_amount,created_at').eq('establishment_id', S.est).eq('status', 'pending').order('created_at', { ascending: false }).limit(5)
   ]);
+  // À régulariser : départs dépassés, arrivées dépassées, caisse ouverte depuis plus de 24 h
+  const [lateOut, lateIn, oldCash] = await Promise.all([
+    sb.from('reservations').select('id', { count: 'exact', head: true }).eq('establishment_id', S.est).eq('status', 'checked_in').lt('check_out', t),
+    sb.from('reservations').select('id', { count: 'exact', head: true }).eq('establishment_id', S.est).in('status', ['pending', 'confirmed']).lt('check_in', t),
+    can(['owner','admin','manager','receptionist','accountant']) ? sb.from('cash_sessions').select('opened_at').eq('establishment_id', S.est).is('closed_at', null).lt('opened_at', new Date(Date.now() - 864e5).toISOString()).limit(1) : { data: [] }
+  ]);
+  const regul = [(lateOut.count || 0) && plur(lateOut.count, 'départ dépassé', 'départs dépassés'), (lateIn.count || 0) && plur(lateIn.count, 'arrivée dépassée', 'arrivées dépassées')].filter(Boolean);
+  const oc = (oldCash.data || [])[0];
+  S._dashRegul = (regul.length ? `<div class="banner b-danger"><span><strong>À régulariser :</strong> ${regul.join(' et ')}. Faites le check-out des clients partis et marquez absents ceux qui ne sont pas venus.</span><button class="small primary" data-go="reservations">Voir</button></div>` : '')
+    + (oc ? `<div class="banner b-warn"><span>La caisse est ouverte depuis le ${new Date(oc.opened_at).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}. Clôturez-la chaque jour pour garder des comptes justes.</span><button class="small primary" data-go="caisse">Clôturer</button></div>` : '');
   let alertCount = 0;
   if (can(['owner','admin'])) { const { count } = await sb.from('owner_alerts').select('id', { count: 'exact', head: true }).eq('organization_id', S.org).is('read_at', null); alertCount = count || 0; }
   const R = resas.data || [];
@@ -2689,6 +2706,7 @@ async function renderDashboardCore(){
       <div class="row"><button type="button" class="ghost" id="maskBtn" aria-pressed="${!!S.maskMoney}" aria-label="${S.maskMoney ? 'Afficher les montants' : 'Masquer les montants'}" title="${S.maskMoney ? 'Afficher les montants' : 'Masquer les montants'}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${S.maskMoney ? '<path d="M3 3l18 18M10.6 10.6a2 2 0 0 0 2.8 2.8M9.4 5.2A9.6 9.6 0 0 1 12 5c5 0 9 5 10 7a17 17 0 0 1-3.2 4.2M6.3 6.3C4.2 7.8 2.7 10 2 12c1 2 5 7 10 7a9.4 9.4 0 0 0 4.4-1.1"/>' : '<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>'}</svg></button>${upgradeBtn()}<button data-walkin>Walk-in</button><button class="primary" data-newresa aria-keyshortcuts="N">Nouvelle réservation<kbd class="kb" aria-hidden="true">N</kbd></button></div>
     </div>
     ${readOnlyNote()}
+    ${S._dashRegul || ''}
     ${guide.checklist}
     ${alertCount ? `<div class="banner b-danger"><span>${plur(alertCount, 'alerte de contrôle non lue', 'alertes de contrôle non lues')}.</span><button class="small primary" data-go="controle">Voir</button></div>` : ''}
     <div class="grid dashkpi" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:16px">
@@ -2876,7 +2894,7 @@ async function renderReservations(){
       : `<button class="small primary" style="flex:1" data-confirm="${r.id}">Confirmer + WhatsApp</button><button class="small ghost" data-refuse="${r.id}">Refuser</button>`;
     const tl = telLink(r.guest_phone);
     return `<div style="border:${kind === 'req' ? '1.5px solid var(--green)' : '1px solid var(--line)'};border-radius:16px;padding:14px;background:#fff;margin-bottom:10px">
-      <div class="row" style="gap:10px;flex-wrap:nowrap"><span style="width:40px;height:40px;flex-shrink:0;border-radius:50%;background:var(--green-l);color:var(--green-d);display:grid;place-items:center;font-weight:800">${initials(r.guest_name)}</span><div style="flex:1;min-width:0"><div style="font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.guest_name)}</div><div class="muted" style="font-size:13px">Ch. ${esc(r.room_number)} · ${kind === 'req' ? dfr(r.check_in) + ' → ' + dfr(r.check_out) + ' · ' : ''}${plur(r.nights, 'nuit', 'nuits')} · ${SOURCE[r.source] || ''}</div></div></div>
+      <div class="row" style="gap:10px;flex-wrap:nowrap"><span style="width:40px;height:40px;flex-shrink:0;border-radius:50%;background:var(--green-l);color:var(--green-d);display:grid;place-items:center;font-weight:800">${initials(r.guest_name)}</span><div style="flex:1;min-width:0"><div style="font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.guest_name)}</div>${lateTag(r, kind)}<div class="muted" style="font-size:13px">Ch. ${esc(r.room_number)} · ${kind === 'req' ? dfr(r.check_in) + ' → ' + dfr(r.check_out) + ' · ' : ''}${plur(r.nights, 'nuit', 'nuits')} · ${SOURCE[r.source] || ''}</div></div></div>
       <div class="row between" style="margin:10px 0;font-size:14px"><span>${kind === 'req' ? 'Total' : 'Solde'}</span><strong style="color:${kind === 'req' ? 'var(--ink)' : r.balance > 0 ? 'var(--red)' : 'var(--ok)'}">${kind === 'req' ? money(r.total_amount) : r.balance > 0 ? money(r.balance) : 'Réglé'}</strong></div>
       <div class="row" style="gap:6px;flex-wrap:wrap">${btns}${tl && kind !== 'dep' ? `<a class="btn" style="min-height:36px;padding:0 12px;font-size:13px" href="${tl}">Appeler</a>` : ''}<button class="small ghost" data-open="${r.id}" aria-label="Ouvrir la réservation">⋯</button></div></div>`;
   };
@@ -2892,8 +2910,8 @@ async function renderReservations(){
   let body = '';
   if (!all.length && !f.q) body = `<div class="card">${emptyState('cal', 'Aucune réservation pour l’instant', 'Enregistrez votre premier client en moins d’une minute. Les réservations faites sur Nuittea.com arrivent aussi ici.', `<button class="primary" data-newresa>Créer une réservation</button><button class="ghost" data-go="mapage">Ma fiche Nuittea</button>`)}</div>`;
   else if (f.tab === 'today') body = `<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:16px;margin-bottom:16px;align-items:start">
-      ${col('Arrivées', arrivals.length + ' à accueillir', 'background:#F2DCA8;color:#5E4510', arrivals, 'arr', 'Aucune arrivée prévue aujourd’hui.')}
-      <div>${col('Départs', departures.length + ' aujourd’hui', 'background:var(--ink);color:var(--card)', departures, 'dep', 'Aucun départ aujourd’hui.')}
+      ${col('Arrivées', arrivals.some(r => r.check_in < t) ? `${arrivals.length} dont ${arrivals.filter(r => r.check_in < t).length} en retard` : arrivals.length + ' à accueillir', 'background:#F2DCA8;color:#5E4510', arrivals, 'arr', 'Aucune arrivée prévue aujourd’hui.')}
+      <div>${col('Départs', departures.some(r => r.check_out < t) ? `${departures.length} dont ${departures.filter(r => r.check_out < t).length} en retard` : departures.length + ' aujourd’hui', 'background:var(--ink);color:var(--card)', departures, 'dep', 'Aucun départ aujourd’hui.')}
         ${soon.map(r => `<div style="margin-top:10px;border-radius:14px;background:#FFF4E5;color:#6B4A00;padding:12px 14px;font-size:14px">${esc(r.guest_name)} (${esc(r.room_number)}) part le ${dfr(r.check_out)} avec <strong>${money(r.balance)}</strong> de solde. <a href="#" data-pay="${r.id}">Encaisser maintenant</a></div>`).join('')}</div>
       ${col('Demandes en ligne', requests.length + ' à confirmer', 'background:var(--green);color:#fff', requests, 'req', 'Aucune demande en attente.')}
     </div>
@@ -2903,7 +2921,7 @@ async function renderReservations(){
     body = `<div class="card"><div class="row between" style="margin-bottom:10px"><h3 style="font-size:20px">${TABS.find(x => x[0] === f.tab)[1]}</h3><label class="row" style="gap:6px;margin:0;font-weight:500"><input type="checkbox" id="rfUnp" style="width:22px;height:22px;min-height:0" ${f.unpaid ? 'checked' : ''}> Solde impayé</label></div>${table(rows, f.q ? 'Aucun résultat pour cette recherche.' : 'Rien à afficher ici.')}</div>`; }
 
   el.innerHTML = head('Réservations', `<input id="rfQ" value="${esc(f.q)}" placeholder="Nom, chambre, téléphone…" aria-label="Rechercher une réservation (nom, chambre, téléphone, numéro)" style="width:min(300px,100%)" aria-label="Rechercher"><button data-walkin>Walk-in</button><button class="primary" data-newresa>Nouvelle réservation</button>`) + readOnlyNote() +
-    `<div class="row" role="tablist" style="gap:6px;background:#E9DCC8;padding:5px;border-radius:26px;width:fit-content;max-width:100%;overflow-x:auto;margin-bottom:16px;flex-wrap:nowrap">${TABS.map(([k, l, n]) => `<button role="tab" aria-selected="${k === f.tab}" class="small ${k === f.tab ? 'primary' : 'ghost'}" style="white-space:nowrap;border:0" data-rtab="${k}">${l}${n ? ' · ' + n : ''}</button>`).join('')}</div>` + (S.resSrc ? (() => { const m0 = t.slice(0, 8) + '01', rows = all.filter(r => (r.source === S.resSrc || (S.resSrc === 'walk_in' && r.source === 'direct')) && r.check_in >= m0 && !['cancelled', 'no_show'].includes(r.status)); return `<section class="card" style="margin-bottom:16px"><div class="row between" style="margin-bottom:10px"><h3 style="font-size:18px">Réservations du mois · ${esc(S.resSrc === 'walk_in' ? 'Sur place' : (SOURCE[S.resSrc] || S.resSrc))} · ${rows.length}</h3><button type="button" class="small ghost" id="srcClear">Fermer</button></div>${table(rows, 'Aucune réservation pour ce canal ce mois-ci.')}</section>`; })() : '') + body;
+    `<div class="row" role="tablist" style="gap:6px;background:#E9DCC8;padding:5px 6px;border-radius:26px;width:fit-content;max-width:100%;overflow-x:auto;margin-bottom:16px;flex-wrap:nowrap;scroll-padding:0 8px">${TABS.map(([k, l, n]) => `<button role="tab" aria-selected="${k === f.tab}" class="small ${k === f.tab ? 'primary' : 'ghost'}" style="white-space:nowrap;border:0" data-rtab="${k}">${l}${n ? ' · ' + n : ''}</button>`).join('')}</div>` + (S.resSrc ? (() => { const m0 = t.slice(0, 8) + '01', rows = all.filter(r => (r.source === S.resSrc || (S.resSrc === 'walk_in' && r.source === 'direct')) && r.check_in >= m0 && !['cancelled', 'no_show'].includes(r.status)); return `<section class="card" style="margin-bottom:16px"><div class="row between" style="margin-bottom:10px"><h3 style="font-size:18px">Réservations du mois · ${esc(S.resSrc === 'walk_in' ? 'Sur place' : (SOURCE[S.resSrc] || S.resSrc))} · ${rows.length}</h3><button type="button" class="small ghost" id="srcClear">Fermer</button></div>${table(rows, 'Aucune réservation pour ce canal ce mois-ci.')}</section>`; })() : '') + body;
   el.querySelectorAll('[data-rtab]').forEach(b => b.onclick = () => { f.tab = b.dataset.rtab; renderReservations(); });
   { const sc = $('srcClear'); if (sc) sc.onclick = () => { S.resSrc = null; renderReservations(); }; }
   let qt; $('rfQ').oninput = () => { clearTimeout(qt); qt = setTimeout(() => { f.q = $('rfQ').value; renderReservations().then(() => { const i = $('rfQ'); i.focus(); i.setSelectionRange(i.value.length, i.value.length); }); }, 350); };
@@ -3266,7 +3284,8 @@ async function openResa(id, refresh, focusCheckout){
       <div class="card" style="padding:12px"><div class="muted" style="font-size:12px">Payé</div><strong style="color:var(--ok)">${money(r.paid)}</strong></div>
       <div class="card" style="padding:12px"><div class="muted" style="font-size:12px">Solde</div><strong style="color:${r.balance > 0 ? 'var(--amber)' : 'var(--ok)'}">${money(r.balance)}</strong></div>
     </div>
-    ${(pays || []).length ? `<div style="font-size:13px;margin-bottom:14px">${pays.map(p => `<div class="row between" style="border-bottom:1px solid #F0ECE3;padding:6px 0"><span>${new Date(p.created_at).toLocaleDateString('fr-FR')} · ${esc(p.label)} · ${PMETHOD[p.method]}</span><strong>${p.kind === 'refund' ? '−' : ''}${money(p.amount)}</strong></div>`).join('')}</div>` : ''}
+    ${(pays || []).length ? `<div style="font-size:13px;margin-bottom:14px">${pays.map(p => `<div class="row between" style="border-bottom:1px solid #F0ECE3;padding:6px 0"><span>${new Date(p.created_at).toLocaleDateString('fr-FR')} · ${esc(p.label)} · ${PMETHOD[p.method] || esc(p.method)}${p.reference ? ' · réf. ' + esc(p.reference) : ''}</span><strong>${p.kind === 'refund' ? '−' : ''}${money(p.amount)}</strong></div>`).join('')}</div>` : ''}
+    ${NET.cachedAt ? `<div class="banner b-danger" style="margin-bottom:12px"><span>Connexion instable : le solde affiché date du ${new Date(NET.cachedAt).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })} et peut avoir changé (paiement en ligne, autre caissier). L’encaissement sera vérifié au retour du réseau.</span></div>` : ''}
     ${active && r.balance > 0 && can(['owner','admin','manager','receptionist','accountant']) ? `<form id="payForm" class="row" style="align-items:flex-end;margin-bottom:14px">
       <div style="flex:1 1 110px"><label for="pAmt">Encaisser (F)</label><input id="pAmt" type="number" min="1" max="${r.balance}" value="${r.balance}" required></div>
       <div style="flex:1 1 130px"><label for="pMeth">Moyen</label><select id="pMeth">${opt(PMETHOD, 'cash')}</select></div>
@@ -3278,11 +3297,15 @@ async function openResa(id, refresh, focusCheckout){
       ${r.status === 'checked_in' ? `<button class="primary" id="aOut">Check-out</button>` : ''}
       ${r.status !== 'cancelled' ? `<button id="aInv">Facture</button>` : ''}
       ${active ? `<button class="ghost" id="aEdit">Modifier / prolonger</button>` : ''}
+      ${['pending','confirmed'].includes(r.status) && r.check_in < today() ? `<button class="ghost" id="aNoShow">Client absent (no-show)</button>` : ''}
       ${['pending','confirmed'].includes(r.status) ? `<button class="ghost" id="aCancel">Annuler la réservation</button>` : ''}
       <button class="ghost" data-close>Fermer</button>
     </div>`);
   const done = (m) => { toast(m); closeModal(); refresh(); };
   const pf = $('payForm'); if (pf) pf.onsubmit = async (e) => { e.preventDefault(); e.submitter.disabled = true;
+    // Solde revérifié sur le serveur juste avant d'encaisser : évite de faire payer deux fois
+    if (navigator.onLine) { const { data: fr, error: fe } = await sb.from('reservation_balances').select('balance').eq('id', r.id).single();
+      if (!fe && fr && +$('pAmt').value > Number(fr.balance)) { e.submitter.disabled = false; toast(Number(fr.balance) > 0 ? `Le solde a changé : il reste ${money(fr.balance)} à payer. Montant corrigé.` : 'Ce séjour est déjà réglé : rien à encaisser.', true); if (Number(fr.balance) > 0) $('pAmt').value = fr.balance; else openResa(id, refresh); return; } }
     const { error } = await sb.from('cash_movements').insert({ establishment_id: r.establishment_id, reservation_id: r.id, kind: 'payment', method: $('pMeth').value, amount: +$('pAmt').value, label: r.status === 'checked_in' ? 'Paiement séjour' : 'Acompte', reference: null });
     if (error) { e.submitter.disabled = false; if (/caisse ouverte/i.test(error.message || '')) return askOpenCash(() => openResa(id, refresh), 'La caisse du jour n’est pas encore ouverte. Ouvrez-la, puis enregistrez de nouveau le paiement.'); return toast(errMsg(error), true); } toast('Paiement enregistré.'); openResa(id, refresh); };
   const a = (x, fn) => { const b = $(x); if (b) b.onclick = fn; };
@@ -3295,6 +3318,8 @@ async function openResa(id, refresh, focusCheckout){
     doOut(); });
   a('aInv', async () => { const { data, error } = await sb.rpc('issue_guest_invoice', { p_reservation: r.id }); if (error) return toast(errMsg(error), true); const { data: inv } = await sb.from('guest_invoices').select('*').eq('id', data).single(); printGuestInvoice(inv); });
   a('aEdit', () => openResaForm(r, refresh));
+  a('aNoShow', async () => { if (!$('aNoShow').dataset.confirm) { $('aNoShow').dataset.confirm = 1; $('aNoShow').textContent = 'Confirmer : client non venu'; return; }
+    const { error } = await sb.from('reservations').update({ status: 'no_show' }).eq('id', r.id); if (error) return toast(errMsg(error), true); done('Réservation marquée « non présentée ». La chambre est libérée.'); });
   a('aCancel', async () => { if (!$('aCancel').dataset.confirm) { $('aCancel').dataset.confirm = 1; $('aCancel').textContent = 'Confirmer l’annulation'; return; }
     const { error } = await sb.from('reservations').update({ status: 'cancelled' }).eq('id', r.id); if (error) return toast(errMsg(error), true); done('Réservation annulée.'); });
   if (focusCheckout && $('aOut')) $('aOut').focus();
@@ -5523,7 +5548,7 @@ async function preloadViews(){
   const R = { dashboard: renderDashboard, reservations: renderReservations, planning: renderPlanning, chambres: renderChambres, clients: renderClients, caisse: renderCaisse, produits: renderProduits };
   for (const v of Object.keys(R)) {
     if (v === S.view || !allowed(v) || lockedView(v)) continue;
-    await new Promise(r => (window.requestIdleCallback || setTimeout)(r, 1500));
+    await new Promise(r => window.requestIdleCallback ? requestIdleCallback(() => r(), { timeout: 3000 }) : setTimeout(r, 1500));
     if (!navigator.onLine || PRELOAD.done !== S.est) return;
     const keep = S.view; try { S.view = v; await R[v](); } catch (_) {} finally { if (S.view === v) S.view = keep; }
   }

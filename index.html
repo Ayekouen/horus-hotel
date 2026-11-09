@@ -227,6 +227,8 @@ html[data-theme="clair"] .auth{background:radial-gradient(1200px 600px at 10% -1
 html[data-theme="clair"] .auth .card{padding:32px;border-radius:24px;box-shadow:0 20px 50px rgba(17,24,39,.10)}
 html[data-theme="clair"] #authTabs{background:#EEF1F6!important;border-radius:14px!important}
 html[data-theme="clair"] #authTabs button{border-radius:10px!important;box-shadow:none}
+/* Éléments du menu latéral jamais écrasés quand le menu dépasse la hauteur de l'écran (il défile) */
+@media (min-width:900px){ nav.side > *, nav.side .ngroup > *{flex-shrink:0!important} }
 /* Barre latérale réduite (icônes seules), choix mémorisé */
 #navCollapse{display:none}
 @media (min-width:900px){
@@ -1157,7 +1159,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.11.09-10';
+const APP_VERSION = '2026.11.09-11';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}

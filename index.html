@@ -1143,7 +1143,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.11.09-03';
+const APP_VERSION = '2026.11.09-04';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -2967,7 +2967,7 @@ async function recordDeposit(resaId, amount, method, ref, refresh){
 const NAYA_URL = 'https://nuittea.pages.dev';
 const openNaya = () => go('naya');
 async function renderNaya(){
-  const el = $('v-naya'); keepOrSkel(el);
+  const el = $('v-naya'); keepOrSkel(el); if (!S.est) await loadEst();
   const owner = can(['owner','admin']);
   const est = S.ests.find(x => x.id === S.est) || {};
   const m0 = new Date(); const mStart = `${m0.getFullYear()}-${String(m0.getMonth() + 1).padStart(2, '0')}-01`;
@@ -4109,7 +4109,7 @@ async function openExtraItems(back){
 const XSTARTER = [['Eau minérale 1,5 L', 'boissons'], ['Eau minérale 50 cl', 'boissons'], ['Coca-Cola 33 cl', 'boissons'], ['Fanta 33 cl', 'boissons'], ['Sprite 33 cl', 'boissons'], ['Bière Flag 65 cl', 'boissons'], ['Bière Castel 65 cl', 'boissons'], ['Bock 66 cl', 'boissons'], ['Jus de fruits', 'boissons'], ['Café', 'boissons'], ['Thé', 'boissons'],
   ['Petit-déjeuner continental', 'petit_dejeuner'], ['Petit-déjeuner complet', 'petit_dejeuner'], ['Omelette', 'petit_dejeuner'], ['Lavage et repassage (pièce)', 'blanchisserie'], ['Repassage (pièce)', 'blanchisserie'], ['Transfert aéroport', 'transport'], ['Course en ville', 'transport'], ['Kit de toilette', 'autre'], ['Lit d’appoint (nuit)', 'autre']];
 async function renderProduits(){
-  const el = $('v-produits'); keepOrSkel(el);
+  const el = $('v-produits'); keepOrSkel(el); if (!S.est) await loadEst();
   if (!can(['owner', 'admin', 'manager', 'accountant'])) { el.innerHTML = head('Produits') + '<p class="muted">Accès réservé.</p>'; return; }
   const tab = S._pTab || 'catalogue', mgr = can(['owner', 'admin', 'manager']);
   const since30 = new Date(Date.now() - 30 * 864e5).toISOString();
@@ -4302,6 +4302,13 @@ async function openXProductForm(it, stats){
       happy_price: num('pfHP'), happy_start: $('pfHS').value || null, happy_end: $('pfHE').value || null,
       alert_qty: $('pfAl').value === '' ? null : parseInt($('pfAl').value, 10), sell_pos: $('pfPos').checked, in_minibar: $('pfMb').checked, minibar_qty: Math.max(0, Math.min(50, parseInt($('pfMbQ').value, 10) || 1)), online: $('pfOn').checked, online_per_night: $('pfOnN').checked };
     if (row.promo_from && row.promo_to && row.promo_to < row.promo_from) return toast('La fin de la promotion précède son début.', true);
+    if (row.promo_price != null && row.price > 0 && row.promo_price >= row.price) return toast('Le prix promo doit être inférieur au prix de vente.', true);
+    if (row.happy_price != null && (!row.happy_start || !row.happy_end)) return toast('Indiquez les heures de début et de fin du happy hour.', true);
+    if (row.happy_price != null && row.price > 0 && row.happy_price >= row.price) return toast('Le prix happy hour doit être inférieur au prix de vente.', true);
+    if (!$('pfF').dataset.ok) {
+      const warn = !row.price && row.sell_pos ? 'Prix de vente à 0 F : le produit sera vendu gratuitement en caisse.' : row.unit_cost != null && row.price > 0 && row.unit_cost > row.price ? `Prix d’achat (${money(row.unit_cost)}) supérieur au prix de vente (${money(row.price)}) : vente à perte. Vérifiez qu’il s’agit du prix d’une seule unité.` : '';
+      if (warn) { $('pfF').dataset.ok = 1; return toast(warn + ' Enregistrez de nouveau pour confirmer.', true); }
+    }
     const btn = e.submitter; if (btn) btn.disabled = true;
     let id = it && it.id, error;
     if (it) ({ error } = await sb.from('extra_items').update(row).eq('id', it.id));
@@ -5718,7 +5725,7 @@ function openAssistant(){
 const SUP_CATS = ['Linge', 'Produits d’accueil', 'Entretien', 'Minibar', 'Fournitures'];
 const SUP_PRESETS = [['Draps 2 places', 'Linge', 'pièce'], ['Taies d’oreiller', 'Linge', 'pièce'], ['Serviettes de bain', 'Linge', 'pièce'], ['Tapis de bain', 'Linge', 'pièce'], ['Savons', 'Produits d’accueil', 'pièce'], ['Gel douche', 'Produits d’accueil', 'flacon'], ['Papier toilette', 'Produits d’accueil', 'rouleau'], ['Eau minérale 50 cl', 'Minibar', 'bouteille'], ['Javel', 'Entretien', 'litre'], ['Sacs poubelle', 'Entretien', 'paquet']];
 async function renderInventaire(){
-  const el = $('v-inventaire'); keepOrSkel(el);
+  const el = $('v-inventaire'); keepOrSkel(el); if (!S.est) await loadEst();
   const [it, mv] = await Promise.all([
     sb.from('supplies').select('*').eq('establishment_id', S.est).eq('is_active', true).order('category').order('name'),
     sb.from('supply_movements').select('*').eq('establishment_id', S.est).order('created_at', { ascending: false }).limit(40)
@@ -5994,7 +6001,7 @@ const prodThumb = (p, size = 64) => ((p.images && p.images[0]) || p.image_url)
 const stockTxt = (p) => !p.track_stock ? '' : Number(p.stock_qty) <= 0 ? '<span class="pill st-cancelled">Rupture</span>' : Number(p.stock_qty) <= Number(p.alert_qty) ? `<span class="pill st-past_due">Reste ${+p.stock_qty}</span>` : `<span class="muted" style="font-size:12px">Stock ${+p.stock_qty}</span>`;
 
 async function renderResto(){
-  const el = $('v-resto'); keepOrSkel(el);
+  const el = $('v-resto'); keepOrSkel(el); if (!S.est) await loadEst();
   S.rTab = S.rTab || 'caisse'; S.rOutlet = S.rOutlet || 'restaurant'; S.cart = S.cart || [];
   if (!isMgr() && !['caisse', 'ventes'].includes(S.rTab)) S.rTab = 'caisse';
   if (S.rTab === 'ventes' && !can(['owner', 'admin', 'manager', 'accountant'])) S.rTab = 'caisse';

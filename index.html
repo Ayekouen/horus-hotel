@@ -976,9 +976,10 @@ section.refreshing{position:relative}section.refreshing::before{content:"";posit
       <button type="button" id="navNotif" class="navsearch" style="justify-content:flex-start;gap:10px;color:var(--ink)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10 21h4"></path></svg>Notifications<span id="notifBadge" class="hidden" style="margin-left:auto;min-width:22px;padding:2px 7px;border-radius:999px;background:var(--green);color:#fff;font-size:12px;font-weight:800;text-align:center"></span></button>
       <button type="button" id="navClock" class="navsearch hidden" style="justify-content:flex-start;gap:8px;color:var(--ink)"></button>
       <select id="estSwitch" class="estsw hidden" aria-label="Établissement"></select>
+      <button type="button" id="dAcc" aria-label="Mon compte" title="Mon compte" style="border:0;background:none;padding:0;min-height:0"></button>
       <button type="button" id="navInstall" class="navsearch" style="color:var(--green);font-weight:700;justify-content:flex-start"> Installer l’application</button>
   </header>
-  <header id="mTop" class="mtop"><div class="brand">Nuittea<span class="bm">Manager</span></div><button type="button" id="mSearch" aria-label="Rechercher une action"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4-4"></path></svg></button><button type="button" id="mNotif" aria-label="Notifications" style="position:relative"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10 21h4"></path></svg><span id="mNotifBadge" class="hidden"></span></button></header>
+  <header id="mTop" class="mtop"><div class="brand">Nuittea<span class="bm">Manager</span></div><button type="button" id="mSearch" aria-label="Rechercher une action"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4-4"></path></svg></button><button type="button" id="mNotif" aria-label="Notifications" style="position:relative"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10 21h4"></path></svg><span id="mNotifBadge" class="hidden"></span></button><button type="button" id="mAcc" aria-label="Mon compte" style="border:0;background:none;padding:0 0 0 4px;min-height:0"></button></header>
   <nav id="tabbar" class="tabbar" aria-label="Navigation rapide">
     <button data-tab="dashboard"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-8 9 8v10h-6v-6H9v6H3z"></path></svg>Accueil</button>
     <button data-tab="heberg"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 18V7M21 18v-6H3M7 12V9h5v3"></path></svg>Hébergement</button>
@@ -1143,7 +1144,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.11.09-06';
+const APP_VERSION = '2026.11.09-07';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -1553,7 +1554,7 @@ async function boot(){
   S.member = mem.data && mem.data[0];
   if (mem.error && isNetErr(mem.error)) { const c = cacheGet('member_' + session.user.id); if (c) { S.member = c; S.offlineBoot = true; } }
   else if (S.member) cacheSet('member_' + session.user.id, S.member);
-  $('navAdmin').classList.toggle('hidden', !S.isAdmin);
+  $('navAdmin').classList.toggle('hidden', !S.isAdmin); drawAcc();
   if (!S.member && mem.error) { show('auth'); renderAuth(); return toast('Connexion impossible : vérifiez votre réseau.', true); }
   if (!S.member && (session.user.user_metadata || {}).staff) {
     await sb.auth.signOut();
@@ -1667,6 +1668,8 @@ $('navReviews').onclick = () => openReviews();
 document.querySelectorAll('nav.side .ghead').forEach(h => { const g = h.parentElement; try { if (localStorage.getItem('hh_grp_' + g.dataset.group) === '0') g.classList.add('collapsed'); } catch (_) {}
   h.onclick = () => { g.classList.toggle('collapsed'); h.setAttribute('aria-expanded', !g.classList.contains('collapsed')); try { localStorage.setItem('hh_grp_' + g.dataset.group, g.classList.contains('collapsed') ? '0' : '1'); } catch (_) {} }; });
 $('navSearch').onclick = () => openPalette();
+['mAcc', 'dAcc'].forEach(id => { const b = $(id); if (b) b.onclick = () => openAccount(); });
+function drawAcc(){ ['mAcc', 'dAcc'].forEach(id => { const b = $(id); if (b) b.innerHTML = S.member ? accAvatar(30) : ''; }); }
 $('mSearch').onclick = () => openPalette();
 $('mNotif').onclick = () => openNotifs();
 const GROUPS = { heberg: ['reservations','planning','chambres','clients','inventaire'], argent: ['caisse','depenses','factures'], resto: ['resto'], pilot: ['controle','rapports','pointage','mapage'] };
@@ -1714,12 +1717,32 @@ function openMore(){
   if (S.org) pilot.unshift(['Assistant', () => openAssistant()]);
   if (S.org && moduleOn('rapports')) pilot.push(['Avis clients', () => openReviews()]);
   if (S.org && moduleOn('pointage')) pilot.unshift([CLOCK.state === 'in' ? 'Pointer mon départ' : 'Pointer mon arrivée', () => toggleClock()]);
-  const settings = [...document.querySelectorAll('nav.side .menu button')].filter(b => !b.classList.contains('hidden')).map(b => [b.textContent.trim(), () => b.click()]);
-  const sec = (title, items) => items.length ? `<h3 style="font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:14px 0 6px">${title}</h3><div class="more-grid" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px">${items.map(([l], i) => `<button type="button" class="ghost" data-mi="${title}|${i}" style="min-height:52px;border-radius:14px;justify-content:flex-start;text-align:left;white-space:normal">${esc(l)}</button>`).join('')}</div>` : '';
+  // « Plus » réduit à l'essentiel : pilotage, quelques raccourcis ; tout le reste est dans Réglages, le compte et la recherche
+  const short = [];
+  if (S.org && allowed('equipe') && can(['owner','admin','manager'])) short.push(['Équipe', () => go('equipe')]);
+  if (S.org && can(['owner','admin'])) short.push(['Mon abonnement', () => go('abonnement')]);
+  short.push(['Réglages', () => openSettings()]);
+  const sec = (title, items) => items.length ? `<h3 style="font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:14px 0 6px">${title}</h3><div class="more-grid" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px">${items.map(([l], i) => `<button type="button" class="ghost" data-mi="${title}|${i}" style="justify-content:flex-start;text-align:left">${esc(l)}</button>`).join('')}</div>` : '';
   const ptitle = S.org ? 'Pilotage' : 'Administration';
-  const map = { [ptitle]: pilot, 'Réglages': settings };
-  modal(`<h2 style="font-size:22px">Plus</h2>${sec(ptitle, pilot)}${sec('Réglages', settings)}`);
+  const map = { [ptitle]: pilot, 'Raccourcis': short };
+  modal(`<h2 style="font-size:22px">Plus</h2>${sec(ptitle, pilot)}${sec('Raccourcis', short)}
+    <button type="button" class="ghost" id="moreAcc" style="width:100%;margin-top:16px;justify-content:flex-start;gap:10px">${accAvatar(30)}<span style="text-align:left"><strong style="display:block">${esc(accName())}</strong><span class="muted" style="font-size:12px">Mon compte · mot de passe, langue, thème, déconnexion</span></span></button>
+    <p class="muted" style="font-size:12px;margin:10px 0 0;text-align:center">Une fonction introuvable ? Touchez la loupe et tapez son nom.</p>`);
+  $('moreAcc').onclick = () => { closeModal(); openAccount(); };
   document.querySelectorAll('[data-mi]').forEach(x => x.onclick = () => { const [t, i] = x.dataset.mi.split('|'); closeModal(); map[t][+i][1](); });
+}
+function accName(){ const m = S.member || {}, u = (S.session && S.session.user) || {}; return m.display_name || m.username || (u.user_metadata || {}).full_name || u.email || 'Mon compte'; }
+function accAvatar(sz){ const n = accName(), ini = esc(n.replace(/@.*/, '').split(/[\s._-]+/).filter(Boolean).map(w => w[0]).slice(0, 2).join('').toUpperCase() || '?'); return `<span aria-hidden="true" style="width:${sz}px;height:${sz}px;flex-shrink:0;border-radius:50%;background:var(--ink);color:var(--card);display:grid;place-items:center;font-weight:800;font-size:${Math.round(sz * .4)}px">${ini}</span>`; }
+// Menu « Mon compte » : en-tête (rond avec initiales) et bas du menu Plus
+function openAccount(){
+  const u = (S.session && S.session.user) || {}, own = can(['owner','admin']);
+  const it = (k, t, d) => `<button type="button" class="st-it" data-ac="${k}"><span class="st-t">${t}${d ? `<span class="st-d">${d}</span>` : ''}</span><span class="st-ch" aria-hidden="true">›</span></button>`;
+  modal(`<div class="row" style="gap:12px;flex-wrap:nowrap;margin-bottom:14px">${accAvatar(48)}<div style="min-width:0"><h2 style="font-size:20px;margin:0;overflow:hidden;text-overflow:ellipsis">${esc(accName())}</h2><div class="muted" style="font-size:13px">${esc(ROLE_LABEL && S.member ? (ROLE_LABEL[S.member.role] || '') : '')}${u.email && !(u.user_metadata || {}).staff ? ' · ' + esc(u.email) : ''}</div></div></div>
+    <div class="st-l">${it('pwd', (u.user_metadata || {}).staff ? 'Changer mon code' : 'Changer mon mot de passe')}${it('lang', 'Langue / Language')}${it('theme', 'Thème de l’application')}${own ? it('sub', 'Mon abonnement') : ''}${it('set', 'Tous les réglages')}${it('refresh', 'Actualiser l’application')}</div>
+    <button type="button" class="st-out" data-ac="out">Se déconnecter</button>`);
+  $('modalBody').style.maxWidth = '460px';
+  const A = { pwd: () => $('navPwd').click(), lang: () => openLang(), theme: () => $('navTheme').click(), sub: () => go('abonnement'), set: () => openSettings(), refresh: () => refreshApp(), out: () => doLogout() };
+  document.querySelectorAll('#modalBody [data-ac]').forEach(b => b.onclick = () => { const k = b.dataset.ac; if (!['lang', 'theme', 'set', 'pwd'].includes(k)) closeModal(); A[k](); });
 }
 document.querySelectorAll('#tabbar [data-tab]').forEach(b => b.onclick = () => openTab(b.dataset.tab));
 
@@ -2819,7 +2842,10 @@ async function openPalette(){
     const people = q.length >= 2 ? (B || []).filter(r => norm(r.guest_name + ' ' + r.room_number + ' ' + (r.guest_phone || '')).includes(q)).slice(0, 6).flatMap(r => [
       { label: `${r.guest_name} · ch. ${r.room_number}`, tag: RSTATUS[r.status], fn: () => openResa(r.id, S.view === 'reservations' ? renderReservations : renderDashboard) },
       ...(r.balance > 0 && can(['owner','admin','manager','receptionist','accountant']) ? [{ label: `Encaisser ${r.guest_name} · ${money(r.balance)}`, tag: 'Caisse', fn: () => openEncaisser(r, () => S.view === 'caisse' && renderCaisse()) }] : [])]) : [];
-    items = people.concat(acts).slice(0, 12); sel = Math.min(sel, Math.max(0, items.length - 1));
+    // Fonctions rangées dans les réglages et le menu : trouvables par leur nom
+    const fx = q.length >= 2 ? [...document.querySelectorAll('nav.side .menu button, nav.side button[id^="nav"]')].filter(b => !b.classList.contains('hidden') && b.textContent.trim() && norm(b.textContent).includes(q)).slice(0, 6).map(b => ({ label: b.textContent.trim().replace(/\s+/g, ' '), tag: 'Réglages', fn: () => b.click() })) : [];
+    const vw = q.length >= 2 ? Object.entries(VIEW_LABEL || {}).filter(([v, l]) => allowed(v) && norm(l).includes(q)).slice(0, 4).map(([v, l]) => ({ label: l, tag: 'Aller à', fn: () => go(v) })) : [];
+    items = people.concat(acts, vw, fx.filter(f => !vw.some(v => norm(v.label) === norm(f.label)))).slice(0, 14); sel = Math.min(sel, Math.max(0, items.length - 1));
     $('cpL').innerHTML = items.length ? items.map((it, i) => `<button type="button" data-cp="${i}" style="display:flex;width:100%;justify-content:space-between;border:0;border-radius:12px;font-weight:${i === sel ? 700 : 500};background:${i === sel ? 'var(--green-l)' : 'transparent'};text-align:left"><span>${esc(it.label)}</span><span class="muted" style="font-weight:500">${esc(it.tag || '')}</span></button>`).join('') : '<p class="muted">Aucune action trouvée.</p>';
     $('cpL').querySelectorAll('[data-cp]').forEach(b => b.onclick = () => run(+b.dataset.cp)); };
   const run = (i) => { const it = items[i]; if (!it) return; closeModal(); it.fn(); };

@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Console Nuittea</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<style>
+:root{--navy:#0F2A3D;--blue:#1F7AB8;--ink:#13212C;--mute:#5E6E7A;--line:#E3E8EC;--bg:#F5F7F9;--card:#fff;--green:#1E8E5A;--red:#C0392B;--amber:#C27C0E}
+*{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,sans-serif;color:var(--ink);background:var(--bg);font-size:14px}
+button{font:inherit;cursor:pointer;border-radius:8px;border:1px solid var(--line);background:#fff;padding:7px 12px;font-weight:600;color:var(--ink)}
+button.p{background:var(--blue);border-color:var(--blue);color:#fff}button.d{color:var(--red);border-color:#f0c9c4}button:disabled{opacity:.5;cursor:default}
+input,select,textarea{font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:8px;width:100%;background:#fff}
+a{color:var(--blue)}
+#app{display:flex;min-height:100vh}
+nav{width:220px;background:var(--navy);color:#cfe0ec;padding:18px 12px;flex-shrink:0;position:sticky;top:0;height:100vh}
+nav .brand{color:#fff;font-weight:800;font-size:18px;padding:0 8px 18px}nav .brand small{display:block;font-weight:500;font-size:12px;color:#8fb0c6}
+nav button{display:block;width:100%;text-align:left;background:none;border:0;color:#cfe0ec;padding:9px 10px;margin:2px 0}
+nav button.on{background:rgba(255,255,255,.1);color:#fff}nav .me{position:absolute;bottom:16px;left:12px;right:12px;font-size:12px;color:#8fb0c6}
+main{flex:1;padding:24px;min-width:0;max-width:1200px}
+h1{font-size:22px;margin:0 0 16px}h3{margin:0 0 8px;font-size:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:14px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:16px}
+.kpi .v{font-size:24px;font-weight:800}.kpi .l{color:var(--mute);font-size:12px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.between{justify-content:space-between}
+.muted{color:var(--mute)}.pill{display:inline-block;padding:2px 8px;border-radius:99px;font-size:12px;font-weight:600}
+.pill.g{background:#E3F4EB;color:var(--green)}.pill.r{background:#FBE6E3;color:var(--red)}.pill.a{background:#FCF1DE;color:var(--amber)}.pill.n{background:#EEF2F5;color:var(--mute)}
+table{width:100%;border-collapse:collapse}td,th{padding:8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}th{font-size:12px;color:var(--mute);font-weight:600}
+.rooms{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-top:10px}
+.room{border:1px solid var(--line);border-radius:10px;padding:10px}.room.h{background:#FBF3F2}
+.room img{width:100%;height:90px;object-fit:cover;border-radius:6px;background:#eef}
+#login{max-width:380px;margin:12vh auto;padding:0 16px}
+#toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;padding:10px 16px;border-radius:8px;display:none;z-index:9}
+.modal{position:fixed;inset:0;background:rgba(15,42,61,.45);display:flex;align-items:center;justify-content:center;padding:16px;z-index:8}
+.modal .card{width:100%;max-width:440px}
+.perms{display:grid;grid-template-columns:1fr 1fr;gap:6px}.perms label{display:flex;gap:6px;align-items:center}.perms input{width:auto}
+@media(max-width:760px){#app{flex-direction:column}nav{width:auto;height:auto;position:static;display:flex;flex-wrap:wrap;gap:4px}nav .brand{width:100%;padding-bottom:8px}nav button{width:auto}nav .me{position:static;width:100%}main{padding:16px}}
+</style>
+</head>
+<body>
+<div id="login" hidden>
+  <div class="card">
+    <h1>Console Nuittea</h1>
+    <p class="muted">Réservée à l'équipe Nuittea.</p>
+    <form id="lf"><input id="le" type="email" placeholder="Adresse e-mail" required style="margin-bottom:8px"><input id="lp" type="password" placeholder="Mot de passe" required style="margin-bottom:10px"><button class="p" style="width:100%">Se connecter</button></form>
+    <button id="lg" style="width:100%;margin-top:8px">Continuer avec Google</button>
+    <p id="lerr" class="muted" style="color:var(--red)"></p>
+  </div>
+</div>
+<div id="app" hidden><nav id="nav"></nav><main id="main"></main></div>
+<div id="toast"></div>
+<script>
+const sb = supabase.createClient('https://kuuyhtvdnoqyikrcbpot.supabase.co', 'sb_publishable_0AT6IoJyfnTlANz0Lf-erg_Sj85F1yT');
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const money = n => n == null ? '—' : Math.round(Number(n)).toLocaleString('fr-FR').replace(/\s/g, ' ') + ' F';
+const dfr = d => d ? new Date(d).toLocaleDateString('fr-FR') : '';
+const dtfr = d => d ? new Date(d).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' }) : '';
+const toast = (m, bad) => { const t = $('toast'); t.textContent = m; t.style.background = bad ? 'var(--red)' : 'var(--navy)'; t.style.display = 'block'; clearTimeout(t._t); t._t = setTimeout(() => t.style.display = 'none', 3500); };
+const SITE = 'https://nuittea.pages.dev';
+const ROLES = { direction: 'Direction', commercial: 'Commercial', support: 'Support', finance: 'Finance', lecture: 'Lecture' };
+const PERMS = { dashboard: 'Aperçu', crm: 'CRM', clients: 'Clients', support: 'Support', finance: 'Finances', moderation: 'Modération', moderation_delete: 'Retrait de publication', demo: 'Comptes de démonstration', impersonate: 'Connexion en tant que', team: 'Équipe', settings: 'Réglages', journal: 'Journal' };
+const ACTIONS = { chambre_masquee: 'Chambre masquée', chambre_reaffichee: 'Chambre réaffichée', etablissement_suspendu: 'Établissement suspendu', etablissement_retabli: 'Établissement rétabli', publication_retiree: 'Publication retirée', equipe_modifiee: 'Équipe modifiée' };
+const STATUS = { pending: 'En attente', confirmed: 'Confirmée', checked_in: 'En séjour', checked_out: 'Partie', cancelled: 'Annulée', no_show: 'Absente' };
+let D = null, V = 'apercu', Q = '';
+const can = p => D && D.me.perms.includes(p);
+const wa = n => n ? 'https://wa.me/' + String(n).replace(/[^0-9]/g, '') : null;
+
+async function boot(){
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) { $('login').hidden = false; $('app').hidden = true; return; }
+  const { data, error } = await sb.rpc('admin_console_data');
+  if (error) { $('login').hidden = false; $('app').hidden = true; $('lerr').innerHTML = 'Ce compte (' + esc(session.user.email) + ') n\'a pas accès à la console. <a href="#" id="lo">Changer de compte</a>'; $('lo').onclick = async e => { e.preventDefault(); await sb.auth.signOut(); location.reload(); }; return; }
+  D = data; D.email = session.user.email; $('login').hidden = true; $('app').hidden = false; render();
+}
+async function reload(){ const { data, error } = await sb.rpc('admin_console_data'); if (error) return toast(error.message, true); const e = D.email; D = data; D.email = e; render(); }
+
+function render(){
+  const tabs = [['apercu', 'Aperçu', 'dashboard'], ['publications', 'Publications', 'dashboard'], ['equipe', 'Équipe', 'team'], ['journal', 'Journal', 'journal']].filter(t => can(t[2]));
+  if (!tabs.find(t => t[0] === V)) V = tabs[0][0];
+  $('nav').innerHTML = `<div class="brand">Nuittea<small>Console d'administration</small></div>` + tabs.map(t => `<button data-v="${t[0]}" class="${V === t[0] ? 'on' : ''}">${t[1]}</button>`).join('') +
+    `<div class="me">${esc(D.email)}<br>${esc(ROLES[D.me.role] || '')} · <a href="#" id="out" style="color:#cfe0ec">Déconnexion</a></div>`;
+  document.querySelectorAll('[data-v]').forEach(b => b.onclick = () => { V = b.dataset.v; render(); });
+  $('out').onclick = async e => { e.preventDefault(); await sb.auth.signOut(); location.reload(); };
+  ({ apercu: vApercu, publications: vPub, equipe: vTeam, journal: vJournal })[V]();
+}
+
+function vApercu(){
+  const s = D.stats, k = (v, l) => `<div class="card kpi"><div class="v">${v}</div><div class="l">${l}</div></div>`;
+  const alerts = D.ests.filter(e => e.suspended_at || e.rooms.some(r => r.hidden));
+  $('main').innerHTML = `<h1>Aperçu</h1><div class="kpis">${k(s.orgs, 'Organisations clientes')}${k(s.ests, 'Établissements')}${k(s.listed, 'Publiés sur Nuittea')}${k(s.suspended, 'Suspendus')}${k(s.hidden_rooms, 'Chambres masquées')}${k(s.naya_30, 'Réservations Nuittea (30 jours)')}</div>
+    <div class="card"><h3>Points de modération en cours</h3>${alerts.length ? '<table><tr><th>Établissement</th><th>Situation</th></tr>' + alerts.map(e => `<tr><td><strong>${esc(e.name)}</strong><br><span class="muted">${esc(e.city || '')}</span></td><td>${e.suspended_at ? `<span class="pill r">Suspendu</span> ${esc(e.suspended_reason)}` : ''} ${e.rooms.filter(r => r.hidden).map(r => `<div><span class="pill a">Ch. ${esc(r.number)} masquée</span> ${esc(r.reason)}</div>`).join('')}</td></tr>`).join('') + '</table>' : '<p class="muted">Aucun.</p>'}</div>`;
+}
+
+function vPub(){
+  const list = D.ests.filter(e => !Q || (e.name + ' ' + (e.city || '') + ' ' + (e.org || '')).toLowerCase().includes(Q.toLowerCase()));
+  const mod = can('moderation');
+  $('main').innerHTML = `<div class="row between"><h1>Publications Nuittea</h1><input id="q" placeholder="Rechercher un établissement" value="${esc(Q)}" style="max-width:280px"></div>` +
+    list.map(e => {
+      const st = e.suspended_at ? '<span class="pill r">Suspendu</span>' : e.listed ? '<span class="pill g">Publié</span>' : '<span class="pill n">Non publié</span>';
+      return `<div class="card"><div class="row between"><div><h3>${esc(e.name)} ${st} ${e.is_test ? '<span class="pill a">Test</span>' : ''}</h3><div class="muted">${esc(e.city || '')} · ${esc(e.org)} · commission ${e.commission ?? '—'} %</div>
+          ${e.suspended_at ? `<div style="color:var(--red);margin-top:4px">Suspendu le ${dtfr(e.suspended_at)} : ${esc(e.suspended_reason)}</div>` : ''}</div>
+        <div class="row">${e.slug ? `<a href="${SITE}/hotel/${esc(e.slug)}" target="_blank" rel="noopener"><button>Voir la fiche</button></a>` : ''}
+          ${wa(e.whatsapp || e.phone) ? `<a href="${wa(e.whatsapp || e.phone)}" target="_blank" rel="noopener"><button>WhatsApp hôtel</button></a>` : ''}
+          ${e.phone ? `<a href="tel:${esc(e.phone)}"><button>Appeler</button></a>` : ''}${e.email ? `<a href="mailto:${esc(e.email)}"><button>E-mail</button></a>` : ''}
+          ${mod ? (e.suspended_at ? `<button data-unsus="${e.id}">Rétablir</button>` : `<button class="d" data-sus="${e.id}">Suspendre</button>`) : ''}
+          ${can('moderation_delete') && e.listed ? `<button class="d" data-rm="${e.id}">Retirer la publication</button>` : ''}</div></div>
+        <details style="margin-top:10px"><summary>${e.rooms.length} chambre(s)${e.rooms.some(r => r.hidden) ? ' · ' + e.rooms.filter(r => r.hidden).length + ' masquée(s)' : ''}</summary><div class="rooms">${e.rooms.map(r => `<div class="room ${r.hidden ? 'h' : ''}">${r.photo ? `<img src="${esc(r.photo)}" alt="" loading="lazy">` : ''}<div class="row between" style="margin-top:6px"><strong>Ch. ${esc(r.number)}</strong>${r.hidden ? '<span class="pill a">Masquée</span>' : r.active ? '' : '<span class="pill n">Inactive</span>'}</div><div class="muted">${esc(r.type || 'Chambre')} · ${money(r.rate)}</div>${r.hidden ? `<div class="muted" style="font-size:12px">${esc(r.reason)}</div>` : ''}${mod ? `<button style="margin-top:6px;width:100%" data-room="${r.id}" data-h="${r.hidden ? 0 : 1}">${r.hidden ? 'Réafficher' : 'Masquer sur Nuittea'}</button>` : ''}</div>`).join('')}</div></details>
+        <details style="margin-top:6px"><summary>Dernières réservations Nuittea (${e.bookings.length})</summary>${e.bookings.length ? '<table><tr><th>Réf.</th><th>Voyageur</th><th>Séjour</th><th>Statut</th><th></th></tr>' + e.bookings.map(b => `<tr><td>${esc(b.ref)}</td><td>${esc(b.guest)}</td><td>${dfr(b.in)} → ${dfr(b.out)}</td><td>${esc(STATUS[b.status] || b.status)}</td><td>${b.phone ? `<a href="${wa(b.phone)}" target="_blank" rel="noopener">WhatsApp</a> · <a href="tel:${esc(b.phone)}">Appeler</a>` : ''}</td></tr>`).join('') + '</table>' : '<p class="muted">Aucune.</p>'}</details></div>`;
+    }).join('') + (list.length ? '' : '<p class="muted">Aucun établissement.</p>');
+  const q = $('q'); q.oninput = () => { Q = q.value; const p = q.selectionStart; vPub(); const n = $('q'); n.focus(); n.setSelectionRange(p, p); };
+  const act = async (fn, args, ok) => { const { error } = await sb.rpc(fn, args); if (error) return toast(error.message, true); toast(ok); reload(); };
+  document.querySelectorAll('[data-room]').forEach(b => b.onclick = () => b.dataset.h === '1'
+    ? ask('Masquer cette chambre sur Nuittea', 'Motif (photos inadaptées, prix erroné…)', r => act('admin_room_hide', { p_room: b.dataset.room, p_hidden: true, p_reason: r }, 'Chambre masquée sur Nuittea.'))
+    : act('admin_room_hide', { p_room: b.dataset.room, p_hidden: false, p_reason: null }, 'Chambre réaffichée.'));
+  document.querySelectorAll('[data-sus]').forEach(b => b.onclick = () => ask('Suspendre l\'établissement sur Nuittea', 'Motif communiqué à l\'hôtel', r => act('admin_est_suspend', { p_est: b.dataset.sus, p_suspend: true, p_reason: r }, 'Établissement suspendu.')));
+  document.querySelectorAll('[data-unsus]').forEach(b => b.onclick = () => act('admin_est_suspend', { p_est: b.dataset.unsus, p_suspend: false, p_reason: null }, 'Établissement rétabli.'));
+  document.querySelectorAll('[data-rm]').forEach(b => b.onclick = () => ask('Retirer la publication de Nuittea', 'Motif (l\'hôtel pourra se republier, ses données sont conservées)', r => act('admin_listing_remove', { p_est: b.dataset.rm, p_reason: r }, 'Publication retirée.')));
+}
+
+function ask(title, ph, cb){
+  const m = document.createElement('div'); m.className = 'modal';
+  m.innerHTML = `<div class="card"><h3>${esc(title)}</h3><textarea rows="3" placeholder="${esc(ph)}"></textarea><div class="row" style="justify-content:flex-end;margin-top:10px"><button data-x>Annuler</button><button class="p" data-ok>Confirmer</button></div></div>`;
+  document.body.appendChild(m); const t = m.querySelector('textarea'); t.focus();
+  m.querySelector('[data-x]').onclick = () => m.remove(); m.onclick = e => { if (e.target === m) m.remove(); };
+  m.querySelector('[data-ok]').onclick = () => { if (t.value.trim().length < 3) return toast('Indiquez un motif.', true); m.remove(); cb(t.value.trim()); };
+}
+
+function vTeam(){
+  $('main').innerHTML = `<div class="row between"><h1>Équipe Nuittea</h1><button class="p" id="add">Ajouter une personne</button></div>
+    <div class="card"><table><tr><th>Personne</th><th>Rôle</th><th>Accès</th><th>État</th><th></th></tr>${(D.staff || []).map((s, i) => `<tr><td><strong>${esc(s.name || s.email)}</strong><br><span class="muted">${esc(s.email)}</span></td><td>${esc(ROLES[s.role])}</td><td style="font-size:12px">${s.perms.map(p => esc(PERMS[p] || p)).join(', ')}</td><td>${s.active ? '<span class="pill g">Actif</span>' : '<span class="pill n">Désactivé</span>'}</td><td><button data-ed="${i}">Modifier</button></td></tr>`).join('')}</table>
+    <p class="muted" style="font-size:12px;margin:10px 0 0">La personne doit d'abord avoir créé son compte (application Nuittea Manager ou site). Elle se connecte ensuite ici avec ce même compte.</p></div>`;
+  $('add').onclick = () => editStaff(null);
+  document.querySelectorAll('[data-ed]').forEach(b => b.onclick = () => editStaff(D.staff[b.dataset.ed]));
+}
+function basePerms(role){ return { direction: Object.keys(PERMS), commercial: ['dashboard','crm','clients','demo'], support: ['dashboard','clients','support','moderation','demo'], finance: ['dashboard','clients','finance','journal'], lecture: ['dashboard','clients'] }[role]; }
+function editStaff(s){
+  const m = document.createElement('div'); m.className = 'modal';
+  const role0 = s ? s.role : 'support';
+  m.innerHTML = `<div class="card"><h3>${s ? 'Modifier l\'accès' : 'Ajouter une personne'}</h3>
+    <input id="se" type="email" placeholder="Adresse e-mail du compte" value="${esc(s ? s.email : '')}" ${s ? 'disabled' : ''} style="margin-bottom:8px">
+    <input id="sn" placeholder="Nom affiché" value="${esc(s ? s.name || '' : '')}" style="margin-bottom:8px">
+    <select id="sr" style="margin-bottom:10px">${Object.entries(ROLES).map(([k, v]) => `<option value="${k}" ${k === role0 ? 'selected' : ''}>${v}</option>`).join('')}</select>
+    <div class="muted" style="font-size:12px;margin-bottom:6px">Accès (cochez ou décochez pour ajuster le rôle)</div><div class="perms" id="sp"></div>
+    <label class="row" style="margin-top:10px"><input type="checkbox" id="sa" style="width:auto" ${!s || s.active ? 'checked' : ''}> Compte actif</label>
+    <div class="row" style="justify-content:flex-end;margin-top:12px"><button data-x>Annuler</button><button class="p" data-ok>Enregistrer</button></div></div>`;
+  document.body.appendChild(m);
+  const drawP = (cur) => { $('sp').innerHTML = Object.entries(PERMS).map(([k, v]) => `<label><input type="checkbox" value="${k}" ${cur.includes(k) ? 'checked' : ''}> ${v}</label>`).join(''); };
+  drawP(s ? s.perms : basePerms(role0));
+  $('sr').onchange = () => drawP(basePerms($('sr').value));
+  m.querySelector('[data-x]').onclick = () => m.remove();
+  m.querySelector('[data-ok]').onclick = async () => {
+    const role = $('sr').value, base = basePerms(role), chk = [...$('sp').querySelectorAll('input:checked')].map(i => i.value);
+    const { error } = await sb.rpc('admin_staff_upsert', { p_email: $('se').value, p_role: role, p_add: chk.filter(p => !base.includes(p)), p_remove: base.filter(p => !chk.includes(p)), p_active: $('sa').checked, p_name: $('sn').value.trim() || null });
+    if (error) return toast(error.message, true); m.remove(); toast('Accès enregistré.'); reload();
+  };
+}
+
+function vJournal(){
+  const tgt = j => { if (j.type === 'establishment') { const e = D.ests.find(x => x.id === j.id); return e ? e.name : 'Établissement'; } if (j.type === 'room') { for (const e of D.ests) { const r = e.rooms.find(x => x.id === j.id); if (r) return e.name + ' · Ch. ' + r.number; } return 'Chambre'; } if (j.type === 'staff') return j.detail.email || 'Équipe'; return j.type || ''; };
+  $('main').innerHTML = `<div class="row between"><h1>Journal</h1><input id="jq" placeholder="Filtrer" style="max-width:240px"></div><div class="card"><table id="jt"></table></div>`;
+  const draw = () => { const f = $('jq').value.toLowerCase(); const rows = (D.journal || []).filter(j => !f || JSON.stringify(j).toLowerCase().includes(f) || (ACTIONS[j.action] || '').toLowerCase().includes(f) || tgt(j).toLowerCase().includes(f));
+    $('jt').innerHTML = '<tr><th>Date</th><th>Par</th><th>Action</th><th>Cible</th><th>Motif / détail</th></tr>' + (rows.length ? rows.map(j => `<tr><td style="white-space:nowrap">${dtfr(j.at)}</td><td>${esc(j.actor || '—')}</td><td>${esc(ACTIONS[j.action] || j.action)}</td><td>${esc(tgt(j))}</td><td>${esc(j.detail.motif || (j.detail.role ? ROLES[j.detail.role] : ''))}</td></tr>`).join('') : '<tr><td colspan="5" class="muted">Aucune action enregistrée.</td></tr>'); };
+  $('jq').oninput = draw; draw();
+}
+
+$('lf').onsubmit = async e => { e.preventDefault(); $('lerr').textContent = ''; const { error } = await sb.auth.signInWithPassword({ email: $('le').value, password: $('lp').value }); if (error) return $('lerr').textContent = 'Identifiants incorrects.'; boot(); };
+$('lg').onclick = () => sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: location.origin + location.pathname } });
+sb.auth.onAuthStateChange(ev => { if (ev === 'SIGNED_IN' && !D) boot(); });
+boot();
+</script>
+</body>
+</html>

@@ -1085,7 +1085,7 @@ html[data-theme="foret"] body.navmini nav.side #navCollapse:not(#_a){width:40px!
         <button data-view="equipe">Équipe</button>
         <button data-view="abonnement" class="keep">Mon abonnement</button>
         <button data-view="tarifs">Tarifs</button>
-        <button data-view="admin" id="navAdmin" class="hidden keep">Administration</button>
+        <button type="button" id="navAdmin" class="hidden keep">Console Nuittea ↗</button>
         <button type="button" id="navHelp">Assistance Nuittea</button>
         <button type="button" id="navPwd">Changer mon mot de passe</button>
         <button data-logout class="keep">Se déconnecter</button>
@@ -1325,7 +1325,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.11.10-26';
+const APP_VERSION = '2026.11.10-27';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -1791,6 +1791,8 @@ async function boot(){
   if (mem.error && isNetErr(mem.error)) { const c = cacheGet('member_' + session.user.id); if (c) { S.member = c; S.offlineBoot = true; } }
   else if (S.member) cacheSet('member_' + session.user.id, S.member);
   $('navAdmin').classList.toggle('hidden', !S.isAdmin); drawAcc();
+  if (!S.isAdmin) sb.rpc('staff_can', { p_perm: 'dashboard' }).then(({ data }) => { if (data === true) $('navAdmin').classList.remove('hidden'); }, () => {});
+  $('navAdmin').onclick = () => { const nb = $('navMore'); if (nb) nb.open = false; window.open('admin.html', '_blank', 'noopener'); };
   if (!S.member && mem.error) { show('auth'); renderAuth(); return toast('Connexion impossible : vérifiez votre réseau.', true); }
   if (!S.member && (session.user.user_metadata || {}).staff) {
     await sb.auth.signOut();

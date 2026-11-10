@@ -136,7 +136,7 @@ function render(){
   const all = G.flatMap(g => g[1]).filter(t => can(t[2]));
   if (!all.find(t => t[0] === V)) V = all[0][0];
   $('nav').innerHTML = `<div class="brand">Nuittea<small>Console d'administration</small></div>` + G.map(([g, ts]) => { const v = ts.filter(t => can(t[2])); return v.length ? `<div class="grp">${g}</div>` + v.map(t => `<button data-v="${t[0]}" class="${V === t[0] ? 'on' : ''}"><span>${t[1]}</span>${nb[t[0]] ? `<span class="b">${nb[t[0]]}</span>` : ''}</button>`).join('') : ''; }).join('') +
-    `<div class="me">${esc(D.email)}<br>${esc(ROLES[D.me.role] || '')} · <a href="#" id="rf" style="color:#cfe0ec">Actualiser</a> · <a href="#" id="out" style="color:#cfe0ec">Déconnexion</a></div>`;
+    `<div class="me"><a href="./" style="display:block;color:#fff;font-weight:600;margin-bottom:6px;text-decoration:none">← Ouvrir Nuittea Manager</a>${esc(D.email)}<br>${esc(ROLES[D.me.role] || '')} · <a href="#" id="rf" style="color:#cfe0ec">Actualiser</a> · <a href="#" id="out" style="color:#cfe0ec">Déconnexion</a></div>`;
   document.querySelectorAll('[data-v]').forEach(b => b.onclick = () => { V = b.dataset.v; Q = ''; render(); window.scrollTo(0, 0); });
   $('out').onclick = async e => { e.preventDefault(); await sb.auth.signOut(); location.reload(); };
   $('rf').onclick = e => { e.preventDefault(); reload(); };

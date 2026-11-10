@@ -1328,7 +1328,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.11.10-32';
+const APP_VERSION = '2026.11.10-33';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -2167,6 +2167,7 @@ async function openEstablishments(){
     closeModal(); await loadEst(); toast('Établissement ajouté. Ajoutez maintenant ses chambres.'); go('chambres'); };
 }
 function go(view){
+  if (view === 'admin' && (S.isAdmin || S.isStaff)) { location.href = 'admin.html'; return; }
   if (view === 'admin' && !S.isAdmin) view = 'abonnement';
   if (S.org && !allowed(view)) view = (memberViews(S.member) || ['dashboard']).find(allowed) || 'dashboard';
   if (!S.org && view !== 'admin') view = 'admin';

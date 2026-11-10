@@ -96,7 +96,7 @@ const SITE = 'https://nuittea.pages.dev';
 const ROLES = { direction: 'Direction', commercial: 'Commercial', support: 'Support', finance: 'Finance', lecture: 'Lecture' };
 const PERMS = { dashboard: 'Aperçu', crm: 'CRM', clients: 'Clients', support: 'Support', finance: 'Finances', moderation: 'Modération', moderation_delete: 'Retrait de publication', demo: 'Comptes de démonstration', impersonate: 'Vue client', team: 'Équipe', settings: 'Réglages', journal: 'Journal' };
 const BASE = { direction: Object.keys(PERMS), commercial: ['dashboard','crm','clients','demo'], support: ['dashboard','clients','support','moderation','demo'], finance: ['dashboard','clients','finance','journal'], lecture: ['dashboard','clients'] };
-const ACTIONS = { chambre_masquee: 'Chambre masquée', chambre_reaffichee: 'Chambre réaffichée', etablissement_suspendu: 'Établissement suspendu', etablissement_retabli: 'Établissement rétabli', publication_retiree: 'Publication retirée', equipe_modifiee: 'Équipe modifiée', fiche_valide: 'Fiche validée', fiche_refuse: 'Fiche refusée', fiche_a_verifier: 'Fiche remise à vérifier', avis_publie: 'Avis publié', avis_masque: 'Avis masqué', signalement_traite: 'Signalement traité', signalement_rejete: 'Signalement rejeté', ticket_modifie: 'Demande d\'assistance modifiée', annonce_enregistree: 'Annonce enregistrée', commission_encaissee: 'Commission encaissée', vue_client: 'Vue client consultée', reglage_modifie: 'Réglage modifié', demo_reinitialisee: 'Démonstration réinitialisée', demo_connexion: 'Connexion démonstration', reversement_payee: 'Reversement versé', reversement_refusee: 'Reversement refusé', reversement_en_cours: 'Reversement en cours', formule_modifiee: 'Formule modifiée', abonnement_prolonge: 'Accès prolongé', paiement_enregistre: 'Paiement enregistré', compte_suspendu: 'Compte suspendu', compte_reactive: 'Compte réactivé', abonnement_resilie: 'Abonnement résilié', derogations_modifiees: 'Fonctions ou limites modifiées', commission_modifiee: 'Commission modifiée', employe_reactive: 'Employé réactivé', employe_desactive: 'Employé désactivé', compte_marque_test: 'Marqué compte de test', compte_marque_reel: 'Marqué compte réel' };
+const ACTIONS = { chambre_masquee: 'Chambre masquée', chambre_reaffichee: 'Chambre réaffichée', etablissement_suspendu: 'Établissement suspendu', etablissement_retabli: 'Établissement rétabli', publication_retiree: 'Publication retirée', equipe_modifiee: 'Équipe modifiée', fiche_valide: 'Fiche validée', fiche_refuse: 'Fiche refusée', fiche_a_verifier: 'Fiche remise à vérifier', avis_publie: 'Avis publié', avis_masque: 'Avis masqué', signalement_traite: 'Signalement traité', signalement_rejete: 'Signalement rejeté', ticket_modifie: 'Demande d\'assistance modifiée', annonce_enregistree: 'Annonce enregistrée', commission_encaissee: 'Commission encaissée', vue_client: 'Vue client consultée', reglage_modifie: 'Réglage modifié', demo_reinitialisee: 'Démonstration réinitialisée', demo_connexion: 'Connexion démonstration', paiement_abonnement_valide: 'Paiement d\'abonnement validé', paiement_abonnement_rejete: 'Paiement d\'abonnement rejeté', formule_parametree: 'Formule modifiée', moyen_paiement_active: 'Moyen de paiement activé', moyen_paiement_desactive: 'Moyen de paiement désactivé', reversement_payee: 'Reversement versé', reversement_refusee: 'Reversement refusé', reversement_en_cours: 'Reversement en cours', formule_modifiee: 'Formule modifiée', abonnement_prolonge: 'Accès prolongé', paiement_enregistre: 'Paiement enregistré', compte_suspendu: 'Compte suspendu', compte_reactive: 'Compte réactivé', abonnement_resilie: 'Abonnement résilié', derogations_modifiees: 'Fonctions ou limites modifiées', commission_modifiee: 'Commission modifiée', employe_reactive: 'Employé réactivé', employe_desactive: 'Employé désactivé', compte_marque_test: 'Marqué compte de test', compte_marque_reel: 'Marqué compte réel' };
 const STATUS = { pending: 'En attente', confirmed: 'Confirmée', checked_in: 'En séjour', checked_out: 'Partie', cancelled: 'Annulée', no_show: 'Absente' };
 const SUB = { active: ['Actif', 'g'], trial: ['Essai', 'b'], past_due: ['Impayé', 'r'], suspended: ['Suspendu', 'r'], cancelled: ['Résilié', 'n'], expired: ['Expiré', 'r'] };
 const STAGES = { a_contacter: 'À contacter', contacte: 'Contacté', demo: 'Démo faite', essai: 'En essai', abonne: 'Abonné', perdu: 'Perdu' };
@@ -146,10 +146,10 @@ function alerts(){
 function render(){
   const nb = { publications: D.stats.to_review, signalements: D.stats.reports, support: (D.tickets || []).filter(t => t.status === 'ouvert').length, taches: (D.tasks || []).filter(t => !t.done && t.assignee === D.me.id && t.due && days(t.due) <= 0).length };
   const G = [
-    ['Pilotage', [['apercu', 'Aperçu', 'dashboard'], ['revenus', 'Abonnements', 'clients'], ['clients', 'Clients', 'clients'], ['commissions', 'Commissions', 'finance'], ['reversements', 'Reversements', 'finance']]],
+    ['Pilotage', [['apercu', 'Aperçu', 'dashboard'], ['revenus', 'Abonnements', 'clients'], ['clients', 'Clients', 'clients'], ['paiements', 'Paiements à valider', 'finance'], ['commissions', 'Commissions', 'finance'], ['reversements', 'Reversements', 'finance']]],
     ['Nuittea.com', [['publications', 'Publications', 'dashboard'], ['avis', 'Avis clients', 'moderation'], ['signalements', 'Signalements', 'moderation']]],
     ['Relation client', [['crm', 'Prospects', 'crm'], ['taches', 'Tâches', 'dashboard'], ['support', 'Assistance', 'support'], ['annonces', 'Annonces', 'support'], ['demo', 'Démonstration', 'demo']]],
-    ['Administration', [['equipe', 'Équipe', 'team'], ['journal', 'Journal', 'journal'], ['reglages', 'Réglages', 'dashboard']]]];
+    ['Administration', [['formules', 'Formules', 'settings'], ['lieux', 'Lieux', 'moderation'], ['equipe', 'Équipe', 'team'], ['journal', 'Journal', 'journal'], ['reglages', 'Réglages', 'dashboard']]]];
   const all = G.flatMap(g => g[1]).filter(t => can(t[2]));
   if (!all.find(t => t[0] === V)) V = all[0][0];
   $('nav').innerHTML = `<div class="brand">Nuittea<small>Console d'administration</small></div>` + G.map(([g, ts]) => { const v = ts.filter(t => can(t[2])); return v.length ? `<div class="grp">${g}</div>` + v.map(t => `<button data-v="${t[0]}" class="${V === t[0] ? 'on' : ''}"><span>${t[1]}</span>${nb[t[0]] ? `<span class="b">${nb[t[0]]}</span>` : ''}</button>`).join('') : ''; }).join('') +
@@ -163,7 +163,7 @@ function render(){
   document.querySelectorAll('[data-v]').forEach(b => b.onclick = () => { V = b.dataset.v; Q = ''; document.body.classList.remove('navopen'); render(); window.scrollTo(0, 0); });
   $('out').onclick = async e => { e.preventDefault(); await sb.auth.signOut(); location.replace('./'); };
   $('rf').onclick = e => { e.preventDefault(); reload(); };
-  ({ reversements: vPayouts, apercu: vApercu, revenus: vRevenus, clients: vClients, commissions: vCom, publications: vPub, avis: vAvis, signalements: vRep, crm: vCrm, taches: vTasks, support: vSupport, annonces: vAnn, demo: vDemo, equipe: vTeam, journal: vJournal, reglages: vSettings })[V]();
+  ({ paiements: vBilling, formules: vPlans, lieux: vPlaces, reversements: vPayouts, apercu: vApercu, revenus: vRevenus, clients: vClients, commissions: vCom, publications: vPub, avis: vAvis, signalements: vRep, crm: vCrm, taches: vTasks, support: vSupport, annonces: vAnn, demo: vDemo, equipe: vTeam, journal: vJournal, reglages: vSettings })[V]();
 }
 function bindGo(){ document.querySelectorAll('[data-go]').forEach(b => b.onclick = () => { V = b.dataset.go; render(); }); }
 
@@ -297,6 +297,81 @@ async function manageOrg(x){
   if (q('#tt')) q('#tt').onchange = () => go('admin_org_set_test', { p_org: x.id, p_test: q('#tt').checked }, 'Enregistré.');
 }
 
+
+/* ---------- Paiements d'abonnement à valider ---------- */
+const PMETH = { geniuspay: 'Genius Pay', wave: 'Wave', orange_money: 'Orange Money', mtn_money: 'MTN MoMo', moov_money: 'Moov Money', card: 'Carte', bank_transfer: 'Virement', cash: 'Espèces' };
+const PCYC = { monthly: 'Mensuel', yearly: 'Annuel', trial: 'Essai', free: 'Gratuit' };
+async function vBilling(){
+  $('main').innerHTML = '<h1>Paiements d\'abonnement</h1><p class="muted">Chargement…</p>';
+  const B = await rpc('admin_billing_data', {}); if (!B || V !== 'paiements') return;
+  const PST = { succeeded: ['Payé', 'g'], failed: ['Échec', 'r'], cancelled: ['Annulé', 'n'], refunded: ['Remboursé', 'n'] };
+  $('main').innerHTML = `<h1>Paiements d'abonnement</h1>
+    <div class="card tw"><h3>À valider (${B.pending.length})</h3><p class="muted sm" style="margin-top:0">Paiements déclarés par les hôtels (virement, espèces, Mobile Money manuel). Vérifiez la réception, saisissez la référence puis validez : l'abonnement est prolongé et la facture émise.</p>
+      <table><tr><th>Date</th><th>Client</th><th>Formule</th><th>Moyen</th><th class="num">Montant</th><th>Référence</th><th></th></tr>${B.pending.map(y => `<tr><td>${dtfr(y.at)}</td><td><strong>${esc(y.org)}</strong></td><td>${esc(y.plan || '')} · ${esc(PCYC[y.cycle] || y.cycle)}</td><td>${esc(PMETH[y.method] || y.method)}</td><td class="num">${money(y.amount)}</td><td><input id="pr-${y.id}" value="${esc(y.ref || '')}" placeholder="N° de reçu ou de transfert" style="min-width:150px"></td><td class="row" style="flex-wrap:nowrap"><button class="s p" data-pok="${y.id}">Valider</button><button class="s d" data-pko="${y.id}">Rejeter</button></td></tr>`).join('') || '<tr><td colspan="7" class="muted">Aucun paiement en attente.</td></tr>'}</table></div>
+    <div class="card tw"><h3>Historique récent</h3><table><tr><th>Date</th><th>Client</th><th>Formule</th><th>Moyen</th><th>État</th><th class="num">Montant</th></tr>${B.history.map(y => `<tr><td>${dfr(y.at)}</td><td>${esc(y.org)}</td><td>${esc(y.plan || '')} · ${esc(PCYC[y.cycle] || '')}</td><td>${esc(PMETH[y.method] || y.method)}</td><td><span class="pill ${(PST[y.status] || ['', 'n'])[1]}">${(PST[y.status] || [y.status])[0]}</span></td><td class="num">${money(y.amount)}</td></tr>`).join('') || '<tr><td colspan="6" class="muted">Aucun.</td></tr>'}</table></div>`;
+  document.querySelectorAll('[data-pok]').forEach(b => b.onclick = async () => { const ref = $('pr-' + b.dataset.pok).value.trim(); if (ref.length < 3) return toast('Saisissez la référence de la transaction.', true); b.disabled = true; const r = await rpc('admin_payment_decide', { p_id: b.dataset.pok, p_ok: true, p_reference: ref, p_reason: null }); b.disabled = false; if (r) { toast('Paiement validé' + (r.invoice ? ' · facture ' + r.invoice : '') + '.'); reload().then(() => { V = 'paiements'; render(); }); } });
+  document.querySelectorAll('[data-pko]').forEach(b => b.onclick = () => ask('Rejeter ce paiement', 'Motif (paiement non reçu, montant incorrect…)', async r => { if (await rpc('admin_payment_decide', { p_id: b.dataset.pko, p_ok: false, p_reference: null, p_reason: r }, 'Paiement rejeté.')) vBilling(); }));
+}
+
+/* ---------- Formules ---------- */
+const PFEAT = { reception: 'Réception', reservations: 'Réservations', clients: 'Fiches clients', payments: 'Paiements', cash: 'Caisse', housekeeping: 'Ménage', users: 'Utilisateurs', notifications: 'Notifications', pdf_export: 'Export PDF', billing: 'Factures', expenses: 'Dépenses', basic_reports: 'Rapports simples', online_booking: 'Nuittea.com', owner_control: 'Contrôle propriétaire', financial_reports: 'Rapports financiers', excel_export: 'Export Excel', daily_summary: 'Résumé quotidien', restaurant: 'Restaurant et bar', venues: 'Salles et événements', multi_property: 'Plusieurs établissements', seasonal_rates: 'Tarifs saisonniers', extra_services: 'Services annexes', whatsapp_auto: 'WhatsApp automatique', priority_support: 'Assistance prioritaire', training: 'Formation' };
+async function vPlans(){
+  $('main').innerHTML = '<h1>Formules</h1><p class="muted">Chargement…</p>';
+  const B = await rpc('admin_billing_data', {}); if (!B || V !== 'formules') return;
+  $('main').innerHTML = `<h1>Formules et prix</h1><p class="muted">Un changement de prix s'applique aux nouveaux paiements ; les abonnements en cours gardent leur échéance. Chaque modification est inscrite au journal.</p>
+    <div class="card tw"><table><tr><th>Formule</th><th class="num">Mensuel</th><th class="num">Annuel</th><th class="num">Chambres</th><th class="num">Utilisateurs</th><th class="num">Établ.</th><th class="num">Clients</th><th>État</th><th></th></tr>
+    ${B.plans.map(p => `<tr><td><strong>${esc(p.name)}</strong>${p.is_trial ? ` <span class="pill b">Essai ${p.trial_days} j</span>` : ''}${p.is_quote_based ? ' <span class="pill n">Sur devis</span>' : ''}</td><td class="num">${money(p.monthly_price)}</td><td class="num">${p.yearly_price != null ? money(p.yearly_price) : '—'}</td><td class="num">${p.max_rooms ?? '∞'}</td><td class="num">${p.max_users ?? '∞'}</td><td class="num">${p.max_properties ?? '∞'}</td><td class="num">${p.clients}</td><td>${p.is_active ? '<span class="pill g">Active</span>' : '<span class="pill n">Inactive</span>'}${p.is_public ? '' : ' <span class="pill n">Cachée</span>'}</td><td><button class="s" data-pe="${p.id}">Modifier</button></td></tr>`).join('')}</table></div>`;
+  document.querySelectorAll('[data-pe]').forEach(b => b.onclick = () => planForm(B.plans.find(p => p.id === b.dataset.pe)));
+}
+function planForm(p){
+  const n = (id, l, v, ph) => `<div><label class="f">${l}</label><input id="${id}" inputmode="numeric" value="${v ?? ''}" placeholder="${ph || ''}"></div>`;
+  const m = modal(`<div class="row between"><h3>Formule ${esc(p.name)}</h3><button data-x>Fermer</button></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 12px">${n('fm', 'Prix mensuel (F)', p.monthly_price)}${n('fy', 'Prix annuel (F)', p.yearly_price, 'Sur devis')}${n('fr', 'Chambres maximum', p.max_rooms, 'Illimité')}${n('fu', 'Utilisateurs maximum', p.max_users, 'Illimité')}${n('fe', 'Établissements maximum', p.max_properties, 'Illimité')}${p.is_trial ? n('ft', 'Durée de l\'essai (jours)', p.trial_days) : '<div></div>'}</div>
+    <label class="row" style="margin-top:10px"><input type="checkbox" class="chk" id="fa" ${p.is_active ? 'checked' : ''}> Formule active</label><label class="row"><input type="checkbox" class="chk" id="fp" ${p.is_public ? 'checked' : ''}> Visible dans la page des tarifs</label>
+    <label class="f" style="margin-top:10px">Fonctions incluses</label><div class="perms" id="ff">${Object.entries(PFEAT).map(([k, l]) => `<label><input type="checkbox" value="${k}" ${(p.features || []).includes(k) ? 'checked' : ''}> ${l}</label>`).join('')}</div>
+    <p class="muted sm">${p.clients} client(s) sur cette formule. Retirer une fonction la retire immédiatement à ces clients (sauf dérogation).</p>
+    <div class="row" style="justify-content:flex-end;margin-top:10px"><button data-x>Annuler</button><button class="p" id="fk">Enregistrer</button></div>`, true);
+  const q = s => m.querySelector(s), num = id => { const x = String(q('#' + id).value).replace(/[^0-9]/g, ''); return x; };
+  q('#fk').onclick = async () => { const body = { monthly_price: num('fm') || '0', yearly_price: num('fy'), max_rooms: num('fr'), max_users: num('fu'), max_properties: num('fe'), is_active: q('#fa').checked, is_public: q('#fp').checked, features: [...m.querySelectorAll('#ff input:checked')].map(i => i.value) };
+    if (q('#ft')) body.trial_days = num('ft');
+    if (await rpc('admin_plan_save', { p_id: p.id, p: body }, 'Formule enregistrée.')) { m.remove(); vPlans(); } };
+}
+
+/* ---------- Lieux ---------- */
+const LKIND = { ville: 'Ville', commune: 'Commune', quartier: 'Quartier' }, LST = { valide: ['Validé', 'g'], propose: ['À valider', 'a'], rejete: ['Rejeté', 'r'] };
+async function vPlaces(){
+  $('main').innerHTML = '<h1>Lieux</h1><p class="muted">Chargement…</p>';
+  const L = await rpc('admin_localities', {}); if (!L || V !== 'lieux') return; SUBV._lx = L;
+  const f = SUBV.lf || 'propose', norm = t => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+  const rows = L.filter(x => (f === 'tous' || x.status === f) && (!Q || norm(x.label + ' ' + (x.aliases || []).join(' ')).includes(norm(Q))));
+  $('main').innerHTML = `<div class="row between"><h1>Lieux</h1><div class="row"><input id="q" placeholder="Rechercher" value="${esc(Q)}" style="width:200px"><button class="p" id="lxn">Ajouter un lieu</button></div></div>
+    <p class="muted">Liste officielle des villes, communes et quartiers utilisée par les hôtels et la recherche Nuittea.com. Validez les quartiers proposés par les hôtels, ou fusionnez-les avec un lieu existant.</p>
+    <div class="tabs2">${[['propose', 'À valider'], ['valide', 'Validés'], ['rejete', 'Rejetés'], ['tous', 'Tous']].map(([k, l]) => `<button data-f="${k}" class="${f === k ? 'on' : ''}">${l} (${L.filter(x => k === 'tous' || x.status === k).length})</button>`).join('')}</div>
+    <div class="card tw"><table><tr><th>Lieu</th><th>Type</th><th>État</th><th class="num">Hôtels</th><th>Proposé par</th><th></th></tr>${rows.slice(0, 300).map(x => `<tr><td><strong>${esc(x.name)}</strong><div class="muted sm">${esc(x.label)}${(x.aliases || []).length ? ' · aussi : ' + esc(x.aliases.join(', ')) : ''}</div></td><td>${LKIND[x.kind] || x.kind}</td><td><span class="pill ${(LST[x.status] || ['', 'n'])[1]}">${(LST[x.status] || [x.status])[0]}</span></td><td class="num">${x.hotels}</td><td>${esc(x.proposed_by || '—')}</td><td class="row" style="flex-wrap:nowrap">${x.status === 'propose' ? `<button class="s p" data-lok="${x.id}">Valider</button>` : ''}<button class="s" data-led="${x.id}">Modifier</button><button class="s" data-lmg="${x.id}">Fusionner</button></td></tr>`).join('') || '<tr><td colspan="6" class="muted">Aucun lieu.</td></tr>'}</table></div>`;
+  searchBox(vPlaces);
+  document.querySelectorAll('[data-f]').forEach(b => b.onclick = () => { SUBV.lf = b.dataset.f; vPlaces(); });
+  const save = async (x, extra, ok) => { const y = { ...x, ...extra }; if (await rpc('admin_locality_save', { p_id: y.id || null, p_kind: y.kind, p_name: y.name, p_parent: y.parent_id || null, p_aliases: y.aliases || [], p_lat: y.lat ?? null, p_lng: y.lng ?? null, p_status: y.status || 'valide' }, ok)) return true; };
+  document.querySelectorAll('[data-lok]').forEach(b => b.onclick = async () => { if (await save(L.find(x => x.id === b.dataset.lok), { status: 'valide' }, 'Lieu validé.')) vPlaces(); });
+  document.querySelectorAll('[data-led]').forEach(b => b.onclick = () => placeForm(L.find(x => x.id === b.dataset.led), save));
+  $('lxn').onclick = () => placeForm({ kind: 'quartier', status: 'valide' }, save);
+  document.querySelectorAll('[data-lmg]').forEach(b => b.onclick = () => { const x = L.find(y => y.id === b.dataset.lmg);
+    const m = modal(`<h3>Fusionner « ${esc(x.name)} »</h3><p class="muted sm">Les hôtels rattachés à ce lieu seront déplacés vers le lieu choisi ; son nom devient un autre nom du lieu choisi, puis il est supprimé.</p><label class="f">Fusionner dans</label><select id="mg">${L.filter(y => y.id !== x.id && y.status === 'valide').map(y => `<option value="${y.id}">${esc(y.label)}</option>`).join('')}</select><div class="row" style="justify-content:flex-end;margin-top:12px"><button data-x>Annuler</button><button class="p" id="mgk">Fusionner</button></div>`);
+    m.querySelector('#mgk').onclick = async () => { const r = await rpc('admin_locality_merge', { p_from: x.id, p_into: m.querySelector('#mg').value }); if (r) { toast(`Fusion faite : ${r.establishments || 0} hôtel(s) déplacé(s).`); m.remove(); vPlaces(); } }; });
+}
+function placeForm(x, save){
+  const L = SUBV._lx || [];
+  const m = modal(`<h3>${x.id ? 'Modifier le lieu' : 'Nouveau lieu'}</h3>
+    <label class="f">Type</label><select id="lk">${Object.entries(LKIND).map(([k, l]) => `<option value="${k}" ${x.kind === k ? 'selected' : ''}>${l}</option>`).join('')}</select>
+    <label class="f">Nom</label><input id="ln" value="${esc(x.name || '')}">
+    <label class="f">Rattaché à</label><select id="lp"><option value="">—</option>${L.filter(y => y.kind !== 'quartier' && y.status === 'valide' && y.id !== x.id).map(y => `<option value="${y.id}" ${x.parent_id === y.id ? 'selected' : ''}>${esc(y.label)}</option>`).join('')}</select>
+    <label class="f">Autres noms (séparés par des virgules)</label><input id="la" value="${esc((x.aliases || []).join(', '))}">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><div><label class="f">Latitude</label><input id="llat" value="${x.lat ?? ''}" placeholder="ex. 5.3599"></div><div><label class="f">Longitude</label><input id="llng" value="${x.lng ?? ''}" placeholder="ex. -4.0083"></div></div>
+    <label class="f">État</label><select id="ls">${Object.entries(LST).map(([k, v]) => `<option value="${k}" ${(x.status || 'valide') === k ? 'selected' : ''}>${v[0]}</option>`).join('')}</select>
+    <div class="row" style="justify-content:flex-end;margin-top:12px"><button data-x>Annuler</button><button class="p" id="lok">Enregistrer</button></div>`);
+  const q = s => m.querySelector(s), f = v => v.trim() === '' ? null : Number(v.replace(',', '.'));
+  q('#lok').onclick = async () => { if (q('#ln').value.trim().length < 2) return toast('Indiquez le nom.', true);
+    if (await save(x, { kind: q('#lk').value, name: q('#ln').value.trim(), parent_id: q('#lp').value || null, aliases: q('#la').value.split(',').map(t => t.trim()).filter(Boolean), lat: f(q('#llat').value), lng: f(q('#llng').value), status: q('#ls').value }, 'Lieu enregistré.')) { m.remove(); vPlaces(); } };
+}
 /* ---------- Reversements aux hôtels ---------- */
 async function vPayouts(){
   $('main').innerHTML = '<h1>Reversements aux hôtels</h1><p class="muted">Chargement…</p>';
@@ -547,6 +622,7 @@ async function vSettings(){
     ${st ? `<div class="card"><h3>Règles de la plateforme</h3>
       <label class="row" style="flex-wrap:nowrap;align-items:flex-start;margin-bottom:12px"><input type="checkbox" class="chk" id="rr" ${D.settings.review_required ? 'checked' : ''} style="margin-top:3px"><span><strong>Validation obligatoire des nouvelles fiches</strong><br><span class="muted sm">Une fiche publiée par un hôtel n'apparaît sur Nuittea.com qu'après validation par l'équipe. Les fiches déjà validées restent en ligne.</span></span></label>
       <label class="row" style="flex-wrap:nowrap;align-items:flex-start"><input type="checkbox" class="chk" id="mr" ${D.settings.mfa_required ? 'checked' : ''} style="margin-top:3px"><span><strong>Validation en deux étapes obligatoire pour l'équipe</strong><br><span class="muted sm">Sans code, un membre de l'équipe n'accède plus à la console. Activez-la d'abord sur votre compte et vérifiez que chaque membre l'a activée.</span></span></label></div>` : ''}
+    ${st ? '<div class="card" id="nyset"><h3>Nuittea.com et moyens de paiement</h3><p class="muted">Chargement…</p></div>' : ''}
     <div class="card"><h3>Mes alertes par e-mail</h3><p class="muted" style="margin-top:0">Vous ne recevez que les alertes correspondant à vos accès.</p>
       <label class="row" style="margin-bottom:8px"><input type="checkbox" class="chk" id="ai" ${me.alert_instant ? 'checked' : ''}> Alertes immédiates (demande urgente, signalement, fiche à vérifier, paiement en échec)</label>
       <label class="row"><input type="checkbox" class="chk" id="aw" ${me.alert_weekly ? 'checked' : ''}> Point hebdomadaire (lundi 7 h)</label>
@@ -559,6 +635,15 @@ async function vSettings(){
       toast('Validation en deux étapes activée.'); await sb.auth.refreshSession(); reload(); };
   };
   if ($('mfx')) $('mfx').onclick = async () => { if (D.settings.mfa_required) return toast('Désactivez d\'abord l\'obligation pour l\'équipe.', true); for (const x of tot) await sb.auth.mfa.unenroll({ factorId: x.id }); toast('Validation en deux étapes désactivée.'); reload(); };
+  if ($('nyset')) { const B = await rpc('admin_billing_data', {}); if (B && $('nyset')) { const S2 = B.settings || {};
+    $('nyset').innerHTML = `<h3>Nuittea.com et moyens de paiement</h3>
+      <label class="f">Instructions de paiement des commissions (affichées aux hôtels)</label><textarea id="nyi" rows="3" placeholder="ex. Wave au 07 00 00 00 00 au nom de Nuittea">${esc(S2.naya_payment_instructions || '')}</textarea>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><div><label class="f">Délai de paiement des commissions (jours après l'arrivée)</label><input id="nyd" inputmode="numeric" value="${esc(S2.naya_payment_delay_days || '7')}"></div><div></div></div>
+      <div class="row" style="justify-content:flex-end;margin-top:8px"><button class="p" id="nyk">Enregistrer</button></div>
+      <label class="f" style="margin-top:12px">Moyens de paiement proposés aux hôtels pour leur abonnement</label>
+      <div class="perms">${B.providers.map(x => `<label><input type="checkbox" data-prov="${x.code}" ${x.is_active ? 'checked' : ''}> ${esc(x.name || x.code)}</label>`).join('')}</div>`;
+    $('nyk').onclick = async () => { const a = await rpc('admin_setting_set', { p_key: 'naya_payment_instructions', p_value: $('nyi').value.trim() }); const b = a && await rpc('admin_setting_set', { p_key: 'naya_payment_delay_days', p_value: String(Math.max(0, Math.min(60, parseInt($('nyd').value, 10) || 7))) }); if (b) toast('Réglages Nuittea.com enregistrés.'); };
+    document.querySelectorAll('[data-prov]').forEach(c => c.onchange = async () => { if (!(await rpc('admin_provider_set', { p_code: c.dataset.prov, p_active: c.checked }, c.checked ? 'Moyen de paiement activé.' : 'Moyen de paiement désactivé.'))) c.checked = !c.checked; }); } }
   const savePrefs = async () => { if (await rpc('my_alert_prefs', { p_instant: $('ai').checked, p_weekly: $('aw').checked }, 'Préférences enregistrées.')) {} };
   $('ai').onchange = savePrefs; $('aw').onchange = savePrefs;
   $('atest').onclick = async () => { $('atest').disabled = true; const { data: { session } } = await sb.auth.getSession();

@@ -1086,6 +1086,7 @@ html[data-theme="foret"] body.navmini nav.side #navCollapse:not(#_a){width:40px!
         <button data-view="abonnement" class="keep">Mon abonnement</button>
         <button data-view="tarifs">Tarifs</button>
         <button data-view="admin" id="navAdmin" class="hidden keep">Administration</button>
+        <button type="button" id="navHelp">Assistance Nuittea</button>
         <button type="button" id="navPwd">Changer mon mot de passe</button>
         <button data-logout class="keep">Se déconnecter</button>
       </div>
@@ -1118,6 +1119,7 @@ html[data-theme="foret"] body.navmini nav.side #navCollapse:not(#_a){width:40px!
   <main id="mainContent" tabindex="-1">
     <div id="subnav" class="subnav hidden" aria-label="Sous-menu"></div>
     <div id="banner"></div>
+    <div id="platBanner"></div>
     <section id="v-dashboard" class="hidden"></section>
     <section id="v-reservations" class="hidden"></section>
     <section id="v-planning" class="hidden"></section>
@@ -1323,7 +1325,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.11.10-24';
+const APP_VERSION = '2026.11.10-25';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -1600,6 +1602,45 @@ function rememberCredential(id, password, name){ try { if (window.PasswordCreden
 $('sUser').addEventListener('input', () => { const v = $('sUser').value.trim(); const m = /^([a-z0-9]{2,20})@([a-z0-9]{3,20})$/i.exec(v); if (m) { $('sUser').value = m[1].toLowerCase(); $('sCode').value = m[2].toLowerCase(); } });
 $('sUser').addEventListener('change', () => $('sUser').dispatchEvent(new Event('input')));
 $('navPwd').onclick = () => { const md = (S.session && S.session.user.user_metadata) || {}; const nb = $('navMore'); if (nb) nb.open = false; if (md.staff) { forcePinChange(); delete $('modal').dataset.locked; } else openNewPassword(false); };
+
+/* ---------- Annonces Nuittea, mode démonstration et assistance ---------- */
+const PB_LV = { info: ['#E4F0F9', '#1F7AB8'], important: ['#FCF1DE', '#9A6408'], maintenance: ['#FBE6E3', '#C0392B'] };
+async function platformExtras(){
+  const box = $('platBanner'); if (!box || !S.org) return;
+  let seen = []; try { seen = JSON.parse(localStorage.getItem('hh_ann_seen') || '[]'); } catch (_) {}
+  const [{ data: A }, { data: O }] = await Promise.all([sb.rpc('my_announcements', { p_org: S.org }), sb.from('organizations').select('is_test,name').eq('id', S.org).maybeSingle()]);
+  const demo = O && O.is_test && O.name === 'Hôtel Démo Nuittea';
+  box.innerHTML = (demo ? `<div style="margin:0 0 12px;padding:10px 14px;border-radius:10px;background:#FCF1DE;color:#7A4E05;font-weight:600">Compte de démonstration : les données sont fictives et peuvent être réinitialisées à tout moment. Aucun paiement réel n'est possible.</div>` : '') +
+    (A || []).filter(a => !seen.includes(a.id)).map(a => { const c = PB_LV[a.level] || PB_LV.info; return `<div style="margin:0 0 12px;padding:10px 14px;border-radius:10px;background:${c[0]};border-left:4px solid ${c[1]};display:flex;gap:10px;align-items:flex-start"><div style="flex:1"><strong style="color:${c[1]}">${esc(a.title)}</strong><div style="white-space:pre-wrap;font-size:14px;margin-top:2px">${esc(a.body)}</div></div><button type="button" class="small ghost" data-annx="${a.id}" aria-label="Masquer l’annonce" style="border:0">✕</button></div>`; }).join('');
+  box.querySelectorAll('[data-annx]').forEach(b => b.onclick = () => { seen.push(b.dataset.annx); try { localStorage.setItem('hh_ann_seen', JSON.stringify(seen.slice(-50))); } catch (_) {} b.parentElement.remove(); });
+}
+const TK_ST = { ouvert: 'Envoyée', en_cours: 'En cours', attente_client: 'Réponse attendue de votre part', resolu: 'Résolue', ferme: 'Fermée' };
+const TK_CAT = { question: 'Question', probleme: 'Problème technique', facturation: 'Abonnement et facturation', nuittea: 'Nuittea.com', suggestion: 'Suggestion' };
+async function openSupport(){
+  const { data: T } = await sb.rpc('my_tickets', { p_org: S.org });
+  modal(`<div class="row between" style="margin-bottom:6px"><h2 style="font-size:22px">Assistance Nuittea</h2><button class="small ghost" data-close style="border:0;font-size:18px" aria-label="Fermer">✕</button></div>
+    <p class="muted" style="margin:0 0 12px;font-size:13px">Écrivez-nous : l’équipe Nuittea vous répond ici. Vous pouvez aussi nous écrire à contactnuittea@gmail.com.</p>
+    <form id="tkF"><label>Sujet<select id="tkC">${Object.entries(TK_CAT).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select></label>
+      <label>Objet<input id="tkS" maxlength="160" required placeholder="ex. Je n’arrive pas à clôturer la caisse"></label>
+      <label>Message<textarea id="tkB" rows="4" required placeholder="Décrivez la situation"></textarea></label><button class="primary" style="width:100%">Envoyer</button></form>
+    <h3 style="font-size:17px;margin:18px 0 8px">Mes demandes</h3>${(T || []).length ? T.map(t => `<button type="button" class="ghost" data-tk="${t.id}" style="display:flex;width:100%;justify-content:space-between;gap:8px;margin-bottom:6px;text-align:left"><span>#${t.number} · ${esc(t.subject)}</span><span class="muted" style="font-size:12px;white-space:nowrap">${esc(TK_ST[t.status] || t.status)}</span></button>`).join('') : '<p class="muted">Aucune demande.</p>'}`);
+  $('modalBody').style.maxWidth = '560px';
+  $('tkF').onsubmit = async e => { e.preventDefault(); const { error } = await sb.rpc('support_ticket_create', { p_org: S.org, p_est: S.est || null, p_subject: $('tkS').value, p_category: $('tkC').value, p_body: $('tkB').value });
+    if (error) return toast(errMsg(error), true); toast('Votre demande est envoyée à l’équipe Nuittea.'); openSupport(); };
+  document.querySelectorAll('[data-tk]').forEach(b => b.onclick = () => openMyTicket((T || []).find(t => t.id === b.dataset.tk)));
+}
+function openMyTicket(t){
+  modal(`<div class="row between" style="margin-bottom:6px"><h2 style="font-size:20px">#${t.number} · ${esc(t.subject)}</h2><button class="small ghost" data-close style="border:0;font-size:18px" aria-label="Fermer">✕</button></div>
+    <p class="muted" style="margin:0 0 10px;font-size:13px">${esc(TK_CAT[t.category] || '')} · ${esc(TK_ST[t.status] || t.status)}</p>
+    <div style="max-height:50vh;overflow-y:auto;display:flex;flex-direction:column;gap:8px;margin-bottom:10px">${t.messages.map(m => `<div style="align-self:${m.staff ? 'flex-start' : 'flex-end'};background:${m.staff ? 'var(--green-l)' : 'var(--line)'};padding:8px 12px;border-radius:12px;max-width:88%;white-space:pre-wrap">${esc(m.body)}<div class="muted" style="font-size:11px;margin-top:4px">${m.staff ? 'Équipe Nuittea' : 'Vous'} · ${new Date(m.at).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })}</div></div>`).join('')}</div>
+    <form id="tkR" class="row" style="gap:8px;flex-wrap:nowrap"><input id="tkM" placeholder="Votre message" style="flex:1;min-width:0" required><button class="primary">Envoyer</button></form>
+    <button type="button" class="small ghost" id="tkBack" style="margin-top:10px">← Mes demandes</button>`);
+  $('modalBody').style.maxWidth = '560px';
+  $('tkBack').onclick = () => openSupport();
+  $('tkR').onsubmit = async e => { e.preventDefault(); const { error } = await sb.rpc('support_message_add', { p_ticket: t.id, p_body: $('tkM').value }); if (error) return toast(errMsg(error), true);
+    const { data: T } = await sb.rpc('my_tickets', { p_org: S.org }); openMyTicket((T || []).find(x => x.id === t.id) || t); };
+}
+$('navHelp').onclick = () => { const nb = $('navMore'); if (nb) nb.open = false; openSupport(); };
 let _am = 'mail'; try { _am = localStorage.getItem('hh_auth_mode') === 'staff' ? 'staff' : 'mail'; } catch (_) {} setAuthMode(_am);
 
 /* Choisir un nouveau mot de passe : obligatoire après un lien « mot de passe oublié », possible à tout moment depuis Réglages */
@@ -1769,6 +1810,7 @@ async function boot(){
   show('app');
   await loadCommon();
   go(S.offlineBoot && !navigator.onLine && allowed('resto') ? 'resto' : S.view);
+  platformExtras();
   setTimeout(() => preloadViews(), 6000);
   if (S.member.must_change_password) forcePinChange();
 }

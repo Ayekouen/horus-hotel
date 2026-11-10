@@ -12,32 +12,43 @@
 :root{--navy:#0F2A3D;--blue:#1F7AB8;--ink:#13212C;--mute:#5E6E7A;--line:#E3E8EC;--bg:#F5F7F9;--card:#fff;--green:#1E8E5A;--red:#C0392B;--amber:#C27C0E}
 *{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,sans-serif;color:var(--ink);background:var(--bg);font-size:14px}
 button{font:inherit;cursor:pointer;border-radius:8px;border:1px solid var(--line);background:#fff;padding:7px 12px;font-weight:600;color:var(--ink)}
-button.p{background:var(--blue);border-color:var(--blue);color:#fff}button.d{color:var(--red);border-color:#f0c9c4}button:disabled{opacity:.5;cursor:default}
-input,select,textarea{font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:8px;width:100%;background:#fff}
+button.p{background:var(--blue);border-color:var(--blue);color:#fff}button.d{color:var(--red);border-color:#f0c9c4}button.s{padding:4px 9px;font-size:12px}button:disabled{opacity:.5;cursor:default}
+input,select,textarea{font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:8px;width:100%;background:#fff;color:var(--ink)}
+label.f{display:block;font-size:12px;color:var(--mute);margin:8px 0 3px}
 a{color:var(--blue)}
 #app{display:flex;min-height:100vh}
-nav{width:220px;background:var(--navy);color:#cfe0ec;padding:18px 12px;flex-shrink:0;position:sticky;top:0;height:100vh}
-nav .brand{color:#fff;font-weight:800;font-size:18px;padding:0 8px 18px}nav .brand small{display:block;font-weight:500;font-size:12px;color:#8fb0c6}
-nav button{display:block;width:100%;text-align:left;background:none;border:0;color:#cfe0ec;padding:9px 10px;margin:2px 0}
-nav button.on{background:rgba(255,255,255,.1);color:#fff}nav .me{position:absolute;bottom:16px;left:12px;right:12px;font-size:12px;color:#8fb0c6}
-main{flex:1;padding:24px;min-width:0;max-width:1200px}
+nav{width:230px;background:var(--navy);color:#cfe0ec;padding:18px 12px 90px;flex-shrink:0;position:sticky;top:0;height:100vh;overflow:auto}
+nav .brand{color:#fff;font-weight:800;font-size:18px;padding:0 8px 14px}nav .brand small{display:block;font-weight:500;font-size:12px;color:#8fb0c6}
+nav .grp{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#7f9fb5;padding:12px 10px 4px}
+nav button{display:flex;justify-content:space-between;width:100%;text-align:left;background:none;border:0;color:#cfe0ec;padding:8px 10px;margin:1px 0}
+nav button.on{background:rgba(255,255,255,.12);color:#fff}nav .b{background:#C0392B;color:#fff;border-radius:99px;font-size:11px;padding:1px 7px}
+nav .me{position:fixed;bottom:0;left:0;width:230px;padding:12px 20px;font-size:12px;color:#8fb0c6;background:var(--navy);border-top:1px solid rgba(255,255,255,.08)}
+main{flex:1;padding:24px;min-width:0;max-width:1260px}
 h1{font-size:22px;margin:0 0 16px}h3{margin:0 0 8px;font-size:16px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:14px}
-.kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:16px}
-.kpi .v{font-size:24px;font-weight:800}.kpi .l{color:var(--mute);font-size:12px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(165px,1fr));gap:12px;margin-bottom:16px}
+.kpi .v{font-size:22px;font-weight:800}.kpi .l{color:var(--mute);font-size:12px}
 .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.between{justify-content:space-between}
-.muted{color:var(--mute)}.pill{display:inline-block;padding:2px 8px;border-radius:99px;font-size:12px;font-weight:600}
-.pill.g{background:#E3F4EB;color:var(--green)}.pill.r{background:#FBE6E3;color:var(--red)}.pill.a{background:#FCF1DE;color:var(--amber)}.pill.n{background:#EEF2F5;color:var(--mute)}
-table{width:100%;border-collapse:collapse}td,th{padding:8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}th{font-size:12px;color:var(--mute);font-weight:600}
+.muted{color:var(--mute)}.sm{font-size:12px}.pill{display:inline-block;padding:2px 8px;border-radius:99px;font-size:12px;font-weight:600;white-space:nowrap}
+.pill.g{background:#E3F4EB;color:var(--green)}.pill.r{background:#FBE6E3;color:var(--red)}.pill.a{background:#FCF1DE;color:var(--amber)}.pill.n{background:#EEF2F5;color:var(--mute)}.pill.b{background:#E4F0F9;color:var(--blue)}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px}.dot.g{background:var(--green)}.dot.a{background:var(--amber)}.dot.r{background:var(--red)}
+.tw{overflow-x:auto}table{width:100%;border-collapse:collapse}td,th{padding:8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}th{font-size:12px;color:var(--mute);font-weight:600;white-space:nowrap}
+.num{text-align:right;white-space:nowrap}
 .rooms{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-top:10px}
 .room{border:1px solid var(--line);border-radius:10px;padding:10px}.room.h{background:#FBF3F2}
 .room img{width:100%;height:90px;object-fit:cover;border-radius:6px;background:#eef}
+.kan{display:grid;grid-template-columns:repeat(6,minmax(190px,1fr));gap:10px;overflow-x:auto}
+.kan .col{background:#EEF2F5;border-radius:10px;padding:8px;min-height:120px}.kan .col h4{margin:2px 4px 8px;font-size:13px}
+.kan .it{background:#fff;border:1px solid var(--line);border-radius:8px;padding:8px;margin-bottom:6px;cursor:pointer}
+.alert{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--line)}.alert:last-child{border:0}
+.msg{padding:8px 10px;border-radius:10px;margin:6px 0;max-width:85%;white-space:pre-wrap}.msg.h{background:#EEF2F5}.msg.s{background:#E4F0F9;margin-left:auto}
 #login{max-width:380px;margin:12vh auto;padding:0 16px}
-#toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;padding:10px 16px;border-radius:8px;display:none;z-index:9}
-.modal{position:fixed;inset:0;background:rgba(15,42,61,.45);display:flex;align-items:center;justify-content:center;padding:16px;z-index:8}
-.modal .card{width:100%;max-width:440px}
-.perms{display:grid;grid-template-columns:1fr 1fr;gap:6px}.perms label{display:flex;gap:6px;align-items:center}.perms input{width:auto}
-@media(max-width:760px){#app{flex-direction:column}nav{width:auto;height:auto;position:static;display:flex;flex-wrap:wrap;gap:4px}nav .brand{width:100%;padding-bottom:8px}nav button{width:auto}nav .me{position:static;width:100%}main{padding:16px}}
+#toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;padding:10px 16px;border-radius:8px;display:none;z-index:20;max-width:90vw}
+.modal{position:fixed;inset:0;background:rgba(15,42,61,.45);display:flex;align-items:flex-start;justify-content:center;padding:5vh 16px;z-index:10;overflow:auto}
+.modal>.card{width:100%;max-width:480px}.modal>.card.w{max-width:860px}
+.perms{display:grid;grid-template-columns:1fr 1fr;gap:6px}.perms label{display:flex;gap:6px;align-items:center}.perms input,.chk{width:auto}
+.tabs2{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}.tabs2 button.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+@media(max-width:820px){#app{flex-direction:column}nav{width:auto;height:auto;position:static;display:flex;flex-wrap:wrap;gap:2px;padding:12px}nav .brand{width:100%;padding-bottom:6px}nav .grp{display:none}nav button{width:auto}nav .me{position:static;width:100%;padding:8px 10px}main{padding:16px}.kan{grid-template-columns:repeat(6,200px)}}
 </style>
 </head>
 <body>
@@ -45,130 +56,426 @@ table{width:100%;border-collapse:collapse}td,th{padding:8px;border-bottom:1px so
   <div class="card">
     <h1>Console Nuittea</h1>
     <p class="muted">Réservée à l'équipe Nuittea.</p>
-    <form id="lf"><input id="le" type="email" placeholder="Adresse e-mail" required style="margin-bottom:8px"><input id="lp" type="password" placeholder="Mot de passe" required style="margin-bottom:10px"><button class="p" style="width:100%">Se connecter</button></form>
+    <form id="lf"><input id="le" type="email" placeholder="Adresse e-mail" required autocomplete="username" style="margin-bottom:8px"><input id="lp" type="password" placeholder="Mot de passe" required autocomplete="current-password" style="margin-bottom:10px"><button class="p" style="width:100%">Se connecter</button></form>
     <button id="lg" style="width:100%;margin-top:8px">Continuer avec Google</button>
+    <div id="mfa" hidden style="margin-top:12px"><label class="f">Code de validation (application d'authentification)</label><input id="mc" inputmode="numeric" maxlength="6"><button class="p" id="mv" style="width:100%;margin-top:8px">Valider</button></div>
     <p id="lerr" class="muted" style="color:var(--red)"></p>
   </div>
 </div>
 <div id="app" hidden><nav id="nav"></nav><main id="main"></main></div>
 <div id="toast"></div>
 <script>
-const sb = supabase.createClient('https://kuuyhtvdnoqyikrcbpot.supabase.co', 'sb_publishable_0AT6IoJyfnTlANz0Lf-erg_Sj85F1yT');
+const SB_URL = 'https://kuuyhtvdnoqyikrcbpot.supabase.co';
+const sb = supabase.createClient(SB_URL, 'sb_publishable_0AT6IoJyfnTlANz0Lf-erg_Sj85F1yT');
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const money = n => n == null ? '—' : Math.round(Number(n)).toLocaleString('fr-FR').replace(/\s/g, ' ') + ' F';
-const dfr = d => d ? new Date(d).toLocaleDateString('fr-FR') : '';
-const dtfr = d => d ? new Date(d).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' }) : '';
-const toast = (m, bad) => { const t = $('toast'); t.textContent = m; t.style.background = bad ? 'var(--red)' : 'var(--navy)'; t.style.display = 'block'; clearTimeout(t._t); t._t = setTimeout(() => t.style.display = 'none', 3500); };
+const dfr = d => d ? new Date(d).toLocaleDateString('fr-FR') : '—';
+const dtfr = d => d ? new Date(d).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' }) : '—';
+const days = d => d ? Math.round((new Date(d) - new Date()) / 864e5) : null;
+const ago = d => { if (!d) return 'jamais'; const n = Math.floor((Date.now() - new Date(d)) / 864e5); return n <= 0 ? "aujourd'hui" : n === 1 ? 'hier' : `il y a ${n} j`; };
+const toast = (m, bad) => { const t = $('toast'); t.textContent = m; t.style.background = bad ? 'var(--red)' : 'var(--navy)'; t.style.display = 'block'; clearTimeout(t._t); t._t = setTimeout(() => t.style.display = 'none', 3800); };
 const SITE = 'https://nuittea.pages.dev';
 const ROLES = { direction: 'Direction', commercial: 'Commercial', support: 'Support', finance: 'Finance', lecture: 'Lecture' };
-const PERMS = { dashboard: 'Aperçu', crm: 'CRM', clients: 'Clients', support: 'Support', finance: 'Finances', moderation: 'Modération', moderation_delete: 'Retrait de publication', demo: 'Comptes de démonstration', impersonate: 'Connexion en tant que', team: 'Équipe', settings: 'Réglages', journal: 'Journal' };
-const ACTIONS = { chambre_masquee: 'Chambre masquée', chambre_reaffichee: 'Chambre réaffichée', etablissement_suspendu: 'Établissement suspendu', etablissement_retabli: 'Établissement rétabli', publication_retiree: 'Publication retirée', equipe_modifiee: 'Équipe modifiée' };
+const PERMS = { dashboard: 'Aperçu', crm: 'CRM', clients: 'Clients', support: 'Support', finance: 'Finances', moderation: 'Modération', moderation_delete: 'Retrait de publication', demo: 'Comptes de démonstration', impersonate: 'Vue client', team: 'Équipe', settings: 'Réglages', journal: 'Journal' };
+const BASE = { direction: Object.keys(PERMS), commercial: ['dashboard','crm','clients','demo'], support: ['dashboard','clients','support','moderation','demo'], finance: ['dashboard','clients','finance','journal'], lecture: ['dashboard','clients'] };
+const ACTIONS = { chambre_masquee: 'Chambre masquée', chambre_reaffichee: 'Chambre réaffichée', etablissement_suspendu: 'Établissement suspendu', etablissement_retabli: 'Établissement rétabli', publication_retiree: 'Publication retirée', equipe_modifiee: 'Équipe modifiée', fiche_valide: 'Fiche validée', fiche_refuse: 'Fiche refusée', fiche_a_verifier: 'Fiche remise à vérifier', avis_publie: 'Avis publié', avis_masque: 'Avis masqué', signalement_traite: 'Signalement traité', signalement_rejete: 'Signalement rejeté', ticket_modifie: 'Demande d\'assistance modifiée', annonce_enregistree: 'Annonce enregistrée', commission_encaissee: 'Commission encaissée', vue_client: 'Vue client consultée', reglage_modifie: 'Réglage modifié', demo_reinitialisee: 'Démonstration réinitialisée', demo_connexion: 'Connexion démonstration' };
 const STATUS = { pending: 'En attente', confirmed: 'Confirmée', checked_in: 'En séjour', checked_out: 'Partie', cancelled: 'Annulée', no_show: 'Absente' };
-let D = null, V = 'apercu', Q = '';
+const SUB = { active: ['Actif', 'g'], trial: ['Essai', 'b'], past_due: ['Impayé', 'r'], suspended: ['Suspendu', 'r'], cancelled: ['Résilié', 'n'], expired: ['Expiré', 'r'] };
+const STAGES = { a_contacter: 'À contacter', contacte: 'Contacté', demo: 'Démo faite', essai: 'En essai', abonne: 'Abonné', perdu: 'Perdu' };
+const T_STATUS = { ouvert: ['Ouverte', 'r'], en_cours: ['En cours', 'a'], attente_client: ['Attente client', 'b'], resolu: ['Résolue', 'g'], ferme: ['Fermée', 'n'] };
+const T_PRIO = { basse: 'Basse', normale: 'Normale', haute: 'Haute', urgente: 'Urgente' };
+const T_CAT = { question: 'Question', probleme: 'Problème', facturation: 'Facturation', nuittea: 'Nuittea.com', suggestion: 'Suggestion' };
+const REASONS = { photos: 'Photos trompeuses', prix: 'Prix incorrect', injoignable: 'Hôtel injoignable', adresse: 'Adresse erronée', comportement: 'Comportement', autre: 'Autre' };
+const NOTE_K = { note: 'Note', appel: 'Appel', whatsapp: 'WhatsApp', email: 'E-mail', visite: 'Visite', demo: 'Démonstration' };
+const DEMO_R = { owner: 'Propriétaire', manager: 'Gérant', receptionist: 'Réceptionniste', housekeeping: 'Agent de ménage', accountant: 'Comptable', staff: 'Employé' };
+let D = null, V = 'apercu', Q = '', SUBV = {};
 const can = p => D && D.me.perms.includes(p);
-const wa = n => n ? 'https://wa.me/' + String(n).replace(/[^0-9]/g, '') : null;
+const wa = (n, t) => n ? 'https://wa.me/' + String(n).replace(/[^0-9]/g, '') + (t ? '?text=' + encodeURIComponent(t) : '') : null;
+const staffName = id => { const s = (D.staff || []).find(x => x.user_id === id); return s ? (s.name || s.email) : ''; };
+const health = o => { const d = o.last_login ? (Date.now() - new Date(o.last_login)) / 864e5 : 999; if (d <= 3 && o.resas_30 >= 3) return ['g', 'Actif']; if (d <= 10) return ['a', 'À surveiller']; return ['r', 'Inactif']; };
+const rpc = async (fn, args, ok) => { const { data, error } = await sb.rpc(fn, args); if (error) { toast(error.message, true); return null; } if (ok) toast(ok); return data ?? true; };
 
 async function boot(){
   const { data: { session } } = await sb.auth.getSession();
-  if (!session) { $('login').hidden = false; $('app').hidden = true; return; }
+  if (!session) return showLogin();
   const { data, error } = await sb.rpc('admin_console_data');
-  if (error) { $('login').hidden = false; $('app').hidden = true; $('lerr').innerHTML = 'Ce compte (' + esc(session.user.email) + ') n\'a pas accès à la console. <a href="#" id="lo">Changer de compte</a>'; $('lo').onclick = async e => { e.preventDefault(); await sb.auth.signOut(); location.reload(); }; return; }
+  if (error) {
+    const { data: aal } = await sb.auth.mfa.getAuthenticatorAssuranceLevel();
+    if (aal && aal.nextLevel === 'aal2' && aal.currentLevel === 'aal1') return showLogin(true);
+    showLogin(); $('lerr').innerHTML = 'Ce compte (' + esc(session.user.email) + ') n\'a pas accès à la console. <a href="#" id="lo">Changer de compte</a>';
+    $('lo').onclick = async e => { e.preventDefault(); await sb.auth.signOut(); location.reload(); }; return;
+  }
   D = data; D.email = session.user.email; $('login').hidden = true; $('app').hidden = false; render();
 }
+function showLogin(mfa){ $('login').hidden = false; $('app').hidden = true; $('mfa').hidden = !mfa; $('lf').hidden = !!mfa; $('lg').hidden = !!mfa; }
 async function reload(){ const { data, error } = await sb.rpc('admin_console_data'); if (error) return toast(error.message, true); const e = D.email; D = data; D.email = e; render(); }
 
+function alerts(){
+  const A = [], o = D.orgs || [];
+  D.ests.filter(e => e.listed && e.review === 'a_verifier').forEach(e => A.push(['a', `Fiche à vérifier : ${e.name}`, 'publications']));
+  (D.reports || []).filter(r => r.status === 'nouveau').forEach(r => A.push(['r', `Signalement : ${r.est} — ${REASONS[r.reason]}`, 'signalements']));
+  (D.tickets || []).filter(t => t.status === 'ouvert' && ['haute', 'urgente'].includes(t.priority)).forEach(t => A.push(['r', `Demande ${T_PRIO[t.priority].toLowerCase()} : ${t.org} — ${t.subject}`, 'support']));
+  o.filter(x => !x.is_test && x.status === 'trial' && days(x.end) !== null && days(x.end) <= 2).forEach(x => A.push(['a', `Essai qui se termine ${days(x.end) <= 0 ? 'aujourd\'hui' : 'dans ' + days(x.end) + ' j'} : ${x.name}`, 'revenus']));
+  o.filter(x => !x.is_test && x.status === 'active' && days(x.end) !== null && days(x.end) <= 7).forEach(x => A.push(['a', `Abonnement à échéance le ${dfr(x.end)} : ${x.name}`, 'revenus']));
+  o.filter(x => !x.is_test && ['past_due', 'expired', 'suspended'].includes(x.status)).forEach(x => A.push(['r', `Abonnement ${SUB[x.status][0].toLowerCase()} : ${x.name}`, 'revenus']));
+  o.filter(x => !x.is_test && x.commission && x.commission.overdue > 0).forEach(x => A.push(['a', `Commission en retard : ${x.name} (${money(x.commission.overdue)})`, 'commissions']));
+  o.filter(x => !x.is_test && ['active', 'trial'].includes(x.status) && health(x)[0] === 'r').forEach(x => A.push(['r', `Client inactif (dernière connexion ${ago(x.last_login)}) : ${x.name}`, 'clients']));
+  D.ests.filter(e => e.cancel_rate >= 40).forEach(e => A.push(['a', `Annulations élevées sur Nuittea (${e.cancel_rate} %) : ${e.name}`, 'publications']));
+  (D.tasks || []).filter(t => !t.done && t.assignee === D.me.id && t.due && days(t.due) <= 0).forEach(t => A.push(['b', `Tâche du jour : ${t.title}`, 'taches']));
+  return A;
+}
+
 function render(){
-  const tabs = [['apercu', 'Aperçu', 'dashboard'], ['publications', 'Publications', 'dashboard'], ['equipe', 'Équipe', 'team'], ['journal', 'Journal', 'journal']].filter(t => can(t[2]));
-  if (!tabs.find(t => t[0] === V)) V = tabs[0][0];
-  $('nav').innerHTML = `<div class="brand">Nuittea<small>Console d'administration</small></div>` + tabs.map(t => `<button data-v="${t[0]}" class="${V === t[0] ? 'on' : ''}">${t[1]}</button>`).join('') +
-    `<div class="me">${esc(D.email)}<br>${esc(ROLES[D.me.role] || '')} · <a href="#" id="out" style="color:#cfe0ec">Déconnexion</a></div>`;
-  document.querySelectorAll('[data-v]').forEach(b => b.onclick = () => { V = b.dataset.v; render(); });
+  const nb = { publications: D.stats.to_review, signalements: D.stats.reports, support: (D.tickets || []).filter(t => t.status === 'ouvert').length, taches: (D.tasks || []).filter(t => !t.done && t.assignee === D.me.id && t.due && days(t.due) <= 0).length };
+  const G = [
+    ['Pilotage', [['apercu', 'Aperçu', 'dashboard'], ['revenus', 'Abonnements', 'clients'], ['clients', 'Clients', 'clients'], ['commissions', 'Commissions', 'finance']]],
+    ['Nuittea.com', [['publications', 'Publications', 'dashboard'], ['avis', 'Avis clients', 'moderation'], ['signalements', 'Signalements', 'moderation']]],
+    ['Relation client', [['crm', 'Prospects', 'crm'], ['taches', 'Tâches', 'dashboard'], ['support', 'Assistance', 'support'], ['annonces', 'Annonces', 'support'], ['demo', 'Démonstration', 'demo']]],
+    ['Administration', [['equipe', 'Équipe', 'team'], ['journal', 'Journal', 'journal'], ['reglages', 'Réglages', 'dashboard']]]];
+  const all = G.flatMap(g => g[1]).filter(t => can(t[2]));
+  if (!all.find(t => t[0] === V)) V = all[0][0];
+  $('nav').innerHTML = `<div class="brand">Nuittea<small>Console d'administration</small></div>` + G.map(([g, ts]) => { const v = ts.filter(t => can(t[2])); return v.length ? `<div class="grp">${g}</div>` + v.map(t => `<button data-v="${t[0]}" class="${V === t[0] ? 'on' : ''}"><span>${t[1]}</span>${nb[t[0]] ? `<span class="b">${nb[t[0]]}</span>` : ''}</button>`).join('') : ''; }).join('') +
+    `<div class="me">${esc(D.email)}<br>${esc(ROLES[D.me.role] || '')} · <a href="#" id="rf" style="color:#cfe0ec">Actualiser</a> · <a href="#" id="out" style="color:#cfe0ec">Déconnexion</a></div>`;
+  document.querySelectorAll('[data-v]').forEach(b => b.onclick = () => { V = b.dataset.v; Q = ''; render(); window.scrollTo(0, 0); });
   $('out').onclick = async e => { e.preventDefault(); await sb.auth.signOut(); location.reload(); };
-  ({ apercu: vApercu, publications: vPub, equipe: vTeam, journal: vJournal })[V]();
+  $('rf').onclick = e => { e.preventDefault(); reload(); };
+  ({ apercu: vApercu, revenus: vRevenus, clients: vClients, commissions: vCom, publications: vPub, avis: vAvis, signalements: vRep, crm: vCrm, taches: vTasks, support: vSupport, annonces: vAnn, demo: vDemo, equipe: vTeam, journal: vJournal, reglages: vSettings })[V]();
+}
+function bindGo(){ document.querySelectorAll('[data-go]').forEach(b => b.onclick = () => { V = b.dataset.go; render(); }); }
+
+function modal(html, wide){ const m = document.createElement('div'); m.className = 'modal'; m.innerHTML = `<div class="card ${wide ? 'w' : ''}">${html}</div>`; document.body.appendChild(m); m.onclick = e => { if (e.target === m) m.remove(); }; m.querySelectorAll('[data-x]').forEach(b => b.onclick = () => m.remove()); return m; }
+function ask(title, ph, cb, opt){
+  const m = modal(`<h3>${esc(title)}</h3><textarea rows="3" placeholder="${esc(ph)}"></textarea><div class="row" style="justify-content:flex-end;margin-top:10px"><button data-x>Annuler</button><button class="p" data-ok>Confirmer</button></div>`);
+  const t = m.querySelector('textarea'); t.focus();
+  m.querySelector('[data-ok]').onclick = () => { if (!(opt && opt.optional) && t.value.trim().length < 3) return toast('Indiquez un motif.', true); m.remove(); cb(t.value.trim()); };
 }
 
+/* ---------- Aperçu ---------- */
 function vApercu(){
-  const s = D.stats, k = (v, l) => `<div class="card kpi"><div class="v">${v}</div><div class="l">${l}</div></div>`;
-  const alerts = D.ests.filter(e => e.suspended_at || e.rooms.some(r => r.hidden));
-  $('main').innerHTML = `<h1>Aperçu</h1><div class="kpis">${k(s.orgs, 'Organisations clientes')}${k(s.ests, 'Établissements')}${k(s.listed, 'Publiés sur Nuittea')}${k(s.suspended, 'Suspendus')}${k(s.hidden_rooms, 'Chambres masquées')}${k(s.naya_30, 'Réservations Nuittea (30 jours)')}</div>
-    <div class="card"><h3>Points de modération en cours</h3>${alerts.length ? '<table><tr><th>Établissement</th><th>Situation</th></tr>' + alerts.map(e => `<tr><td><strong>${esc(e.name)}</strong><br><span class="muted">${esc(e.city || '')}</span></td><td>${e.suspended_at ? `<span class="pill r">Suspendu</span> ${esc(e.suspended_reason)}` : ''} ${e.rooms.filter(r => r.hidden).map(r => `<div><span class="pill a">Ch. ${esc(r.number)} masquée</span> ${esc(r.reason)}</div>`).join('')}</td></tr>`).join('') + '</table>' : '<p class="muted">Aucun.</p>'}</div>`;
+  const s = D.stats, k = (v, l, go) => `<div class="card kpi" ${go ? `data-go="${go}" style="cursor:pointer"` : ''}><div class="v">${v}</div><div class="l">${l}</div></div>`;
+  const A = alerts();
+  $('main').innerHTML = `<h1>Aperçu</h1><div class="kpis">
+    ${can('clients') ? k(money(s.mrr), 'Revenu mensuel récurrent', 'revenus') + k(s.active, 'Abonnés actifs', 'revenus') + k(s.trials, 'Essais en cours', 'revenus') + k(money(s.paid_30), 'Encaissé sur 30 jours', 'revenus') : ''}
+    ${k(s.orgs, 'Organisations clientes', can('clients') ? 'clients' : '')}${k(s.listed, 'Publiés sur Nuittea', 'publications')}${k(s.to_review, 'Fiches à vérifier', 'publications')}${k(s.naya_30, 'Réservations Nuittea (30 j)', 'publications')}
+    ${k(s.reports, 'Signalements nouveaux', can('moderation') ? 'signalements' : '')}${k(s.tickets, 'Demandes d\'assistance ouvertes', can('support') ? 'support' : '')}</div>
+    <div class="card"><h3>À traiter (${A.length})</h3>${A.length ? A.map(a => `<div class="alert"><span class="dot ${a[0] === 'b' ? 'a' : a[0]}" style="margin-top:4px"></span><div style="flex:1">${esc(a[1])}</div>${can(({ revenus: 'clients', clients: 'clients', commissions: 'finance', signalements: 'moderation', support: 'support' })[a[2]] || 'dashboard') ? `<button class="s" data-go="${a[2]}">Ouvrir</button>` : ''}</div>`).join('') : '<p class="muted">Rien à traiter.</p>'}</div>`;
+  bindGo();
 }
 
+/* ---------- Abonnements ---------- */
+function vRevenus(){
+  const o = (D.orgs || []).filter(x => !x.is_test), f = SUBV.rev || 'tous';
+  const F = { tous: () => true, echeance: x => x.status === 'active' && days(x.end) !== null && days(x.end) <= 7, essais: x => x.status === 'trial', impayes: x => ['past_due', 'expired', 'suspended'].includes(x.status) || x.unpaid > 0, actifs: x => x.status === 'active' };
+  const L = o.filter(F[f]).sort((a, b) => new Date(a.end || 0) - new Date(b.end || 0));
+  const msg = x => x.status === 'trial' ? `Bonjour, votre essai Nuittea Manager se termine le ${dfr(x.end)}. Souhaitez-vous que nous vous aidions à choisir votre formule ?` : `Bonjour, votre abonnement Nuittea Manager (${x.plan || ''}) arrive à échéance le ${dfr(x.end)}. Pensez à le renouveler depuis Réglages → Abonnement. Nous restons disponibles.`;
+  $('main').innerHTML = `<h1>Abonnements et revenus</h1>
+    <div class="kpis"><div class="card kpi"><div class="v">${money(D.stats.mrr)}</div><div class="l">Revenu mensuel récurrent</div></div><div class="card kpi"><div class="v">${money(D.stats.mrr * 12)}</div><div class="l">Projection annuelle</div></div><div class="card kpi"><div class="v">${D.stats.active}</div><div class="l">Abonnés actifs</div></div><div class="card kpi"><div class="v">${D.stats.trials}</div><div class="l">Essais en cours</div></div></div>
+    <div class="tabs2">${Object.entries({ tous: 'Tous', echeance: 'Échéance sous 7 jours', essais: 'Essais', impayes: 'Impayés', actifs: 'Actifs' }).map(([k, v]) => `<button data-f="${k}" class="${f === k ? 'on' : ''}">${v} (${o.filter(F[k]).length})</button>`).join('')}</div>
+    <div class="card tw"><table><tr><th>Client</th><th>Formule</th><th>État</th><th>Échéance</th><th class="num">Montant</th><th>Santé</th><th></th></tr>${L.map(x => { const h = health(x), st = SUB[x.status] || [x.status || '—', 'n'], d = days(x.end); return `<tr><td><strong>${esc(x.name)}</strong><div class="muted sm">${esc(x.owner_email || '')}</div></td><td>${esc(x.plan || '—')}<div class="muted sm">${x.cycle === 'yearly' ? 'Annuel' : x.cycle === 'trial' ? '' : 'Mensuel'}</div></td><td><span class="pill ${st[1]}">${st[0]}</span>${x.unpaid ? ' <span class="pill r">Paiement en échec</span>' : ''}</td><td>${dfr(x.end)}${d !== null ? `<div class="muted sm">${d < 0 ? 'dépassée de ' + (-d) + ' j' : 'dans ' + d + ' j'}</div>` : ''}</td><td class="num">${money(x.price)}</td><td><span class="dot ${h[0]}"></span>${h[1]}</td><td>${x.owner_phone ? `<a href="${wa(x.owner_phone, msg(x))}" target="_blank" rel="noopener"><button class="s">Relancer</button></a>` : `<span class="muted sm">Pas de téléphone</span>`}</td></tr>`; }).join('') || '<tr><td colspan="7" class="muted">Aucun.</td></tr>'}</table></div>`;
+  document.querySelectorAll('[data-f]').forEach(b => b.onclick = () => { SUBV.rev = b.dataset.f; vRevenus(); });
+}
+
+/* ---------- Clients ---------- */
+function vClients(){
+  const L = (D.orgs || []).filter(x => !Q || (x.name + ' ' + (x.owner_email || '')).toLowerCase().includes(Q.toLowerCase()));
+  $('main').innerHTML = `<div class="row between"><h1>Clients</h1><input id="q" placeholder="Rechercher un client" value="${esc(Q)}" style="max-width:280px"></div>
+    <div class="card tw"><table><tr><th>Client</th><th>Formule</th><th>Santé</th><th>Dernière connexion</th><th class="num">Réservations 30 j</th><th class="num">Chambres</th><th></th></tr>${L.map(x => { const h = health(x), st = SUB[x.status] || ['—', 'n']; return `<tr><td><strong>${esc(x.name)}</strong> ${x.is_test ? '<span class="pill a">Test</span>' : ''}<div class="muted sm">${esc(x.owner_email || '')}</div></td><td>${esc(x.plan || '—')} <span class="pill ${st[1]}">${st[0]}</span></td><td><span class="dot ${h[0]}"></span>${h[1]}</td><td>${ago(x.last_login)}</td><td class="num">${x.resas_30}</td><td class="num">${x.rooms}</td><td><button class="s" data-o="${x.id}">Fiche</button></td></tr>`; }).join('')}</table></div>`;
+  searchBox(vClients);
+  document.querySelectorAll('[data-o]').forEach(b => b.onclick = () => openOrg(b.dataset.o));
+}
+function searchBox(fn){ const q = $('q'); if (!q) return; q.oninput = () => { Q = q.value; const p = q.selectionStart; fn(); const n = $('q'); n.focus(); n.setSelectionRange(p, p); }; }
+function noteForm(attr, id){ return `<div class="row" style="margin-top:8px;flex-wrap:nowrap"><select id="nk" style="width:140px">${Object.entries(NOTE_K).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select><input id="nb" placeholder="Ajouter une note, un appel, une visite…"><button class="p" id="na" data-${attr}="${id}">Ajouter</button></div>`; }
+function notesList(L){ return L.length ? L.map(n => `<div style="padding:8px 0;border-bottom:1px solid var(--line)"><span class="pill n">${esc(NOTE_K[n.kind])}</span> <span class="muted sm">${dtfr(n.at)} · ${esc(n.author || '')}</span><div style="white-space:pre-wrap;margin-top:3px">${esc(n.body)}</div></div>`).join('') : '<p class="muted">Aucune note.</p>'; }
+async function addNote(m, field, id, after){
+  const body = m.querySelector('#nb').value.trim(); if (!body) return;
+  const { error } = await sb.from('crm_notes').insert({ [field]: id, kind: m.querySelector('#nk').value, body, author: D.me.id });
+  if (error) return toast(error.message, true); toast('Note ajoutée.'); m.remove(); await reload(); after();
+}
+function openOrg(id){
+  const x = D.orgs.find(o => o.id === id); if (!x) return;
+  const h = health(x), st = SUB[x.status] || ['—', 'n'], c = x.commission || {}, ests = D.ests.filter(e => e.org_id === id);
+  const N = (D.notes || []).filter(n => n.org === id), TK = (D.tasks || []).filter(t => t.org === id), TI = (D.tickets || []).filter(t => t.org_id === id);
+  const m = modal(`<div class="row between"><h3>${esc(x.name)}</h3><button data-x>Fermer</button></div>
+    <div class="kpis" style="margin-top:8px"><div class="card kpi"><div class="v" style="font-size:16px">${esc(x.plan || '—')} <span class="pill ${st[1]}">${st[0]}</span></div><div class="l">Échéance ${dfr(x.end)} · ${money(x.price)}</div></div>
+      <div class="card kpi"><div class="v" style="font-size:16px"><span class="dot ${h[0]}"></span>${h[1]}</div><div class="l">Connexion ${ago(x.last_login)} · ${x.resas_30} résa. / 30 j</div></div>
+      <div class="card kpi"><div class="v" style="font-size:16px">${money(c.balance)}</div><div class="l">Commission due${c.overdue ? ' · ' + money(c.overdue) + ' en retard' : ''}</div></div>
+      <div class="card kpi"><div class="v" style="font-size:16px">${money(x.online && x.online.collected)}</div><div class="l">Encaissé en ligne (${x.online ? x.online.count : 0})</div></div></div>
+    <div class="row" style="margin-bottom:10px">${x.owner_phone ? `<a href="${wa(x.owner_phone)}" target="_blank" rel="noopener"><button>WhatsApp</button></a><a href="tel:${esc(x.owner_phone)}"><button>Appeler</button></a>` : ''}${x.owner_email ? `<a href="mailto:${esc(x.owner_email)}"><button>E-mail</button></a>` : ''}
+      ${can('impersonate') ? `<button id="ov">Vue client</button>` : ''}${can('finance') ? `<button id="op">Encaisser une commission</button>` : ''}<button id="ot">Nouvelle tâche</button></div>
+    <div class="muted sm">${x.ests} établissement(s) · ${x.rooms} chambre(s) · client depuis le ${dfr(x.created_at)}${ests.length ? ' · Nuittea : ' + ests.map(e => esc(e.name) + (e.listed ? ' (publié)' : '')).join(', ') : ''}</div>
+    <h3 style="margin-top:16px">Tâches</h3>${TK.length ? TK.map(t => `<div class="row"><input type="checkbox" class="chk" data-td="${t.id}" ${t.done ? 'checked' : ''}> ${esc(t.title)} <span class="muted sm">${dfr(t.due)} · ${esc(t.assignee_name || '')}</span></div>`).join('') : '<p class="muted">Aucune.</p>'}
+    ${TI.length ? `<h3 style="margin-top:16px">Assistance</h3>` + TI.map(t => `<div>#${t.number} ${esc(t.subject)} <span class="pill ${T_STATUS[t.status][1]}">${T_STATUS[t.status][0]}</span></div>`).join('') : ''}
+    <h3 style="margin-top:16px">Historique des échanges</h3>${noteForm('org', id)}${notesList(N)}`, true);
+  m.querySelector('#na').onclick = () => addNote(m, 'organization_id', id, () => openOrg(id));
+  m.querySelectorAll('[data-td]').forEach(b => b.onchange = async () => { await rpc('crm_task_save', { p_id: b.dataset.td, p_title: null, p_due: (D.tasks.find(t => t.id === b.dataset.td) || {}).due || null, p_assignee: null, p_org: null, p_prospect: null, p_done: b.checked }); reload(); });
+  m.querySelector('#ot').onclick = () => { m.remove(); taskForm({ org: id }); };
+  if (m.querySelector('#op')) m.querySelector('#op').onclick = () => { m.remove(); payForm(x); };
+  if (m.querySelector('#ov')) m.querySelector('#ov').onclick = () => { m.remove(); orgView(x); };
+}
+async function orgView(x){
+  const r = await rpc('admin_org_view', { p_org: x.id }); if (!r) return;
+  modal(`<div class="row between"><h3>Vue client · ${esc(x.name)}</h3><button data-x>Fermer</button></div><p class="muted sm">Lecture seule. Cette consultation est inscrite au journal.</p>
+    <div class="kpis">${(r.establishments || []).map(e => `<div class="card kpi"><div class="v" style="font-size:16px">${esc(e.name)}</div><div class="l">${e.rooms} chambres · ${e.occupied} occupée(s) · ${e.arrivals} arrivée(s) aujourd'hui · caisse ${e.open_cash ? 'ouverte' : 'fermée'}</div></div>`).join('')}
+      <div class="card kpi"><div class="v" style="font-size:16px">${r.month.count} · ${money(r.month.revenue)}</div><div class="l">Réservations et chiffre du mois</div></div></div>
+    <h3>Équipe de l'hôtel</h3><div class="tw"><table><tr><th>Nom</th><th>Rôle</th><th>Dernière connexion</th></tr>${(r.members || []).map(u => `<tr><td>${esc(u.name)} ${u.active ? '' : '<span class="pill n">Désactivé</span>'}</td><td>${esc(u.role)}</td><td>${ago(u.last)}</td></tr>`).join('')}</table></div>
+    <h3 style="margin-top:12px">Dernières réservations</h3><div class="tw"><table><tr><th>Client</th><th>Séjour</th><th>Origine</th><th>Statut</th><th class="num">Total</th></tr>${(r.reservations || []).map(v => `<tr><td>${esc(v.guest)}</td><td>${dfr(v.in)} → ${dfr(v.out)}</td><td>${esc(v.source)}</td><td>${esc(STATUS[v.status] || v.status)}</td><td class="num">${money(v.total)}</td></tr>`).join('')}</table></div>
+    <h3 style="margin-top:12px">Alertes du propriétaire</h3>${(r.alerts || []).map(a => `<div class="sm">${dtfr(a.at)} · ${esc(a.message)}</div>`).join('') || '<p class="muted">Aucune.</p>'}`, true);
+}
+function payForm(x){
+  const c = x.commission || {};
+  const m = modal(`<h3>Encaisser une commission · ${esc(x.name)}</h3><p class="muted sm">Solde dû : ${money(c.balance)}</p>
+    <label class="f">Montant</label><input id="pa" inputmode="numeric" value="${Math.round(c.balance || 0) || ''}"><label class="f">Moyen</label><select id="pm"><option value="mobile_money">Mobile Money</option><option value="virement">Virement</option><option value="especes">Espèces</option><option value="geniuspay">Genius Pay</option></select>
+    <label class="f">Référence</label><input id="pr"><label class="f">Note</label><input id="pn"><div class="row" style="justify-content:flex-end;margin-top:12px"><button data-x>Annuler</button><button class="p" id="pk">Enregistrer</button></div>`);
+  m.querySelector('#pk').onclick = async () => { const a = Number(m.querySelector('#pa').value.replace(/[^0-9]/g, '')); if (await rpc('admin_commission_pay', { p_org: x.id, p_amount: a, p_method: m.querySelector('#pm').value, p_reference: m.querySelector('#pr').value || null, p_note: m.querySelector('#pn').value || null }, 'Encaissement enregistré.')) { m.remove(); reload(); } };
+}
+
+/* ---------- Commissions ---------- */
+function vCom(){
+  const L = (D.orgs || []).filter(x => x.commission && (x.commission.earned > 0 || x.commission.paid > 0 || (x.online && x.online.collected > 0)));
+  const sum = k => L.reduce((a, x) => a + Number(x.commission[k] || 0), 0), on = L.reduce((a, x) => a + Number(x.online ? x.online.collected : 0), 0);
+  $('main').innerHTML = `<h1>Commissions Nuittea</h1><div class="kpis"><div class="card kpi"><div class="v">${money(sum('earned'))}</div><div class="l">Commissions acquises</div></div><div class="card kpi"><div class="v">${money(sum('paid'))}</div><div class="l">Encaissées</div></div><div class="card kpi"><div class="v">${money(sum('balance'))}</div><div class="l">Restant dû</div></div><div class="card kpi"><div class="v">${money(sum('overdue'))}</div><div class="l">En retard</div></div><div class="card kpi"><div class="v">${money(on)}</div><div class="l">Paiements en ligne reçus pour les hôtels</div></div></div>
+    <div class="card tw"><table><tr><th>Client</th><th class="num">Acquis</th><th class="num">Encaissé</th><th class="num">Dû</th><th class="num">En retard</th><th class="num">Reçu en ligne</th><th></th></tr>${L.map(x => `<tr><td><strong>${esc(x.name)}</strong></td><td class="num">${money(x.commission.earned)}</td><td class="num">${money(x.commission.paid)}</td><td class="num">${money(x.commission.balance)}</td><td class="num">${x.commission.overdue ? `<span class="pill r">${money(x.commission.overdue)}</span>` : '—'}</td><td class="num">${money(x.online && x.online.collected)}</td><td class="row" style="flex-wrap:nowrap">${x.owner_phone && x.commission.balance > 0 ? `<a href="${wa(x.owner_phone, `Bonjour, votre solde de commission Nuittea est de ${money(x.commission.balance)}. Merci de procéder au règlement.`)}" target="_blank" rel="noopener"><button class="s">Relancer</button></a>` : ''}<button class="s p" data-pay="${x.id}">Encaisser</button></td></tr>`).join('') || '<tr><td colspan="7" class="muted">Aucune commission.</td></tr>'}</table>
+    <p class="muted sm" style="margin:10px 0 0">« Reçu en ligne » : acomptes et paiements Genius Pay encaissés par Nuittea pour le compte des hôtels, à reverser selon la règle convenue (déblocage au check-in).</p></div>`;
+  document.querySelectorAll('[data-pay]').forEach(b => b.onclick = () => payForm(D.orgs.find(o => o.id === b.dataset.pay)));
+}
+
+/* ---------- Publications ---------- */
+function checks(e){ const P = []; if (!e.photos && !e.cover && !e.rooms.some(r => r.photos)) P.push('Aucune photo'); if (!e.has_description) P.push('Description absente ou trop courte'); if (e.rooms.some(r => r.active && !r.hidden && (!r.rate || r.rate < 3000))) P.push('Prix nul ou suspect'); if (!e.phone && !e.whatsapp) P.push('Aucun contact'); return P; }
 function vPub(){
-  const list = D.ests.filter(e => !Q || (e.name + ' ' + (e.city || '') + ' ' + (e.org || '')).toLowerCase().includes(Q.toLowerCase()));
-  const mod = can('moderation');
-  $('main').innerHTML = `<div class="row between"><h1>Publications Nuittea</h1><input id="q" placeholder="Rechercher un établissement" value="${esc(Q)}" style="max-width:280px"></div>` +
+  const f = SUBV.pub || 'tous', F = { tous: () => true, verifier: e => e.listed && e.review === 'a_verifier', refuse: e => e.review === 'refuse', suspendu: e => !!e.suspended_at, problemes: e => checks(e).length > 0 };
+  const list = D.ests.filter(F[f]).filter(e => !Q || (e.name + ' ' + (e.city || '') + ' ' + (e.org || '')).toLowerCase().includes(Q.toLowerCase()));
+  const mod = can('moderation'), REV = { a_verifier: ['À vérifier', 'a'], valide: ['Validée', 'g'], refuse: ['Refusée', 'r'] };
+  $('main').innerHTML = `<div class="row between"><h1>Publications Nuittea</h1><input id="q" placeholder="Rechercher un établissement" value="${esc(Q)}" style="max-width:280px"></div>
+    <div class="tabs2">${Object.entries({ tous: 'Toutes', verifier: 'À vérifier', problemes: 'Fiches incomplètes', refuse: 'Refusées', suspendu: 'Suspendues' }).map(([k, v]) => `<button data-f="${k}" class="${f === k ? 'on' : ''}">${v} (${D.ests.filter(F[k]).length})</button>`).join('')}</div>` +
     list.map(e => {
-      const st = e.suspended_at ? '<span class="pill r">Suspendu</span>' : e.listed ? '<span class="pill g">Publié</span>' : '<span class="pill n">Non publié</span>';
-      return `<div class="card"><div class="row between"><div><h3>${esc(e.name)} ${st} ${e.is_test ? '<span class="pill a">Test</span>' : ''}</h3><div class="muted">${esc(e.city || '')} · ${esc(e.org)} · commission ${e.commission ?? '—'} %</div>
+      const st = e.suspended_at ? '<span class="pill r">Suspendu</span>' : e.listed ? '<span class="pill g">Publié</span>' : '<span class="pill n">Non publié</span>', rv = REV[e.review] || ['—', 'n'], P = checks(e);
+      return `<div class="card"><div class="row between"><div><h3>${esc(e.name)} ${st} <span class="pill ${rv[1]}">Fiche ${rv[0].toLowerCase()}</span> ${e.is_test ? '<span class="pill a">Test</span>' : ''}</h3><div class="muted">${esc(e.city || '')} · ${esc(e.org)} · commission ${e.commission ?? '—'} %${e.cancel_rate != null ? ' · annulations ' + e.cancel_rate + ' %' : ''}</div>
+          ${P.length ? `<div style="margin-top:4px">${P.map(p => `<span class="pill a">${p}</span>`).join(' ')}</div>` : ''}
+          ${e.review === 'refuse' && e.review_note ? `<div class="sm" style="color:var(--red);margin-top:4px">Motif du refus : ${esc(e.review_note)}</div>` : ''}
           ${e.suspended_at ? `<div style="color:var(--red);margin-top:4px">Suspendu le ${dtfr(e.suspended_at)} : ${esc(e.suspended_reason)}</div>` : ''}</div>
         <div class="row">${e.slug ? `<a href="${SITE}/hotel/${esc(e.slug)}" target="_blank" rel="noopener"><button>Voir la fiche</button></a>` : ''}
           ${wa(e.whatsapp || e.phone) ? `<a href="${wa(e.whatsapp || e.phone)}" target="_blank" rel="noopener"><button>WhatsApp hôtel</button></a>` : ''}
           ${e.phone ? `<a href="tel:${esc(e.phone)}"><button>Appeler</button></a>` : ''}${e.email ? `<a href="mailto:${esc(e.email)}"><button>E-mail</button></a>` : ''}
+          ${mod && e.review !== 'valide' ? `<button class="p" data-ok="${e.id}">Valider la fiche</button>` : ''}${mod && e.review !== 'refuse' ? `<button class="d" data-ko="${e.id}">Refuser</button>` : ''}
           ${mod ? (e.suspended_at ? `<button data-unsus="${e.id}">Rétablir</button>` : `<button class="d" data-sus="${e.id}">Suspendre</button>`) : ''}
           ${can('moderation_delete') && e.listed ? `<button class="d" data-rm="${e.id}">Retirer la publication</button>` : ''}</div></div>
-        <details style="margin-top:10px"><summary>${e.rooms.length} chambre(s)${e.rooms.some(r => r.hidden) ? ' · ' + e.rooms.filter(r => r.hidden).length + ' masquée(s)' : ''}</summary><div class="rooms">${e.rooms.map(r => `<div class="room ${r.hidden ? 'h' : ''}">${r.photo ? `<img src="${esc(r.photo)}" alt="" loading="lazy">` : ''}<div class="row between" style="margin-top:6px"><strong>Ch. ${esc(r.number)}</strong>${r.hidden ? '<span class="pill a">Masquée</span>' : r.active ? '' : '<span class="pill n">Inactive</span>'}</div><div class="muted">${esc(r.type || 'Chambre')} · ${money(r.rate)}</div>${r.hidden ? `<div class="muted" style="font-size:12px">${esc(r.reason)}</div>` : ''}${mod ? `<button style="margin-top:6px;width:100%" data-room="${r.id}" data-h="${r.hidden ? 0 : 1}">${r.hidden ? 'Réafficher' : 'Masquer sur Nuittea'}</button>` : ''}</div>`).join('')}</div></details>
-        <details style="margin-top:6px"><summary>Dernières réservations Nuittea (${e.bookings.length})</summary>${e.bookings.length ? '<table><tr><th>Réf.</th><th>Voyageur</th><th>Séjour</th><th>Statut</th><th></th></tr>' + e.bookings.map(b => `<tr><td>${esc(b.ref)}</td><td>${esc(b.guest)}</td><td>${dfr(b.in)} → ${dfr(b.out)}</td><td>${esc(STATUS[b.status] || b.status)}</td><td>${b.phone ? `<a href="${wa(b.phone)}" target="_blank" rel="noopener">WhatsApp</a> · <a href="tel:${esc(b.phone)}">Appeler</a>` : ''}</td></tr>`).join('') + '</table>' : '<p class="muted">Aucune.</p>'}</details></div>`;
+        <details style="margin-top:10px"><summary>${e.rooms.length} chambre(s)${e.rooms.some(r => r.hidden) ? ' · ' + e.rooms.filter(r => r.hidden).length + ' masquée(s)' : ''}</summary><div class="rooms">${e.rooms.map(r => `<div class="room ${r.hidden ? 'h' : ''}">${r.photo ? `<img src="${esc(r.photo)}" alt="" loading="lazy">` : ''}<div class="row between" style="margin-top:6px"><strong>Ch. ${esc(r.number)}</strong>${r.hidden ? '<span class="pill a">Masquée</span>' : r.active ? '' : '<span class="pill n">Inactive</span>'}</div><div class="muted">${esc(r.type || 'Chambre')} · ${money(r.rate)} · ${r.photos} photo(s)</div>${r.hidden ? `<div class="muted sm">${esc(r.reason)}</div>` : ''}${mod ? `<button style="margin-top:6px;width:100%" data-room="${r.id}" data-h="${r.hidden ? 0 : 1}">${r.hidden ? 'Réafficher' : 'Masquer sur Nuittea'}</button>` : ''}</div>`).join('')}</div></details>
+        <details style="margin-top:6px"><summary>Dernières réservations Nuittea (${e.bookings.length})</summary>${e.bookings.length ? '<div class="tw"><table><tr><th>Réf.</th><th>Voyageur</th><th>Séjour</th><th>Statut</th><th></th></tr>' + e.bookings.map(b => `<tr><td>${esc(b.ref)}</td><td>${esc(b.guest)}</td><td>${dfr(b.in)} → ${dfr(b.out)}</td><td>${esc(STATUS[b.status] || b.status)}</td><td>${b.phone ? `<a href="${wa(b.phone)}" target="_blank" rel="noopener">WhatsApp</a> · <a href="tel:${esc(b.phone)}">Appeler</a>` : ''}</td></tr>`).join('') + '</table></div>' : '<p class="muted">Aucune.</p>'}</details></div>`;
     }).join('') + (list.length ? '' : '<p class="muted">Aucun établissement.</p>');
-  const q = $('q'); q.oninput = () => { Q = q.value; const p = q.selectionStart; vPub(); const n = $('q'); n.focus(); n.setSelectionRange(p, p); };
-  const act = async (fn, args, ok) => { const { error } = await sb.rpc(fn, args); if (error) return toast(error.message, true); toast(ok); reload(); };
+  searchBox(vPub);
+  document.querySelectorAll('[data-f]').forEach(b => b.onclick = () => { SUBV.pub = b.dataset.f; vPub(); });
+  const act = async (fn, args, ok) => { if (await rpc(fn, args, ok)) reload(); };
   document.querySelectorAll('[data-room]').forEach(b => b.onclick = () => b.dataset.h === '1'
     ? ask('Masquer cette chambre sur Nuittea', 'Motif (photos inadaptées, prix erroné…)', r => act('admin_room_hide', { p_room: b.dataset.room, p_hidden: true, p_reason: r }, 'Chambre masquée sur Nuittea.'))
     : act('admin_room_hide', { p_room: b.dataset.room, p_hidden: false, p_reason: null }, 'Chambre réaffichée.'));
+  document.querySelectorAll('[data-ok]').forEach(b => b.onclick = () => act('admin_listing_review', { p_est: b.dataset.ok, p_status: 'valide', p_note: null }, 'Fiche validée.'));
+  document.querySelectorAll('[data-ko]').forEach(b => b.onclick = () => ask('Refuser la fiche', 'Ce que l\'hôtel doit corriger (photos, prix, description…)', r => act('admin_listing_review', { p_est: b.dataset.ko, p_status: 'refuse', p_note: r }, 'Fiche refusée : elle n\'apparaît plus sur Nuittea.')));
   document.querySelectorAll('[data-sus]').forEach(b => b.onclick = () => ask('Suspendre l\'établissement sur Nuittea', 'Motif communiqué à l\'hôtel', r => act('admin_est_suspend', { p_est: b.dataset.sus, p_suspend: true, p_reason: r }, 'Établissement suspendu.')));
   document.querySelectorAll('[data-unsus]').forEach(b => b.onclick = () => act('admin_est_suspend', { p_est: b.dataset.unsus, p_suspend: false, p_reason: null }, 'Établissement rétabli.'));
   document.querySelectorAll('[data-rm]').forEach(b => b.onclick = () => ask('Retirer la publication de Nuittea', 'Motif (l\'hôtel pourra se republier, ses données sont conservées)', r => act('admin_listing_remove', { p_est: b.dataset.rm, p_reason: r }, 'Publication retirée.')));
 }
 
-function ask(title, ph, cb){
-  const m = document.createElement('div'); m.className = 'modal';
-  m.innerHTML = `<div class="card"><h3>${esc(title)}</h3><textarea rows="3" placeholder="${esc(ph)}"></textarea><div class="row" style="justify-content:flex-end;margin-top:10px"><button data-x>Annuler</button><button class="p" data-ok>Confirmer</button></div></div>`;
-  document.body.appendChild(m); const t = m.querySelector('textarea'); t.focus();
-  m.querySelector('[data-x]').onclick = () => m.remove(); m.onclick = e => { if (e.target === m) m.remove(); };
-  m.querySelector('[data-ok]').onclick = () => { if (t.value.trim().length < 3) return toast('Indiquez un motif.', true); m.remove(); cb(t.value.trim()); };
+/* ---------- Avis ---------- */
+function vAvis(){
+  const f = SUBV.av || 'tous', F = { tous: () => true, bas: v => v.rating <= 2, masques: v => !v.published };
+  const L = (D.reviews || []).filter(F[f]);
+  $('main').innerHTML = `<h1>Avis clients</h1><div class="tabs2">${Object.entries({ tous: 'Tous', bas: 'Notes 1 et 2', masques: 'Masqués' }).map(([k, v]) => `<button data-f="${k}" class="${f === k ? 'on' : ''}">${v} (${(D.reviews || []).filter(F[k]).length})</button>`).join('')}</div>` +
+    (L.map(v => `<div class="card"><div class="row between"><div><strong>${'★'.repeat(v.rating)}${'☆'.repeat(5 - v.rating)}</strong> · ${esc(v.est)} · <span class="muted">${esc(v.guest || 'Client')} · ${dfr(v.at)}</span> ${v.published ? '<span class="pill g">Publié</span>' : '<span class="pill r">Masqué</span>'}</div>
+      <div class="row">${v.published ? `<button class="s d" data-hide="${v.id}">Masquer</button>` : `<button class="s" data-show="${v.id}">Republier</button>`}<button class="s" data-rep="${v.id}">Répondre au nom de Nuittea</button></div></div>
+      <p style="margin:8px 0 0;white-space:pre-wrap">${esc(v.comment || '')}</p>${v.reply ? `<p class="sm muted" style="margin:6px 0 0">Réponse de l'hôtel : ${esc(v.reply)}</p>` : ''}${v.nuittea_reply ? `<p class="sm" style="margin:6px 0 0;color:var(--blue)">Réponse Nuittea : ${esc(v.nuittea_reply)}</p>` : ''}${!v.published && v.reason ? `<p class="sm" style="color:var(--red);margin:6px 0 0">Motif : ${esc(v.reason)}</p>` : ''}</div>`).join('') || '<p class="muted">Aucun avis.</p>');
+  document.querySelectorAll('[data-f]').forEach(b => b.onclick = () => { SUBV.av = b.dataset.f; vAvis(); });
+  document.querySelectorAll('[data-hide]').forEach(b => b.onclick = () => ask('Masquer cet avis', 'Motif (propos injurieux, hors sujet…)', async r => { if (await rpc('admin_review_moderate', { p_review: b.dataset.hide, p_published: false, p_reason: r, p_reply: null }, 'Avis masqué.')) reload(); }));
+  document.querySelectorAll('[data-show]').forEach(b => b.onclick = async () => { if (await rpc('admin_review_moderate', { p_review: b.dataset.show, p_published: true, p_reason: null, p_reply: null }, 'Avis republié.')) reload(); });
+  document.querySelectorAll('[data-rep]').forEach(b => b.onclick = () => { const v = D.reviews.find(x => x.id === b.dataset.rep); ask('Réponse de Nuittea', 'Votre réponse', async r => { if (await rpc('admin_review_moderate', { p_review: v.id, p_published: v.published, p_reason: v.published ? null : (v.reason || 'Masqué'), p_reply: r }, 'Réponse enregistrée.')) reload(); }); });
 }
 
+/* ---------- Signalements ---------- */
+function vRep(){
+  const f = SUBV.rp || 'nouveau', L = (D.reports || []).filter(r => f === 'tous' || r.status === f);
+  $('main').innerHTML = `<h1>Signalements des voyageurs</h1><div class="tabs2">${Object.entries({ nouveau: 'Nouveaux', traite: 'Traités', rejete: 'Rejetés', tous: 'Tous' }).map(([k, v]) => `<button data-f="${k}" class="${f === k ? 'on' : ''}">${v} (${(D.reports || []).filter(r => k === 'tous' || r.status === k).length})</button>`).join('')}</div>
+    <div class="card tw"><table><tr><th>Date</th><th>Établissement</th><th>Motif</th><th>Message</th><th>Contact</th><th></th></tr>${L.map(r => `<tr><td style="white-space:nowrap">${dtfr(r.at)}</td><td><strong>${esc(r.est)}</strong></td><td>${esc(REASONS[r.reason])}</td><td style="white-space:pre-wrap">${esc(r.message || '')}</td><td>${esc(r.contact || '—')}</td><td class="row" style="flex-wrap:nowrap">${r.status === 'nouveau' ? `<button class="s p" data-t="${r.id}">Traité</button><button class="s" data-r="${r.id}">Rejeter</button>` : ''}<button class="s" data-e="${r.est_id}">Voir la fiche</button></td></tr>`).join('') || '<tr><td colspan="6" class="muted">Aucun.</td></tr>'}</table>
+    <p class="muted sm" style="margin:10px 0 0">Les voyageurs signalent une fiche depuis le bouton « Signaler cette fiche » sur Nuittea.com.</p></div>`;
+  document.querySelectorAll('[data-f]').forEach(b => b.onclick = () => { SUBV.rp = b.dataset.f; vRep(); });
+  document.querySelectorAll('[data-t]').forEach(b => b.onclick = async () => { if (await rpc('admin_report_handle', { p_id: b.dataset.t, p_status: 'traite' }, 'Signalement traité.')) reload(); });
+  document.querySelectorAll('[data-r]').forEach(b => b.onclick = async () => { if (await rpc('admin_report_handle', { p_id: b.dataset.r, p_status: 'rejete' }, 'Signalement rejeté.')) reload(); });
+  document.querySelectorAll('[data-e]').forEach(b => b.onclick = () => { SUBV.pub = 'tous'; Q = (D.ests.find(e => e.id === b.dataset.e) || {}).name || ''; V = 'publications'; render(); });
+}
+
+/* ---------- CRM ---------- */
+function vCrm(){
+  const P = (D.prospects || []).filter(p => !Q || (p.name + ' ' + (p.city || '') + ' ' + (p.contact_name || '')).toLowerCase().includes(Q.toLowerCase()));
+  $('main').innerHTML = `<div class="row between"><h1>Prospects</h1><div class="row"><input id="q" placeholder="Rechercher" value="${esc(Q)}" style="width:220px"><button class="p" id="np">Nouveau prospect</button></div></div>
+    <div class="kan">${Object.entries(STAGES).map(([k, v]) => { const L = P.filter(p => p.stage === k); return `<div class="col"><h4>${v} (${L.length})</h4>${L.map(p => `<div class="it" data-p="${p.id}"><strong>${esc(p.name)}</strong><div class="muted sm">${esc(p.city || '')}${p.rooms ? ' · ' + p.rooms + ' ch.' : ''}</div>${p.next_action_at ? `<div class="sm" style="color:${days(p.next_action_at) < 0 ? 'var(--red)' : 'var(--mute)'}">Relance ${dfr(p.next_action_at)}</div>` : ''}<div class="muted sm">${esc(staffName(p.owner))}</div></div>`).join('')}</div>`; }).join('')}</div>`;
+  searchBox(vCrm);
+  $('np').onclick = () => prospectForm({});
+  document.querySelectorAll('[data-p]').forEach(b => b.onclick = () => prospectForm(D.prospects.find(p => p.id === b.dataset.p)));
+}
+function prospectForm(p){
+  const N = p.id ? (D.notes || []).filter(n => n.prospect === p.id) : [], TK = p.id ? (D.tasks || []).filter(t => t.prospect === p.id) : [];
+  const fld = (k, l, t) => `<div><label class="f">${l}</label><input data-k="${k}" type="${t || 'text'}" value="${esc(p[k] ?? '')}"></div>`;
+  const m = modal(`<div class="row between"><h3>${p.id ? esc(p.name) : 'Nouveau prospect'}</h3><button data-x>Fermer</button></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 12px">${fld('name', 'Établissement')}${fld('contact_name', 'Contact')}${fld('phone', 'Téléphone')}${fld('email', 'E-mail', 'email')}${fld('city', 'Ville / commune')}${fld('rooms', 'Nombre de chambres', 'number')}
+      <div><label class="f">Étape</label><select data-k="stage">${Object.entries(STAGES).map(([k, v]) => `<option value="${k}" ${(p.stage || 'a_contacter') === k ? 'selected' : ''}>${v}</option>`).join('')}</select></div>
+      <div><label class="f">Responsable</label><select data-k="owner">${(D.staff || []).map(s => `<option value="${s.user_id}" ${(p.owner || D.me.id) === s.user_id ? 'selected' : ''}>${esc(s.name || s.email)}</option>`).join('')}</select></div>
+      ${fld('next_action_at', 'Prochaine relance', 'date')}${fld('source', 'Source (salon, bouche-à-oreille…)')}
+      <div><label class="f">Client lié (si abonné)</label><select data-k="organization_id"><option value="">—</option>${(D.orgs || []).map(o => `<option value="${o.id}" ${p.organization_id === o.id ? 'selected' : ''}>${esc(o.name)}</option>`).join('')}</select></div>${fld('lost_reason', 'Motif si perdu')}</div>
+    <div class="row" style="justify-content:flex-end;margin-top:12px">${p.phone ? `<a href="${wa(p.phone)}" target="_blank" rel="noopener"><button>WhatsApp</button></a>` : ''}${p.id ? '<button id="pt">Nouvelle tâche</button>' : ''}<button class="p" id="ps">Enregistrer</button></div>
+    ${p.id ? `<h3 style="margin-top:14px">Tâches</h3>${TK.map(t => `<div class="sm">${t.done ? '✓' : '○'} ${esc(t.title)} · ${dfr(t.due)} · ${esc(t.assignee_name || '')}</div>`).join('') || '<p class="muted">Aucune.</p>'}<h3 style="margin-top:14px">Échanges</h3>${noteForm('pr', p.id)}${notesList(N)}` : ''}`, true);
+  m.querySelector('#ps').onclick = async () => { const o = { id: p.id || '' }; m.querySelectorAll('[data-k]').forEach(i => o[i.dataset.k] = i.value); if ((o.name || '').trim().length < 2) return toast('Indiquez le nom de l\'établissement.', true); if (await rpc('crm_prospect_save', { p: o }, 'Prospect enregistré.')) { m.remove(); reload(); } };
+  if (p.id) { m.querySelector('#na').onclick = () => addNote(m, 'prospect_id', p.id, () => prospectForm(D.prospects.find(x => x.id === p.id))); m.querySelector('#pt').onclick = () => { m.remove(); taskForm({ prospect: p.id }); }; }
+}
+
+/* ---------- Tâches ---------- */
+function taskForm(t){
+  const m = modal(`<h3>${t.id ? 'Modifier la tâche' : 'Nouvelle tâche'}</h3><label class="f">Tâche</label><input id="tt" value="${esc(t.title || '')}" placeholder="Rappeler l'hôtel, préparer une démo…">
+    <label class="f">Échéance</label><input id="td" type="date" value="${esc(t.due || new Date().toISOString().slice(0, 10))}">
+    <label class="f">Pour</label><select id="ta" ${can('crm') ? '' : 'disabled'}>${(D.staff || [{ user_id: D.me.id, email: D.email }]).map(s => `<option value="${s.user_id}" ${(t.assignee || D.me.id) === s.user_id ? 'selected' : ''}>${esc(s.name || s.email)}</option>`).join('')}</select>
+    <div class="row" style="justify-content:flex-end;margin-top:12px"><button data-x>Annuler</button><button class="p" id="tk">Enregistrer</button></div>`);
+  m.querySelector('#tk').onclick = async () => { if (await rpc('crm_task_save', { p_id: t.id || null, p_title: m.querySelector('#tt').value.trim(), p_due: m.querySelector('#td').value || null, p_assignee: m.querySelector('#ta').value, p_org: t.org || null, p_prospect: t.prospect || null, p_done: !!t.done }, 'Tâche enregistrée.')) { m.remove(); reload(); } };
+}
+function vTasks(){
+  const f = SUBV.tk || 'moi', mine = t => t.assignee === D.me.id;
+  const F = { moi: t => mine(t) && !t.done, jour: t => mine(t) && !t.done && t.due && days(t.due) <= 0, equipe: t => !t.done, faites: t => !!t.done };
+  const L = (D.tasks || []).filter(F[f]);
+  const lbl = t => t.org ? ((D.orgs || []).find(o => o.id === t.org) || {}).name : t.prospect ? ((D.prospects || []).find(p => p.id === t.prospect) || {}).name : '';
+  $('main').innerHTML = `<div class="row between"><h1>Tâches</h1><button class="p" id="nt">Nouvelle tâche</button></div>
+    <div class="tabs2">${Object.entries({ moi: 'Mes tâches', jour: 'Aujourd\'hui et en retard', ...(can('crm') ? { equipe: 'Toute l\'équipe' } : {}), faites: 'Terminées' }).map(([k, v]) => `<button data-f="${k}" class="${f === k ? 'on' : ''}">${v} (${(D.tasks || []).filter(F[k]).length})</button>`).join('')}</div>
+    <div class="card">${L.map(t => `<div class="alert"><input type="checkbox" class="chk" data-done="${t.id}" ${t.done ? 'checked' : ''} style="margin-top:3px"><div style="flex:1"><strong>${esc(t.title)}</strong>${lbl(t) ? ` · <span class="muted">${esc(lbl(t))}</span>` : ''}<div class="sm" style="color:${t.due && days(t.due) < 0 && !t.done ? 'var(--red)' : 'var(--mute)'}">${t.due ? 'Échéance ' + dfr(t.due) : 'Sans échéance'} · ${esc(t.assignee_name || '')}</div></div><button class="s" data-ed="${t.id}">Modifier</button></div>`).join('') || '<p class="muted">Aucune tâche.</p>'}</div>`;
+  $('nt').onclick = () => taskForm({});
+  document.querySelectorAll('[data-f]').forEach(b => b.onclick = () => { SUBV.tk = b.dataset.f; vTasks(); });
+  document.querySelectorAll('[data-done]').forEach(b => b.onchange = async () => { const t = D.tasks.find(x => x.id === b.dataset.done); if (await rpc('crm_task_save', { p_id: t.id, p_title: null, p_due: t.due, p_assignee: null, p_org: null, p_prospect: null, p_done: b.checked })) reload(); });
+  document.querySelectorAll('[data-ed]').forEach(b => b.onclick = () => taskForm(D.tasks.find(x => x.id === b.dataset.ed)));
+}
+
+/* ---------- Assistance ---------- */
+function vSupport(){
+  const f = SUBV.sp || 'actifs', F = { actifs: t => ['ouvert', 'en_cours', 'attente_client'].includes(t.status), moi: t => t.assignee === D.me.id && !['resolu', 'ferme'].includes(t.status), resolus: t => ['resolu', 'ferme'].includes(t.status) };
+  const L = (D.tickets || []).filter(F[f]);
+  const resp = (D.tickets || []).filter(t => t.first_response_at), avg = resp.length ? Math.round(resp.reduce((a, t) => a + (new Date(t.first_response_at) - new Date(t.created_at)), 0) / resp.length / 36e5) : null;
+  $('main').innerHTML = `<h1>Assistance aux hôtels</h1><div class="kpis"><div class="card kpi"><div class="v">${(D.tickets || []).filter(t => t.status === 'ouvert').length}</div><div class="l">Sans réponse</div></div><div class="card kpi"><div class="v">${avg == null ? '—' : avg + ' h'}</div><div class="l">Délai moyen de première réponse</div></div></div>
+    <div class="tabs2">${Object.entries({ actifs: 'En cours', moi: 'Qui me sont attribuées', resolus: 'Résolues' }).map(([k, v]) => `<button data-f="${k}" class="${f === k ? 'on' : ''}">${v} (${(D.tickets || []).filter(F[k]).length})</button>`).join('')}</div>
+    <div class="card tw"><table><tr><th>N°</th><th>Hôtel</th><th>Objet</th><th>Catégorie</th><th>Priorité</th><th>État</th><th>Mise à jour</th><th></th></tr>${L.map(t => `<tr><td>#${t.number}</td><td>${esc(t.org)}</td><td><strong>${esc(t.subject)}</strong><div class="muted sm">${esc(t.author || '')}</div></td><td>${esc(T_CAT[t.category])}</td><td>${['haute', 'urgente'].includes(t.priority) ? `<span class="pill r">${T_PRIO[t.priority]}</span>` : T_PRIO[t.priority]}</td><td><span class="pill ${T_STATUS[t.status][1]}">${T_STATUS[t.status][0]}</span></td><td>${dtfr(t.updated_at)}</td><td><button class="s" data-t="${t.id}">Ouvrir</button></td></tr>`).join('') || '<tr><td colspan="8" class="muted">Aucune demande.</td></tr>'}</table>
+    <p class="muted sm" style="margin:10px 0 0">Les hôtels écrivent depuis Nuittea Manager, menu Aide → Contacter l'assistance.</p></div>`;
+  document.querySelectorAll('[data-f]').forEach(b => b.onclick = () => { SUBV.sp = b.dataset.f; vSupport(); });
+  document.querySelectorAll('[data-t]').forEach(b => b.onclick = () => openTicket(b.dataset.t));
+}
+function openTicket(id){
+  const t = D.tickets.find(x => x.id === id);
+  const m = modal(`<div class="row between"><h3>#${t.number} · ${esc(t.subject)}</h3><button data-x>Fermer</button></div><div class="muted sm">${esc(t.org)} · ${esc(t.author || '')} · ${dtfr(t.created_at)}</div>
+    <div class="row" style="margin:10px 0"><select id="ts" style="width:auto">${Object.entries(T_STATUS).map(([k, v]) => `<option value="${k}" ${t.status === k ? 'selected' : ''}>${v[0]}</option>`).join('')}</select>
+      <select id="tp" style="width:auto">${Object.entries(T_PRIO).map(([k, v]) => `<option value="${k}" ${t.priority === k ? 'selected' : ''}>${v}</option>`).join('')}</select>
+      <select id="tas" style="width:auto"><option value="">Non attribuée</option>${(D.staff || []).map(s => `<option value="${s.user_id}" ${t.assignee === s.user_id ? 'selected' : ''}>${esc(s.name || s.email)}</option>`).join('')}</select><button id="tu">Mettre à jour</button></div>
+    <div style="max-height:45vh;overflow:auto">${t.messages.map(x => `<div class="msg ${x.staff ? 's' : 'h'}">${esc(x.body)}<div class="muted sm" style="margin-top:4px">${x.staff ? 'Nuittea' : 'Hôtel'} · ${dtfr(x.at)}</div></div>`).join('')}</div>
+    <textarea id="tr" rows="3" placeholder="Votre réponse à l'hôtel" style="margin-top:8px"></textarea><div class="row" style="justify-content:flex-end;margin-top:8px"><button class="p" id="tsend">Répondre</button></div>`, true);
+  m.querySelector('#tu').onclick = async () => { if (await rpc('admin_ticket_update', { p_ticket: id, p_status: m.querySelector('#ts').value, p_priority: m.querySelector('#tp').value, p_assignee: m.querySelector('#tas').value || null }, 'Demande mise à jour.')) { m.remove(); reload(); } };
+  m.querySelector('#tsend').onclick = async () => { const b = m.querySelector('#tr').value.trim(); if (!b) return; if (await rpc('support_message_add', { p_ticket: id, p_body: b }, 'Réponse envoyée.')) { m.remove(); await reload(); openTicket(id); } };
+}
+
+/* ---------- Annonces ---------- */
+function vAnn(){
+  const now = Date.now(), live = a => new Date(a.starts_at) <= now && (!a.ends_at || new Date(a.ends_at) > now);
+  const LV = { info: ['Information', 'b'], important: ['Important', 'a'], maintenance: ['Maintenance', 'r'] };
+  $('main').innerHTML = `<div class="row between"><h1>Annonces aux hôtels</h1><button class="p" id="na">Nouvelle annonce</button></div><p class="muted">Les annonces s'affichent en bandeau dans Nuittea Manager, pour tous les hôtels ou pour certaines formules.</p>` +
+    ((D.announcements || []).map(a => `<div class="card"><div class="row between"><div><strong>${esc(a.title)}</strong> <span class="pill ${LV[a.level][1]}">${LV[a.level][0]}</span> ${live(a) ? '<span class="pill g">En ligne</span>' : '<span class="pill n">Hors ligne</span>'}<div class="muted sm">Du ${dtfr(a.starts_at)}${a.ends_at ? ' au ' + dtfr(a.ends_at) : ''} · ${a.plans.length ? 'Formules : ' + a.plans.join(', ') : 'Tous les hôtels'}</div></div><div class="row"><button class="s" data-e="${a.id}">Modifier</button>${live(a) ? `<button class="s d" data-end="${a.id}">Arrêter</button>` : ''}</div></div><p style="white-space:pre-wrap;margin:8px 0 0">${esc(a.body)}</p></div>`).join('') || '<p class="muted">Aucune annonce.</p>');
+  $('na').onclick = () => annForm({});
+  document.querySelectorAll('[data-e]').forEach(b => b.onclick = () => annForm(D.announcements.find(a => a.id === b.dataset.e)));
+  document.querySelectorAll('[data-end]').forEach(b => b.onclick = async () => { const a = D.announcements.find(x => x.id === b.dataset.end); if (await rpc('admin_announcement_save', { p_id: a.id, p_title: a.title, p_body: a.body, p_level: a.level, p_plans: a.plans, p_starts: a.starts_at, p_ends: new Date().toISOString() }, 'Annonce arrêtée.')) reload(); });
+}
+function annForm(a){
+  const loc = d => d ? new Date(new Date(d) - new Date().getTimezoneOffset() * 6e4).toISOString().slice(0, 16) : '';
+  const m = modal(`<h3>${a.id ? 'Modifier l\'annonce' : 'Nouvelle annonce'}</h3><label class="f">Titre</label><input id="at" value="${esc(a.title || '')}"><label class="f">Message</label><textarea id="ab" rows="4">${esc(a.body || '')}</textarea>
+    <label class="f">Type</label><select id="al"><option value="info" ${a.level === 'info' ? 'selected' : ''}>Information</option><option value="important" ${a.level === 'important' ? 'selected' : ''}>Important</option><option value="maintenance" ${a.level === 'maintenance' ? 'selected' : ''}>Maintenance</option></select>
+    <label class="f">Destinataires (aucune case = tous les hôtels)</label><div class="perms">${(D.plans || []).map(p => `<label><input type="checkbox" value="${p.slug}" ${(a.plans || []).includes(p.slug) ? 'checked' : ''}> ${esc(p.name)}</label>`).join('')}</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><div><label class="f">Début</label><input id="as" type="datetime-local" value="${loc(a.starts_at || new Date())}"></div><div><label class="f">Fin (facultatif)</label><input id="ae" type="datetime-local" value="${loc(a.ends_at)}"></div></div>
+    <div class="row" style="justify-content:flex-end;margin-top:12px"><button data-x>Annuler</button><button class="p" id="ak">Enregistrer</button></div>`);
+  m.querySelector('#ak').onclick = async () => { const iso = v => v ? new Date(v).toISOString() : null;
+    if (await rpc('admin_announcement_save', { p_id: a.id || null, p_title: m.querySelector('#at').value, p_body: m.querySelector('#ab').value, p_level: m.querySelector('#al').value, p_plans: [...m.querySelectorAll('.perms input:checked')].map(i => i.value), p_starts: iso(m.querySelector('#as').value), p_ends: iso(m.querySelector('#ae').value) }, 'Annonce enregistrée.')) { m.remove(); reload(); } };
+}
+
+/* ---------- Démonstration ---------- */
+async function demoCall(body){
+  const { data: { session } } = await sb.auth.getSession();
+  const r = await fetch(SB_URL + '/functions/v1/demo-access', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + session.access_token, apikey: 'sb_publishable_0AT6IoJyfnTlANz0Lf-erg_Sj85F1yT' }, body: JSON.stringify(body) });
+  const j = await r.json().catch(() => ({})); if (!r.ok || j.error) { toast(j.error || 'Erreur du serveur.', true); return null; } return j;
+}
+function vDemo(){
+  const d = D.demo;
+  $('main').innerHTML = `<h1>Comptes de démonstration</h1>
+    <div class="card"><p style="margin-top:0">Une organisation isolée « Hôtel Démo Nuittea » (formule Pro, 10 chambres, réservations fictives) avec un compte par poste, sans mot de passe. Elle n'apparaît jamais sur Nuittea.com ni dans les statistiques.</p>
+      <p class="muted sm">${d ? `État actuel : ${d.members.length} compte(s), ${d.resas} réservation(s).` : 'Pas encore créée : elle le sera au premier clic.'}</p>
+      <p class="sm" style="background:#FCF1DE;padding:8px 10px;border-radius:8px">Le lien connecte le navigateur qui l'ouvre. Pour ne pas fermer votre session de la console, utilisez « Copier le lien » et ouvrez-le dans une fenêtre de navigation privée ou sur un autre appareil (tablette de démonstration, téléphone du prospect).</p>
+      <div class="tw"><table><tr><th>Poste</th><th></th></tr>${Object.entries(DEMO_R).map(([k, v]) => `<tr><td><strong>${v}</strong></td><td class="row" style="justify-content:flex-end"><button class="s" data-copy="${k}">Copier le lien</button><button class="s p" data-open="${k}">Ouvrir</button></td></tr>`).join('')}</table></div>
+      <div class="row" style="margin-top:12px"><button class="d" id="dr">Réinitialiser la démonstration</button><span class="muted sm">Remet les chambres et réservations de démonstration à leur état d'origine.</span></div></div>`;
+  const link = async (k) => { const r = await demoCall({ action: 'login', role: k }); return r && r.link; };
+  document.querySelectorAll('[data-copy]').forEach(b => b.onclick = async () => { b.disabled = true; const l = await link(b.dataset.copy); b.disabled = false; if (!l) return; try { await navigator.clipboard.writeText(l); toast('Lien copié (valable une seule fois, environ 1 heure).'); } catch { modal(`<h3>Lien de connexion</h3><textarea rows="4" readonly>${esc(l)}</textarea><div class="row" style="justify-content:flex-end;margin-top:8px"><button data-x>Fermer</button></div>`); } });
+  document.querySelectorAll('[data-open]').forEach(b => b.onclick = async () => { if (!confirmBox()) return; b.disabled = true; const l = await link(b.dataset.open); b.disabled = false; if (l) window.open(l, '_blank', 'noopener'); });
+  $('dr').onclick = async () => { $('dr').disabled = true; const r = await demoCall({ action: 'reset' }); $('dr').disabled = false; if (r) { toast('Démonstration réinitialisée.'); reload(); } };
+}
+function confirmBox(){ return window.confirm('Ce lien va remplacer votre session dans ce navigateur : vous serez déconnecté de la console. Continuer ?'); }
+
+/* ---------- Équipe ---------- */
 function vTeam(){
   $('main').innerHTML = `<div class="row between"><h1>Équipe Nuittea</h1><button class="p" id="add">Ajouter une personne</button></div>
-    <div class="card"><table><tr><th>Personne</th><th>Rôle</th><th>Accès</th><th>État</th><th></th></tr>${(D.staff || []).map((s, i) => `<tr><td><strong>${esc(s.name || s.email)}</strong><br><span class="muted">${esc(s.email)}</span></td><td>${esc(ROLES[s.role])}</td><td style="font-size:12px">${s.perms.map(p => esc(PERMS[p] || p)).join(', ')}</td><td>${s.active ? '<span class="pill g">Actif</span>' : '<span class="pill n">Désactivé</span>'}</td><td><button data-ed="${i}">Modifier</button></td></tr>`).join('')}</table>
-    <p class="muted" style="font-size:12px;margin:10px 0 0">La personne doit d'abord avoir créé son compte (application Nuittea Manager ou site). Elle se connecte ensuite ici avec ce même compte.</p></div>`;
+    <div class="card tw"><table><tr><th>Personne</th><th>Rôle</th><th>Accès</th><th>État</th><th></th></tr>${(D.staff || []).map((s, i) => `<tr><td><strong>${esc(s.name || s.email)}</strong><br><span class="muted">${esc(s.email)}</span></td><td>${esc(ROLES[s.role])}</td><td class="sm">${s.perms.map(p => esc(PERMS[p] || p)).join(', ')}</td><td>${s.active ? '<span class="pill g">Actif</span>' : '<span class="pill n">Désactivé</span>'}</td><td><button data-ed="${i}">Modifier</button></td></tr>`).join('')}</table>
+    <p class="muted sm" style="margin:10px 0 0">La personne doit d'abord avoir créé son compte (Nuittea Manager ou Nuittea.com). Elle se connecte ensuite à cette console avec ce même compte.</p></div>`;
   $('add').onclick = () => editStaff(null);
   document.querySelectorAll('[data-ed]').forEach(b => b.onclick = () => editStaff(D.staff[b.dataset.ed]));
 }
-function basePerms(role){ return { direction: Object.keys(PERMS), commercial: ['dashboard','crm','clients','demo'], support: ['dashboard','clients','support','moderation','demo'], finance: ['dashboard','clients','finance','journal'], lecture: ['dashboard','clients'] }[role]; }
 function editStaff(s){
-  const m = document.createElement('div'); m.className = 'modal';
   const role0 = s ? s.role : 'support';
-  m.innerHTML = `<div class="card"><h3>${s ? 'Modifier l\'accès' : 'Ajouter une personne'}</h3>
+  const m = modal(`<h3>${s ? 'Modifier l\'accès' : 'Ajouter une personne'}</h3>
     <input id="se" type="email" placeholder="Adresse e-mail du compte" value="${esc(s ? s.email : '')}" ${s ? 'disabled' : ''} style="margin-bottom:8px">
     <input id="sn" placeholder="Nom affiché" value="${esc(s ? s.name || '' : '')}" style="margin-bottom:8px">
     <select id="sr" style="margin-bottom:10px">${Object.entries(ROLES).map(([k, v]) => `<option value="${k}" ${k === role0 ? 'selected' : ''}>${v}</option>`).join('')}</select>
-    <div class="muted" style="font-size:12px;margin-bottom:6px">Accès (cochez ou décochez pour ajuster le rôle)</div><div class="perms" id="sp"></div>
-    <label class="row" style="margin-top:10px"><input type="checkbox" id="sa" style="width:auto" ${!s || s.active ? 'checked' : ''}> Compte actif</label>
-    <div class="row" style="justify-content:flex-end;margin-top:12px"><button data-x>Annuler</button><button class="p" data-ok>Enregistrer</button></div></div>`;
-  document.body.appendChild(m);
-  const drawP = (cur) => { $('sp').innerHTML = Object.entries(PERMS).map(([k, v]) => `<label><input type="checkbox" value="${k}" ${cur.includes(k) ? 'checked' : ''}> ${v}</label>`).join(''); };
-  drawP(s ? s.perms : basePerms(role0));
-  $('sr').onchange = () => drawP(basePerms($('sr').value));
-  m.querySelector('[data-x]').onclick = () => m.remove();
-  m.querySelector('[data-ok]').onclick = async () => {
-    const role = $('sr').value, base = basePerms(role), chk = [...$('sp').querySelectorAll('input:checked')].map(i => i.value);
-    const { error } = await sb.rpc('admin_staff_upsert', { p_email: $('se').value, p_role: role, p_add: chk.filter(p => !base.includes(p)), p_remove: base.filter(p => !chk.includes(p)), p_active: $('sa').checked, p_name: $('sn').value.trim() || null });
-    if (error) return toast(error.message, true); m.remove(); toast('Accès enregistré.'); reload();
+    <div class="muted sm" style="margin-bottom:6px">Accès (cochez ou décochez pour ajuster le rôle)</div><div class="perms" id="sp"></div>
+    <label class="row" style="margin-top:10px"><input type="checkbox" id="sa" class="chk" ${!s || s.active ? 'checked' : ''}> Compte actif</label>
+    <div class="row" style="justify-content:flex-end;margin-top:12px"><button data-x>Annuler</button><button class="p" id="sk">Enregistrer</button></div>`);
+  const drawP = cur => { m.querySelector('#sp').innerHTML = Object.entries(PERMS).map(([k, v]) => `<label><input type="checkbox" value="${k}" ${cur.includes(k) ? 'checked' : ''}> ${v}</label>`).join(''); };
+  drawP(s ? s.perms : BASE[role0]);
+  m.querySelector('#sr').onchange = () => drawP(BASE[m.querySelector('#sr').value]);
+  m.querySelector('#sk').onclick = async () => {
+    const role = m.querySelector('#sr').value, base = BASE[role], chk = [...m.querySelectorAll('#sp input:checked')].map(i => i.value);
+    if (await rpc('admin_staff_upsert', { p_email: m.querySelector('#se').value, p_role: role, p_add: chk.filter(p => !base.includes(p)), p_remove: base.filter(p => !chk.includes(p)), p_active: m.querySelector('#sa').checked, p_name: m.querySelector('#sn').value.trim() || null }, 'Accès enregistré.')) { m.remove(); reload(); }
   };
 }
 
+/* ---------- Journal ---------- */
 function vJournal(){
-  const tgt = j => { if (j.type === 'establishment') { const e = D.ests.find(x => x.id === j.id); return e ? e.name : 'Établissement'; } if (j.type === 'room') { for (const e of D.ests) { const r = e.rooms.find(x => x.id === j.id); if (r) return e.name + ' · Ch. ' + r.number; } return 'Chambre'; } if (j.type === 'staff') return j.detail.email || 'Équipe'; return j.type || ''; };
-  $('main').innerHTML = `<div class="row between"><h1>Journal</h1><input id="jq" placeholder="Filtrer" style="max-width:240px"></div><div class="card"><table id="jt"></table></div>`;
+  const tgt = j => { if (j.type === 'establishment') { const e = D.ests.find(x => x.id === j.id); return e ? e.name : 'Établissement'; } if (j.type === 'room') { for (const e of D.ests) { const r = e.rooms.find(x => x.id === j.id); if (r) return e.name + ' · Ch. ' + r.number; } return 'Chambre'; } if (j.type === 'organization') { const o = (D.orgs || []).find(x => x.id === j.id); return o ? o.name : 'Client'; } if (j.type === 'staff') return j.detail.email || 'Équipe'; if (j.type === 'demo') return 'Démonstration · ' + (DEMO_R[j.id] || 'tous'); return j.type || ''; };
+  const det = j => j.detail.motif || (j.detail.role ? ROLES[j.detail.role] : '') || (j.detail.montant ? money(j.detail.montant) : '') || j.detail.titre || j.detail.valeur || '';
+  $('main').innerHTML = `<div class="row between"><h1>Journal</h1><input id="jq" placeholder="Filtrer" style="max-width:240px"></div><div class="card tw"><table id="jt"></table></div>`;
   const draw = () => { const f = $('jq').value.toLowerCase(); const rows = (D.journal || []).filter(j => !f || JSON.stringify(j).toLowerCase().includes(f) || (ACTIONS[j.action] || '').toLowerCase().includes(f) || tgt(j).toLowerCase().includes(f));
-    $('jt').innerHTML = '<tr><th>Date</th><th>Par</th><th>Action</th><th>Cible</th><th>Motif / détail</th></tr>' + (rows.length ? rows.map(j => `<tr><td style="white-space:nowrap">${dtfr(j.at)}</td><td>${esc(j.actor || '—')}</td><td>${esc(ACTIONS[j.action] || j.action)}</td><td>${esc(tgt(j))}</td><td>${esc(j.detail.motif || (j.detail.role ? ROLES[j.detail.role] : ''))}</td></tr>`).join('') : '<tr><td colspan="5" class="muted">Aucune action enregistrée.</td></tr>'); };
+    $('jt').innerHTML = '<tr><th>Date</th><th>Par</th><th>Action</th><th>Cible</th><th>Motif / détail</th></tr>' + (rows.length ? rows.map(j => `<tr><td style="white-space:nowrap">${dtfr(j.at)}</td><td>${esc(j.actor || '—')}</td><td>${esc(ACTIONS[j.action] || j.action)}</td><td>${esc(tgt(j))}</td><td>${esc(det(j))}</td></tr>`).join('') : '<tr><td colspan="5" class="muted">Aucune action enregistrée.</td></tr>'); };
   $('jq').oninput = draw; draw();
+}
+
+/* ---------- Réglages et sécurité ---------- */
+async function vSettings(){
+  const { data: f } = await sb.auth.mfa.listFactors(); const tot = (f && f.totp || []).filter(x => x.status === 'verified');
+  const st = can('settings');
+  $('main').innerHTML = `<h1>Réglages et sécurité</h1>
+    <div class="card"><h3>Ma validation en deux étapes</h3><p class="muted">Protège votre compte : en plus du mot de passe, un code à 6 chiffres de votre application d'authentification (Google Authenticator, Microsoft Authenticator…).</p>
+      ${tot.length ? `<p><span class="pill g">Activée</span> ${D.me.aal === 'aal2' ? '' : '<span class="pill a">Session actuelle sans code</span>'}</p><button class="d" id="mfx">Désactiver sur mon compte</button>` : '<button class="p" id="mfe">Activer la validation en deux étapes</button>'}<div id="mfz"></div></div>
+    ${st ? `<div class="card"><h3>Règles de la plateforme</h3>
+      <label class="row" style="flex-wrap:nowrap;align-items:flex-start;margin-bottom:12px"><input type="checkbox" class="chk" id="rr" ${D.settings.review_required ? 'checked' : ''} style="margin-top:3px"><span><strong>Validation obligatoire des nouvelles fiches</strong><br><span class="muted sm">Une fiche publiée par un hôtel n'apparaît sur Nuittea.com qu'après validation par l'équipe. Les fiches déjà validées restent en ligne.</span></span></label>
+      <label class="row" style="flex-wrap:nowrap;align-items:flex-start"><input type="checkbox" class="chk" id="mr" ${D.settings.mfa_required ? 'checked' : ''} style="margin-top:3px"><span><strong>Validation en deux étapes obligatoire pour l'équipe</strong><br><span class="muted sm">Sans code, un membre de l'équipe n'accède plus à la console. Activez-la d'abord sur votre compte et vérifiez que chaque membre l'a activée.</span></span></label></div>` : ''}
+    <div class="card"><h3>Alertes</h3><p class="muted" style="margin:0">Les alertes (fiches à vérifier, signalements, demandes urgentes, échéances, impayés, clients inactifs, annulations élevées, tâches du jour) sont regroupées dans l'Aperçu. L'envoi par e-mail nécessite un service d'envoi (par exemple Resend ou Brevo) : je pourrai le brancher dès que vous aurez créé ce compte.</p></div>`;
+  if ($('mfe')) $('mfe').onclick = async () => {
+    const { data, error } = await sb.auth.mfa.enroll({ factorType: 'totp', friendlyName: 'Console Nuittea ' + Date.now() }); if (error) return toast(error.message, true);
+    $('mfz').innerHTML = `<p style="margin-top:12px">1. Scannez ce code avec votre application d'authentification :</p><img src="${data.totp.qr_code}" alt="Code QR" style="width:180px;height:180px;background:#fff"><p class="muted sm">Ou saisissez la clé : <code>${esc(data.totp.secret)}</code></p><p>2. Saisissez le code affiché :</p><div class="row" style="flex-wrap:nowrap;max-width:320px"><input id="mfc" inputmode="numeric" maxlength="6"><button class="p" id="mfv">Valider</button></div>`;
+    $('mfv').onclick = async () => { const { data: ch, error: e1 } = await sb.auth.mfa.challenge({ factorId: data.id }); if (e1) return toast(e1.message, true);
+      const { error: e2 } = await sb.auth.mfa.verify({ factorId: data.id, challengeId: ch.id, code: $('mfc').value.trim() }); if (e2) return toast('Code incorrect.', true);
+      toast('Validation en deux étapes activée.'); await sb.auth.refreshSession(); reload(); };
+  };
+  if ($('mfx')) $('mfx').onclick = async () => { if (D.settings.mfa_required) return toast('Désactivez d\'abord l\'obligation pour l\'équipe.', true); for (const x of tot) await sb.auth.mfa.unenroll({ factorId: x.id }); toast('Validation en deux étapes désactivée.'); reload(); };
+  if ($('rr')) $('rr').onchange = async () => { if (await rpc('admin_setting_set', { p_key: 'nuittea_review_required', p_value: String($('rr').checked) }, 'Réglage enregistré.')) reload(); else $('rr').checked = !$('rr').checked; };
+  if ($('mr')) $('mr').onchange = async () => { if (await rpc('admin_setting_set', { p_key: 'staff_mfa_required', p_value: String($('mr').checked) }, 'Réglage enregistré.')) reload(); else $('mr').checked = !$('mr').checked; };
 }
 
 $('lf').onsubmit = async e => { e.preventDefault(); $('lerr').textContent = ''; const { error } = await sb.auth.signInWithPassword({ email: $('le').value, password: $('lp').value }); if (error) return $('lerr').textContent = 'Identifiants incorrects.'; boot(); };
 $('lg').onclick = () => sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: location.origin + location.pathname } });
+$('mv').onclick = async () => { const { data: f } = await sb.auth.mfa.listFactors(); const t = (f.totp || [])[0]; if (!t) return; const { data: ch } = await sb.auth.mfa.challenge({ factorId: t.id }); const { error } = await sb.auth.mfa.verify({ factorId: t.id, challengeId: ch.id, code: $('mc').value.trim() }); if (error) return $('lerr').textContent = 'Code incorrect.'; $('lerr').textContent = ''; boot(); };
 sb.auth.onAuthStateChange(ev => { if (ev === 'SIGNED_IN' && !D) boot(); });
 boot();
 </script>

@@ -971,6 +971,7 @@ html[data-theme="foret"] body.navmini nav.side #navCollapse:not(#_a){width:40px!
 .ny-prev{border:1px solid var(--line);border-radius:12px;overflow:hidden;height:480px;background:#F5F8FB}.ny-prev iframe{width:100%;height:100%;border:0}
 #dRefresh svg,#mRefresh svg{transition:transform .6s}#dRefresh.rf-spin svg,#mRefresh.rf-spin svg{animation:rfspin .8s linear infinite}@keyframes rfspin{to{transform:rotate(360deg)}}
 @media (max-width:1280px){#dRefresh .rf-l{display:none}}
+nav.side [data-view="salles"]{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='4' width='18' height='12' rx='2'/%3E%3Cpath d='M7 20h10M12 16v4'/%3E%3C/svg%3E")}
 </style>
 </head>
 <body>
@@ -1046,6 +1047,7 @@ html[data-theme="foret"] body.navmini nav.side #navCollapse:not(#_a){width:40px!
       <button data-view="passes" class="ess">Passes</button>
       <button data-view="chambres" class="ess">Chambres</button>
       <button data-view="naya" class="ess">Nuittea · en ligne</button>
+      <button data-view="salles">Salles et événements</button>
       <button data-view="clients">Clients</button>
       <button data-view="produits">Produits et stock</button>
       <button data-view="inventaire">Inventaire</button></div>
@@ -1123,6 +1125,7 @@ html[data-theme="foret"] body.navmini nav.side #navCollapse:not(#_a){width:40px!
     <section id="v-dashboard" class="hidden"></section>
     <section id="v-reservations" class="hidden"></section>
     <section id="v-planning" class="hidden"></section>
+    <section id="v-salles" class="hidden"></section>
     <section id="v-clients" class="hidden"></section>
     <section id="v-caisse" class="hidden"></section>
     <section id="v-resto" class="hidden"></section>
@@ -1215,7 +1218,7 @@ const S = { session:null, member:null, org:null, overview:null, plans:[], provid
 /* Restaurant & Bar retiré de l'offre (code conservé, réactivable en passant RESTO_ACTIF à true). */
 const RESTO_ACTIF = false;
 if (!RESTO_ACTIF) document.querySelectorAll('nav.side [data-group="resto"], #tabbar [data-tab="resto"]').forEach(e => e.remove());
-const VIEWS = ['produits','naya','passes','inventaire','pointage','resto','rapports','controle','equipe','mapage','dashboard','reservations','planning','clients','caisse','depenses','factures','tarifs','abonnement','chambres','admin'];
+const VIEWS = ['salles','produits','naya','passes','inventaire','pointage','resto','rapports','controle','equipe','mapage','dashboard','reservations','planning','clients','caisse','depenses','factures','tarifs','abonnement','chambres','admin'];
 const $ = (id) => document.getElementById(id);
 const esc = (v) => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fcfa = (n) => n == null ? '—' : new Intl.NumberFormat('fr-FR').format(n).replace(/ | /g,' ') + ' FCFA';
@@ -1224,7 +1227,7 @@ const STATUS = { trial:'Essai', active:'Actif', past_due:'Échéance dépassée'
 const PAYST = { pending:'En attente', succeeded:'Payé', failed:'Échoué', cancelled:'Annulé', refunded:'Remboursé' };
 const CYCLE = { trial:'Essai', monthly:'Mensuel', yearly:'Annuel' };
 const METHOD = { orange_money:'Orange Money', mtn_money:'MTN MoMo', moov_money:'Moov Money', wave:'Wave', card:'Carte bancaire', bank_transfer:'Virement bancaire', cash:'Espèces' };
-const FEAT = { notifications:'Notifications', daily_summary:'Résumé quotidien au propriétaire (bientôt)', whatsapp_auto:'Messages WhatsApp automatiques (bientôt)', seasonal_rates:'Tarifs automatiques (week-end, saisons)', extra_services:'Services en plus : petit-déjeuner, linge… (bientôt)', online_booking:'Visibilité sur Nuittea.com', owner_control:'Contrôle propriétaire & alertes', multi_property:'Plusieurs établissements', priority_support:'Support prioritaire', training:'Installation & formation', reception:'Réception & planning', reservations:'Réservations', clients:'Fiches clients', billing:'Facturation', payments:'Encaissements', cash:'Caisse', housekeeping:'Ménage et état des chambres', expenses:'Dépenses', basic_reports:'Rapports de base', users:'Utilisateurs', pdf_export:'Export PDF', advanced_reservations:'Réservations avancées', rates:'Tarifs', promotions:'Promotions', services:'Services', advanced_housekeeping:'Housekeeping avancé', maintenance:'Maintenance', financial_reports:'Rapports financiers', occupancy_stats:"Statistiques d'occupation", full_history:'Historique complet', excel_export:'Export Excel', user_permissions:'Permissions utilisateurs', notifications:'Notifications', restaurant:'Restaurant', bar:'Bar', orders:'Commandes', room_charge_transfer:'Transfert sur chambre', inventory:'Stocks', suppliers:'Fournisseurs', staff:'Personnel', groups:'Groupes', accounting:'Comptabilité simplifiée', advanced_dashboard:'Dashboard avancé', adr_revpar:'ADR & RevPAR', revenue_by_service:'CA par service', online_booking:'Réservation en ligne', online_payment:'Paiement en ligne', whatsapp_sms:'WhatsApp / SMS', api:'API', channel_manager:'Channel Manager', ota:'Connexion OTA', dynamic_pricing:'Tarification dynamique', revenue_management:'Revenue Management', advanced_crm:'CRM avancé', loyalty:'Fidélité', advanced_promotions:'Promotions avancées', whatsapp_automation:'Automatisation WhatsApp', custom_reports:'Rapports personnalisables', ai_assistant:'Assistant IA', smart_alerts:'Alertes intelligentes', advanced_api:'API avancée', full_audit:'Audit complet', multi_property:'Multi-établissements', multi_city:'Multi-villes', central_admin:'Administration centralisée', hotel_groups:'Groupes hôteliers', financial_consolidation:'Consolidation financière', national_dashboard:'Dashboard national', advanced_permissions:'Permissions avancées', custom_api:'API personnalisée', custom_integrations:'Intégrations spécifiques', data_migration:'Migration des données', training:'Formation', priority_support:'Support prioritaire' };
+const FEAT = { venues:'Salles et événements', notifications:'Notifications', daily_summary:'Résumé quotidien au propriétaire (bientôt)', whatsapp_auto:'Messages WhatsApp automatiques (bientôt)', seasonal_rates:'Tarifs automatiques (week-end, saisons)', extra_services:'Services en plus : petit-déjeuner, linge… (bientôt)', online_booking:'Visibilité sur Nuittea.com', owner_control:'Contrôle propriétaire & alertes', multi_property:'Plusieurs établissements', priority_support:'Support prioritaire', training:'Installation & formation', reception:'Réception & planning', reservations:'Réservations', clients:'Fiches clients', billing:'Facturation', payments:'Encaissements', cash:'Caisse', housekeeping:'Ménage et état des chambres', expenses:'Dépenses', basic_reports:'Rapports de base', users:'Utilisateurs', pdf_export:'Export PDF', advanced_reservations:'Réservations avancées', rates:'Tarifs', promotions:'Promotions', services:'Services', advanced_housekeeping:'Housekeeping avancé', maintenance:'Maintenance', financial_reports:'Rapports financiers', occupancy_stats:"Statistiques d'occupation", full_history:'Historique complet', excel_export:'Export Excel', user_permissions:'Permissions utilisateurs', notifications:'Notifications', restaurant:'Restaurant', bar:'Bar', orders:'Commandes', room_charge_transfer:'Transfert sur chambre', inventory:'Stocks', suppliers:'Fournisseurs', staff:'Personnel', groups:'Groupes', accounting:'Comptabilité simplifiée', advanced_dashboard:'Dashboard avancé', adr_revpar:'ADR & RevPAR', revenue_by_service:'CA par service', online_booking:'Réservation en ligne', online_payment:'Paiement en ligne', whatsapp_sms:'WhatsApp / SMS', api:'API', channel_manager:'Channel Manager', ota:'Connexion OTA', dynamic_pricing:'Tarification dynamique', revenue_management:'Revenue Management', advanced_crm:'CRM avancé', loyalty:'Fidélité', advanced_promotions:'Promotions avancées', whatsapp_automation:'Automatisation WhatsApp', custom_reports:'Rapports personnalisables', ai_assistant:'Assistant IA', smart_alerts:'Alertes intelligentes', advanced_api:'API avancée', full_audit:'Audit complet', multi_property:'Multi-établissements', multi_city:'Multi-villes', central_admin:'Administration centralisée', hotel_groups:'Groupes hôteliers', financial_consolidation:'Consolidation financière', national_dashboard:'Dashboard national', advanced_permissions:'Permissions avancées', custom_api:'API personnalisée', custom_integrations:'Intégrations spécifiques', data_migration:'Migration des données', training:'Formation', priority_support:'Support prioritaire' };
 
 function toast(msg, err=false){ document.querySelectorAll('.is-busy').forEach(b => { b.classList.remove('is-busy'); b.removeAttribute('aria-busy'); }); const t=$('toast'); t.textContent=msg; t.className='toast'+(err?' err':''); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.add('hidden'), 5000); }
 function errMsg(e){ const m = (e && (e.message || e.error_description)) || 'Une erreur est survenue.'; if (typeof isNetErr === 'function' && isNetErr(e)) return 'Hors connexion : cette action sera possible dès le retour du réseau. Vous pouvez continuer à consulter vos données.'; return /momo_ref/.test(m) ? 'Saisissez le numéro de transaction Mobile Money (4 caractères minimum).' : m; }
@@ -1325,7 +1328,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.11.10-28';
+const APP_VERSION = '2026.11.10-29';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -2071,9 +2074,9 @@ $('navPrn').onclick = () => openPrinterSetup('caisse');
 
 const ROLE_VIEWS = {
   owner: null, admin: null,
-  manager: ['dashboard','reservations','planning','naya','passes','clients','chambres','produits','inventaire','pointage','caisse','resto','depenses','factures','rapports','mapage'],
-  receptionist: ['dashboard','reservations','planning','naya','passes','clients','chambres','inventaire','caisse','resto','factures'],
-  accountant: ['dashboard','reservations','produits','pointage','caisse','resto','depenses','factures','rapports'],
+  manager: ['dashboard','reservations','planning','naya','salles','passes','clients','chambres','produits','inventaire','pointage','caisse','resto','depenses','factures','rapports','mapage'],
+  receptionist: ['dashboard','reservations','planning','naya','salles','passes','clients','chambres','inventaire','caisse','resto','factures'],
+  accountant: ['dashboard','reservations','salles','produits','pointage','caisse','resto','depenses','factures','rapports'],
   housekeeping: ['chambres','inventaire'],
   staff: ['resto','dashboard','planning']
 };
@@ -2084,7 +2087,8 @@ const memberCan = (a) => { const m = S.member; if (!m) return false; if (['owner
 const allowed = (v) => v === 'admin' ? S.isAdmin : (moduleOn(v) && (!S.member || !memberViews(S.member) || memberViews(S.member).includes(v)));
 function applyRoleNav(){ [['navAna', 'rapports'], ['navReviews', 'rapports'], ['navRates', 'mapage'], ['navDir', 'mapage'], ['navPrn', 'caisse']].forEach(([id, m]) => { const e = $(id); if (e) e.classList.toggle('hidden', !moduleOn(m)); }); document.querySelectorAll('nav.side [data-view]').forEach(b => { if (b.dataset.view !== 'admin') b.classList.toggle('hidden', !allowed(b.dataset.view)); b.classList.toggle('locked', !!lockedView(b.dataset.view)); }); renderEstSwitch(); applyNavExtras(); }
 
-const VIEW_FEATURE = { resto: ['restaurant', 'Le module Restaurant & Bar', 'Vos plats et boissons en photo, une caisse tactile, le stock qui se décompte à chaque vente, les marges et les alertes de réapprovisionnement.'],
+const VIEW_FEATURE = { salles: ['venues', 'Les salles et événements', 'Louez vos salles de conférence, de réunion ou de fête : agenda sans double réservation, devis PDF, acomptes, prestations (pauses, repas, sono) et demandes de devis depuis Nuittea.com.'],
+  resto: ['restaurant', 'Le module Restaurant & Bar', 'Vos plats et boissons en photo, une caisse tactile, le stock qui se décompte à chaque vente, les marges et les alertes de réapprovisionnement.'],
   mapage: ['online_booking', 'La page de présentation et la réservation en ligne', 'Une belle page avec votre logo, vos photos et un formulaire de réservation : vos clients réservent directement, sans commission.'],
   depenses: ['expenses', 'Le module Dépenses', 'Suivez vos charges fixes et opérationnelles, fixez un budget par poste et exigez un justificatif au-delà d’un seuil.'],
   controle: ['owner_control', 'Le contrôle propriétaire', 'Recevez une alerte à chaque remise importante, grosse dépense ou écart de caisse, et consultez le journal de toutes les actions de votre équipe.'],
@@ -2157,7 +2161,7 @@ function go(view){
   if (typeof syncTabbar === 'function') syncTabbar();
   window.scrollTo(0, 0);
   if (lockedView(view)) return renderLocked(view);
-  ({ produits: renderProduits, naya: renderNaya, passes: renderPasses, inventaire: renderInventaire, pointage: renderPointage, resto: renderResto, rapports: renderRapports, controle: renderControle, equipe: renderEquipe, mapage: renderMaPage, dashboard: renderDashboard, reservations: renderReservations, planning: renderPlanning, clients: renderClients, caisse: renderCaisse, depenses: renderDepenses, factures: renderFactures, tarifs: renderTarifs, abonnement: renderAbonnement, chambres: renderChambres, admin: renderAdmin })[view]();
+  ({ salles: renderSalles, produits: renderProduits, naya: renderNaya, passes: renderPasses, inventaire: renderInventaire, pointage: renderPointage, resto: renderResto, rapports: renderRapports, controle: renderControle, equipe: renderEquipe, mapage: renderMaPage, dashboard: renderDashboard, reservations: renderReservations, planning: renderPlanning, clients: renderClients, caisse: renderCaisse, depenses: renderDepenses, factures: renderFactures, tarifs: renderTarifs, abonnement: renderAbonnement, chambres: renderChambres, admin: renderAdmin })[view]();
 }
 
 /* ---------- Tarifs ---------- */
@@ -3090,11 +3094,22 @@ async function renderDashboardCore(){
   const tel = (r) => r.guest_phone ? `<a class="small ghost btn-a" href="tel:${esc(String(r.guest_phone).replace(/\s/g, ''))}" aria-label="Appeler ${esc(r.guest_name)}" style="display:inline-flex;align-items:center;justify-content:center;min-height:36px;padding:0 10px;border:1px solid var(--line);border-radius:10px;text-decoration:none;color:inherit">Appeler</a>` : '';
   const djRow = (tag, col, r, sub, btn) => `<div class="row" style="padding:10px 0;border-bottom:1px dashed var(--line);flex-wrap:nowrap;gap:10px"><span class="pill" style="background:${col[0]};color:${col[1]};flex-shrink:0;min-width:92px;justify-content:center">${tag}</span><div style="flex:1;min-width:0"><div style="font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(r.guest_name || 'Client')} · ch. ${esc(r.room_number || '')}</div><div class="muted" style="font-size:12px">${sub}</div></div>${tel(r)}${btn}</div>`;
   const RED = ['#FEE2E2', '#991B1B'], AMB = ['#FEF3C7', '#92400E'], BLU = ['#DBEAFE', '#1E3A8A'], GRN = ['#DCFCE7', '#14532D'], VIO = ['#EDE9FE', '#5B21B6'];
+  // Groupes : arrivées et départs d'un même groupe regroupés sur une ligne
+  const GMAP = {}; { const ids = [...arrivals, ...departures].map(r => r.id); if (ids.length) { const { data: gm } = await sb.from('reservations').select('id,group_id,reservation_groups(name)').in('id', ids).not('group_id', 'is', null); (gm || []).forEach(x => GMAP[x.id] = { gid: x.group_id, name: (x.reservation_groups || {}).name || 'Groupe' }); } }
+  const grpRows = (list, tag, col, btnFn) => { const by = {}; list.forEach(r => { const g = GMAP[r.id]; if (g) (by[g.gid] = by[g.gid] || { ...g, rs: [] }).rs.push(r); });
+    const big = Object.values(by).filter(g => g.rs.length >= 2), inBig = new Set(big.flatMap(g => g.rs.map(r => r.id)));
+    return { rows: big.map(g => `<div class="row" style="padding:10px 0;border-bottom:1px dashed var(--line);flex-wrap:nowrap;gap:10px"><span class="pill" style="background:${col[0]};color:${col[1]};flex-shrink:0;min-width:92px;justify-content:center">${tag}</span><div style="flex:1;min-width:0"><div style="font-weight:700">Groupe ${esc(g.name)} · ${g.rs.length} chambres</div><div class="muted" style="font-size:13px">Ch. ${g.rs.map(r => esc(r.room_number)).join(', ')}${g.rs.some(r => r.balance > 0) ? ' · reste ' + money(g.rs.reduce((a, r) => a + Math.max(Number(r.balance), 0), 0)) : ''}</div></div><div class="row" style="gap:6px;flex-wrap:nowrap"><button class="small ghost" data-grpopen="${g.gid}">Voir le groupe</button>${btnFn(g)}</div></div>`), rest: list.filter(r => !inBig.has(r.id)), groups: big }; };
+  const GA = grpRows(arrivals, 'Arrivée groupe', ['#DBEAFE', '#1E3A8A'], g => `<button class="small primary" data-grpin="${g.gid}">Check-in du groupe</button>`);
+  const GD = grpRows(departures, 'Départ groupe', ['#FEF3C7', '#92400E'], () => '');
+  S._djGroups = GA.groups;
+  let EVT = []; if (hasF('venues')) { const d0 = new Date(); d0.setHours(0, 0, 0, 0); const d1 = new Date(d0.getTime() + 864e5); const { data: ev } = await sb.from('venue_event_balances').select('id,title,venue_name,starts_at,ends_at,setup_before,status,attendees,total_amount,paid').eq('establishment_id', S.est).in('status', ['option', 'confirmed', 'in_progress', 'request']).lt('starts_at', d1.toISOString()).gt('ends_at', d0.toISOString()).order('starts_at'); EVT = ev || []; }
+  const evRows = EVT.map(e => { const due = Math.max(Number(e.total_amount) - Number(e.paid), 0), setup = new Date(new Date(e.starts_at).getTime() - (e.setup_before || 0) * 6e4); return `<div class="row" style="padding:10px 0;border-bottom:1px dashed var(--line);flex-wrap:nowrap;gap:10px"><span class="pill" style="background:#FCE7F3;color:#9D174D;flex-shrink:0;min-width:92px;justify-content:center">${e.status === 'request' ? 'Demande salle' : 'Événement'}</span><div style="flex:1;min-width:0"><div style="font-weight:700">${esc(e.title)}</div><div class="muted" style="font-size:13px">${esc(e.venue_name)} · ${hhmm(e.starts_at)}–${hhmm(e.ends_at)} · mise en place ${hhmm(setup)}${e.attendees ? ' · ' + e.attendees + ' pers.' : ''}${due ? ' · reste ' + money(due) : ''}</div></div><button class="small primary" data-evopen="${e.id}">Ouvrir</button></div>`; });
   const djItems = [
     ...(lateOut.data || []).map(r => djRow('Départ dépassé', RED, r, `Départ prévu le ${dfr(r.check_out)}${r.balance > 0 ? ' · solde ' + money(r.balance) : ''}`, `<button class="small primary" data-checkout="${r.id}">Check-out</button>`)),
     ...(lateIn.data || []).map(r => djRow('Arrivée en retard', RED, r, `Attendu le ${dfr(r.check_in)}`, `<button class="small primary" data-open="${r.id}">Traiter</button>`)),
-    ...departures.map(r => djRow('Départ', AMB, r, r.balance > 0 ? 'Solde à encaisser : ' + money(r.balance) : 'Séjour réglé', `<button class="small primary" data-checkout="${r.id}">Check-out</button>`)),
-    ...arrivals.map(r => djRow('Arrivée', BLU, r, `${plur(r.nights, 'nuit', 'nuits')}${r.balance > 0 ? ' · reste ' + money(r.balance) : ' · réglé'}${r.source === 'en_ligne' ? ' · en ligne' : ''}`, `<button class="small primary" data-checkin="${r.id}">Check-in</button>`)),
+    ...evRows, ...GD.rows, ...GA.rows,
+    ...GD.rest.map(r => djRow('Départ', AMB, r, r.balance > 0 ? 'Solde à encaisser : ' + money(r.balance) : 'Séjour réglé', `<button class="small primary" data-checkout="${r.id}">Check-out</button>`)),
+    ...GA.rest.map(r => djRow('Arrivée', BLU, r, `${plur(r.nights, 'nuit', 'nuits')}${r.balance > 0 ? ' · reste ' + money(r.balance) : ' · réglé'}${r.source === 'en_ligne' ? ' · en ligne' : ''}`, `<button class="small primary" data-checkin="${r.id}">Check-in</button>`)),
     ...(pend.data || []).map(r => djRow('Demande en ligne', VIO, r, `${dfr(r.check_in)} → ${dfr(r.check_out)} · ${money(r.total_amount)}`, `<button class="small primary" data-open="${r.id}">Traiter</button>`)),
     ...dueStay.map(r => djRow('Solde dû', GRN, r, `En séjour jusqu’au ${dfr(r.check_out)} · reste ${money(r.balance)}`, `<button class="small primary" data-open="${r.id}">Encaisser</button>`))
   ];
@@ -3149,6 +3164,13 @@ async function renderDashboardCore(){
   const gh = $('gHide'); if (gh) gh.onclick = () => { try { localStorage.setItem('hh_guide_hidden_' + S.org, '1'); } catch (_) {} const sec = gh.closest('section'); if (sec) sec.remove(); toast('Guide de démarrage masqué. Vous pouvez le réafficher dans Réglages.'); };
   bindResaActions(el, renderDashboard);
   el.querySelectorAll('[data-djmode]').forEach(b => b.onclick = () => { try { localStorage.setItem('hh_dash_mode', b.dataset.djmode); } catch (_) {} renderDashboard(); });
+  el.querySelectorAll('[data-evopen]').forEach(b => b.onclick = async () => { const { data: sv } = await sb.from('venue_services').select('*').eq('establishment_id', S.est); S._vservices = sv || []; openEvent(b.dataset.evopen); });
+  el.querySelectorAll('[data-grpopen]').forEach(b => b.onclick = () => openGroup(b.dataset.grpopen, () => go('dashboard')));
+  el.querySelectorAll('[data-grpin]').forEach(b => b.onclick = () => { const g = (S._djGroups || []).find(x => x.gid === b.dataset.grpin); if (!g) return;
+    modal(`<h2 style="font-size:22px;margin-bottom:8px">Check-in du groupe ${esc(g.name)}</h2><p class="muted" style="margin:0 0 10px">${g.rs.length} chambres arrivent aujourd’hui :</p><ul style="margin:0 0 14px;padding-left:18px">${g.rs.map(r => `<li>Ch. ${esc(r.room_number)} · ${esc(r.guest_name)}${r.balance > 0 ? ' · reste ' + money(r.balance) : ''}</li>`).join('')}</ul><div class="row" style="gap:8px;justify-content:flex-end"><button class="ghost" data-close>Annuler</button><button class="primary" id="gciGo">Enregistrer les ${g.rs.length} arrivées</button></div>`);
+    $('gciGo').onclick = async () => { $('gciGo').disabled = true; let ok = 0, ko = [];
+      for (const r of g.rs) { const { error } = await sb.rpc('check_in_reservation', { p_reservation: r.id }); if (error) ko.push('Ch. ' + r.room_number + ' : ' + errMsg(error)); else ok++; }
+      closeModal(); toast(ko.length ? `${ok} arrivée(s) enregistrée(s). ${ko.join(' · ')}` : `Groupe ${g.name} : ${ok} arrivées enregistrées.`, !!ko.length); go('dashboard'); }; });
   el.querySelectorAll('[data-djf]').forEach(b => b.onclick = () => { const s = el.querySelector('[aria-label="Ma journée"]'); if (s) s.scrollIntoView({ behavior: 'smooth', block: 'start' }); });
   el.querySelectorAll('[data-room]:not([data-open])').forEach(b => b.onclick = () => roomTileAction(b.dataset.room, renderDashboard));
 }
@@ -3538,6 +3560,239 @@ async function renderNaya(){
   };
   draw();
 }
+
+/* ---------- Salles et événements ---------- */
+const VKIND = { conference: 'Salle de conférence', fete: 'Salle de fête', reunion: 'Salle de réunion', terrasse: 'Terrasse', jardin: 'Jardin', autre: 'Autre espace' };
+const EKIND = { seminaire: 'Séminaire', reunion: 'Réunion', conference: 'Conférence', formation: 'Formation', mariage: 'Mariage', anniversaire: 'Anniversaire', bapteme: 'Baptême', funerailles: 'Funérailles', soiree: 'Soirée', autre: 'Autre' };
+const ESTAT = { request: ['Demande Nuittea', '#EDE9FE', '#5B21B6'], option: ['Option', '#FEF3C7', '#92400E'], confirmed: ['Confirmé', '#DBEAFE', '#1E3A8A'], in_progress: ['En cours', '#DCFCE7', '#14532D'], done: ['Terminé', '#F1F5F9', '#475569'], cancelled: ['Annulé', '#FEE2E2', '#991B1B'] };
+const LAYOUTS = { theatre: 'Théâtre', classe: 'Classe', banquet: 'Banquet', cocktail: 'Cocktail', u: 'En U' };
+const RMODE = { hour: 'À l’heure', half: 'Demi-journée', day: 'Journée', evening: 'Soirée', custom: 'Prix libre' };
+const VAMEN = { projecteur: 'Vidéoprojecteur', ecran: 'Écran', sono: 'Sonorisation', micro: 'Micros', clim: 'Climatisation', wifi: 'Wi-Fi', scene: 'Scène', groupe: 'Groupe électrogène', parking: 'Parking', cuisine: 'Cuisine traiteur', tables: 'Tables et chaises', paperboard: 'Paperboard' };
+const SUNIT = { personne: 'par personne', forfait: 'forfait', heure: 'par heure', unite: 'par unité' };
+const epill = (s) => { const c = ESTAT[s] || [s, '#F1F5F9', '#475569']; return `<span class="pill" style="background:${c[1]};color:${c[2]}">${c[0]}</span>`; };
+const dlong = (d) => new Date(d).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+const venueMgr = () => can(['owner', 'admin', 'manager']);
+
+async function renderSalles(){
+  const el = $('v-salles'); keepOrSkel(el); if (!S.est) await loadEst();
+  const st = S._sl || (S._sl = { tab: 'agenda', f: 'actifs' });
+  const now = new Date(), from = new Date(now.getTime() - 864e5 * 30).toISOString();
+  const [{ data: V }, { data: SV }, { data: EV }] = await Promise.all([
+    sb.from('venues').select('*').eq('establishment_id', S.est).order('sort_order').order('name'),
+    sb.from('venue_services').select('*').eq('establishment_id', S.est).order('name'),
+    sb.from('venue_event_balances').select('*').eq('establishment_id', S.est).gte('ends_at', from).order('starts_at').limit(500)]);
+  if (S.view !== 'salles') return;
+  S._venues = V || []; S._vservices = SV || []; S._vevents = EV || [];
+  const E = S._vevents, act = E.filter(e => ['option', 'confirmed', 'in_progress'].includes(e.status));
+  const reqs = E.filter(e => e.status === 'request');
+  const up = act.filter(e => new Date(e.ends_at) >= now);
+  const month = E.filter(e => ['confirmed', 'in_progress', 'done'].includes(e.status) && new Date(e.starts_at).getMonth() === now.getMonth() && new Date(e.starts_at).getFullYear() === now.getFullYear());
+  const TABS = [['agenda', `Agenda${reqs.length ? ' · ' + reqs.length + ' demande(s)' : ''}`], ['evenements', 'Tous les événements'], ['salles', `Salles · ${S._venues.length}`], ['prestations', 'Prestations']];
+  let body = '';
+  const evRow = (e) => `<div class="row" style="padding:10px 0;border-bottom:1px dashed var(--line);flex-wrap:nowrap;gap:10px;cursor:pointer" data-ev="${e.id}">
+      <div style="width:64px;flex:none;text-align:center"><div style="font-weight:800;font-size:18px">${hhmm(e.starts_at)}</div><div class="muted" style="font-size:12px">${hhmm(e.ends_at)}</div></div>
+      <div style="flex:1;min-width:0"><div style="font-weight:700">${esc(e.title)} ${epill(e.status)}</div><div class="muted" style="font-size:13px">${esc(e.venue_name)} · ${esc(EKIND[e.kind] || e.kind)}${e.attendees ? ' · ' + e.attendees + ' pers.' : ''} · ${esc(e.client_name)}${e.option_until && e.status === 'option' ? ' · option jusqu’au ' + dfr(e.option_until) : ''}</div></div>
+      <div style="text-align:right;white-space:nowrap"><div style="font-weight:700">${money(e.total_amount)}</div>${Number(e.total_amount) - Number(e.paid) > 0 ? `<div style="font-size:12px;color:var(--red)">reste ${money(Number(e.total_amount) - Number(e.paid))}</div>` : '<div class="muted" style="font-size:12px">réglé</div>'}</div></div>`;
+  if (!S._venues.length && st.tab !== 'salles') st.tab = 'salles';
+  if (st.tab === 'agenda') {
+    const byDay = {}; up.forEach(e => { const k = new Date(e.starts_at).toDateString(); (byDay[k] = byDay[k] || []).push(e); });
+    body = `${reqs.length ? `<div class="card" style="margin-bottom:14px;border-color:#C4B5FD"><h3 style="font-size:17px;margin-bottom:6px">Demandes de devis Nuittea.com</h3>${reqs.map(evRow).join('')}<p class="muted" style="font-size:12px;margin:8px 0 0">Ouvrez une demande pour la transformer en option ou en événement confirmé, ou la refuser.</p></div>` : ''}
+      <div class="card">${Object.keys(byDay).length ? Object.entries(byDay).map(([k, l]) => `<h3 style="font-size:16px;margin:10px 0 2px;text-transform:capitalize">${dlong(l[0].starts_at)}</h3>${l.map(evRow).join('')}`).join('') : '<p class="muted" style="margin:0">Aucun événement à venir.</p>'}</div>`;
+  } else if (st.tab === 'evenements') {
+    const F = { actifs: e => ['option', 'confirmed', 'in_progress', 'request'].includes(e.status), passes: e => e.status === 'done', annules: e => e.status === 'cancelled', impayes: e => e.status !== 'cancelled' && Number(e.total_amount) > Number(e.paid) };
+    const L = E.filter(F[st.f]).slice().sort((a, b) => st.f === 'passes' ? new Date(b.starts_at) - new Date(a.starts_at) : new Date(a.starts_at) - new Date(b.starts_at));
+    body = `<div class="row" style="gap:6px;margin-bottom:10px;flex-wrap:wrap">${[['actifs', 'En cours et à venir'], ['impayes', 'Soldes dus'], ['passes', 'Terminés'], ['annules', 'Annulés']].map(([k, l]) => `<button type="button" class="small ${st.f === k ? 'primary' : 'ghost'}" data-slf="${k}">${l} · ${E.filter(F[k]).length}</button>`).join('')}</div>
+      <div class="card">${L.length ? L.map(e => `<div class="muted" style="font-size:12px;margin-top:8px;text-transform:capitalize">${dlong(e.starts_at)}</div>${evRow(e)}`).join('') : '<p class="muted" style="margin:0">Aucun événement.</p>'}</div>`;
+  } else if (st.tab === 'salles') {
+    body = `${venueMgr() ? '<div class="row" style="justify-content:flex-end;margin-bottom:10px"><button class="primary" id="vNew">Ajouter une salle</button></div>' : ''}
+      ${S._venues.length ? `<div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px">${S._venues.map(v => `<div class="card" style="padding:0;overflow:hidden;${v.is_active ? '' : 'opacity:.6'}">
+        ${(v.photos || [])[0] ? `<img src="${esc(v.photos[0])}" alt="" style="width:100%;height:140px;object-fit:cover" loading="lazy">` : '<div style="height:80px;background:var(--line)"></div>'}
+        <div style="padding:12px"><div class="row between"><strong>${esc(v.name)}</strong>${v.public_listed ? '<span class="pill" style="background:#DCFCE7;color:#14532D">Sur Nuittea</span>' : ''}</div>
+        <div class="muted" style="font-size:13px">${esc(VKIND[v.kind])}${(v.capacity || {}).theatre || (v.capacity || {}).banquet ? ' · jusqu’à ' + Math.max(...Object.values(v.capacity || {}).map(Number).filter(Boolean)) + ' pers.' : ''}${v.area_m2 ? ' · ' + v.area_m2 + ' m²' : ''}</div>
+        <div style="font-size:13px;margin-top:6px">${[['rate_hour', 'heure'], ['half', ''], ['rate_half', 'demi-journée'], ['rate_day', 'journée'], ['rate_evening', 'soirée']].filter(([k]) => v[k] != null && k.startsWith('rate')).map(([k, l]) => `${money(v[k])} / ${l}`).join(' · ') || '<span class="muted">Tarifs à définir</span>'}</div>
+        <div class="row" style="gap:6px;margin-top:10px"><button class="small primary" data-vbook="${v.id}">Réserver</button>${venueMgr() ? `<button class="small ghost" data-vedit="${v.id}">Modifier</button>` : ''}</div></div></div>`).join('')}</div>`
+        : `<div class="card" style="text-align:center;padding:30px"><h3 style="font-size:20px">Louez vos salles</h3><p class="muted">Conférences, séminaires, mariages, anniversaires : ajoutez vos salles, leurs capacités et leurs tarifs, puis gérez les réservations, devis, acomptes et prestations au même endroit.</p>${venueMgr() ? '<button class="primary" id="vNew2">Ajouter ma première salle</button>' : '<p class="muted">Demandez au gérant d’ajouter les salles.</p>'}</div>`}`;
+  } else {
+    body = `${venueMgr() ? '<div class="row" style="justify-content:flex-end;margin-bottom:10px"><button class="primary" id="svNew">Ajouter une prestation</button></div>' : ''}
+      <div class="card">${S._vservices.length ? `<div class="tablewrap"><table class="table"><thead><tr><th>Prestation</th><th>Unité</th><th style="text-align:right">Prix</th><th></th></tr></thead><tbody>${S._vservices.map(x => `<tr style="${x.is_active ? '' : 'opacity:.55'}"><td><strong>${esc(x.name)}</strong></td><td>${SUNIT[x.unit]}</td><td style="text-align:right">${money(x.price)}</td><td style="text-align:right">${venueMgr() ? `<button class="small ghost" data-svedit="${x.id}">Modifier</button>` : ''}</td></tr>`).join('')}</tbody></table></div>`
+        : '<p class="muted" style="margin:0">Ajoutez vos prestations : pause-café, déjeuner, buffet, boissons, décoration, sonorisation, DJ, sécurité…</p>'}</div>`;
+  }
+  const kp = (l, v) => `<div class="card" style="padding:12px"><div class="muted" style="font-size:12px">${l}</div><div style="font-weight:800;font-size:20px">${v}</div></div>`;
+  el.innerHTML = head('Salles et événements', S._venues.length ? '<button class="primary" id="evNew">Nouvel événement</button>' : '') +
+    `<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:12px">${kp('Événements à venir', up.length)}${kp('Demandes Nuittea', reqs.length)}${kp('Chiffre du mois', money(month.reduce((a, e) => a + Number(e.total_amount), 0)))}${kp('Soldes dus', money(E.filter(e => e.status !== 'cancelled').reduce((a, e) => a + Math.max(Number(e.total_amount) - Number(e.paid), 0), 0)))}</div>
+    <div class="row ny-tabs" role="tablist" aria-label="Salles">${TABS.map(([k, l]) => `<button type="button" role="tab" aria-selected="${st.tab === k}" class="${st.tab === k ? 'on' : ''}" data-sltab="${k}">${l}</button>`).join('')}</div>` + body;
+  el.querySelectorAll('[data-sltab]').forEach(b => b.onclick = () => { st.tab = b.dataset.sltab; renderSalles(); });
+  el.querySelectorAll('[data-slf]').forEach(b => b.onclick = () => { st.f = b.dataset.slf; renderSalles(); });
+  el.querySelectorAll('[data-ev]').forEach(b => b.onclick = () => openEvent(b.dataset.ev));
+  el.querySelectorAll('[data-vbook]').forEach(b => b.onclick = () => openEventForm({ venue_id: b.dataset.vbook }));
+  el.querySelectorAll('[data-vedit]').forEach(b => b.onclick = () => openVenueForm(S._venues.find(v => v.id === b.dataset.vedit)));
+  el.querySelectorAll('[data-svedit]').forEach(b => b.onclick = () => openServiceForm(S._vservices.find(v => v.id === b.dataset.svedit)));
+  [['vNew', () => openVenueForm({})], ['vNew2', () => openVenueForm({})], ['svNew', () => openServiceForm({})], ['evNew', () => openEventForm({})]].forEach(([id, fn]) => { const b = $(id); if (b) b.onclick = fn; });
+}
+
+function openVenueForm(v){
+  const cap = v.capacity || {};
+  modal(`<h2 style="font-size:22px;margin-bottom:10px">${v.id ? 'Modifier la salle' : 'Nouvelle salle'}</h2>
+    <form id="vF" class="grid g2" style="gap:10px">
+      <label>Nom<input id="vN" required maxlength="80" value="${esc(v.name || '')}" placeholder="ex. Salle Ivoire"></label>
+      <label>Type<select id="vK">${Object.entries(VKIND).map(([k, l]) => `<option value="${k}" ${v.kind === k ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
+      <fieldset style="grid-column:1/-1;border:1px solid var(--line);border-radius:12px;padding:10px"><legend style="font-weight:700;padding:0 6px">Capacité selon la disposition (personnes)</legend>
+        <div class="grid" style="grid-template-columns:repeat(5,minmax(0,1fr));gap:8px">${Object.entries(LAYOUTS).map(([k, l]) => `<label style="font-size:13px">${l}<input type="number" min="0" data-cap="${k}" value="${cap[k] || ''}"></label>`).join('')}</div></fieldset>
+      <label>Surface (m²)<input id="vA" type="number" min="5" value="${v.area_m2 || ''}"></label>
+      <label>Mise en place et rangement (minutes avant/après)<input id="vSu" type="number" min="0" max="720" value="${v.setup_minutes ?? 60}"></label>
+      <label>Tarif à l’heure<input id="vR1" inputmode="numeric" value="${v.rate_hour ?? ''}"></label>
+      <label>Tarif demi-journée<input id="vR2" inputmode="numeric" value="${v.rate_half ?? ''}"></label>
+      <label>Tarif journée<input id="vR3" inputmode="numeric" value="${v.rate_day ?? ''}"></label>
+      <label>Tarif soirée / événement<input id="vR4" inputmode="numeric" value="${v.rate_evening ?? ''}"></label>
+      <label>Majoration week-end (%)<input id="vW" type="number" min="0" max="200" value="${v.weekend_pct || 0}"></label>
+      <div></div>
+      <fieldset style="grid-column:1/-1;border:1px solid var(--line);border-radius:12px;padding:10px"><legend style="font-weight:700;padding:0 6px">Équipements</legend>
+        <div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:6px">${Object.entries(VAMEN).map(([k, l]) => `<label class="row" style="gap:6px;flex-wrap:nowrap;font-weight:500"><input type="checkbox" data-am="${k}" ${(v.amenities || []).includes(k) ? 'checked' : ''} style="width:18px;min-height:18px"> ${l}</label>`).join('')}</div></fieldset>
+      <label style="grid-column:1/-1">Description<textarea id="vD" rows="3" maxlength="1500">${esc(v.description || '')}</textarea></label>
+      <div style="grid-column:1/-1"><div style="font-weight:700;margin-bottom:6px">Photos (10 maximum)</div><div id="vPh" class="row" style="gap:8px;flex-wrap:wrap"></div><input type="file" id="vPf" accept="image/jpeg,image/png,image/webp" multiple style="margin-top:8px"></div>
+      <label class="row" style="grid-column:1/-1;gap:8px;flex-wrap:nowrap;font-weight:600"><input type="checkbox" id="vPub" ${v.public_listed ? 'checked' : ''} style="width:20px;min-height:20px"> Proposer cette salle sur Nuittea.com (demandes de devis en ligne)</label>
+      <label class="row" style="grid-column:1/-1;gap:8px;flex-wrap:nowrap;font-weight:600"><input type="checkbox" id="vAct" ${v.is_active !== false ? 'checked' : ''} style="width:20px;min-height:20px"> Salle active</label>
+      <div class="row" style="grid-column:1/-1;justify-content:flex-end;gap:8px"><button type="button" class="ghost" data-close>Annuler</button><button class="primary">Enregistrer</button></div>
+    </form>`);
+  $('modalBody').style.maxWidth = '720px';
+  let photos = [...(v.photos || [])];
+  const drawPh = () => { $('vPh').innerHTML = photos.map((u, i) => `<div style="position:relative"><img src="${esc(u)}" alt="" style="width:96px;height:72px;object-fit:cover;border-radius:8px"><button type="button" data-rmph="${i}" aria-label="Retirer la photo" style="position:absolute;top:2px;right:2px;min-height:24px;padding:0 6px" class="small">✕</button></div>`).join('') || '<span class="muted" style="font-size:13px">Aucune photo.</span>'; $('vPh').querySelectorAll('[data-rmph]').forEach(b => b.onclick = () => { photos.splice(+b.dataset.rmph, 1); drawPh(); }); };
+  drawPh();
+  $('vPf').onchange = async () => { for (const f of [...$('vPf').files].slice(0, 10 - photos.length)) { try { photos.push(await uploadRoomPhoto(f, 'salle-' + (v.id || 'new'))); drawPh(); } catch (e) { toast(e.message || errMsg(e), true); } } $('vPf').value = ''; };
+  const num = (id) => { const x = String($(id).value).replace(/[^0-9]/g, ''); return x === '' ? null : Number(x); };
+  $('vF').onsubmit = async (e) => { e.preventDefault();
+    const capacity = {}; document.querySelectorAll('[data-cap]').forEach(i => { if (+i.value > 0) capacity[i.dataset.cap] = +i.value; });
+    const row = { establishment_id: S.est, name: $('vN').value.trim(), kind: $('vK').value, capacity, area_m2: num('vA'), setup_minutes: num('vSu') ?? 60,
+      rate_hour: num('vR1'), rate_half: num('vR2'), rate_day: num('vR3'), rate_evening: num('vR4'), weekend_pct: num('vW') || 0,
+      amenities: [...document.querySelectorAll('[data-am]:checked')].map(i => i.dataset.am), description: $('vD').value.trim() || null, photos, public_listed: $('vPub').checked, is_active: $('vAct').checked };
+    const { error } = v.id ? await sb.from('venues').update(row).eq('id', v.id) : await sb.from('venues').insert(row);
+    if (error) return toast(errMsg(error), true); closeModal(); toast('Salle enregistrée.'); renderSalles(); };
+}
+
+function openServiceForm(x){
+  modal(`<h2 style="font-size:22px;margin-bottom:10px">${x.id ? 'Modifier la prestation' : 'Nouvelle prestation'}</h2>
+    <form id="svF" class="grid g2" style="gap:10px"><label style="grid-column:1/-1">Nom<input id="svN" required maxlength="80" value="${esc(x.name || '')}" placeholder="ex. Pause-café"></label>
+      <label>Unité<select id="svU">${Object.entries(SUNIT).map(([k, l]) => `<option value="${k}" ${x.unit === k ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
+      <label>Prix<input id="svP" inputmode="numeric" required value="${x.price ?? ''}"></label>
+      <label class="row" style="grid-column:1/-1;gap:8px;flex-wrap:nowrap;font-weight:600"><input type="checkbox" id="svA" ${x.is_active !== false ? 'checked' : ''} style="width:20px;min-height:20px"> Prestation active</label>
+      <div class="row" style="grid-column:1/-1;justify-content:flex-end;gap:8px"><button type="button" class="ghost" data-close>Annuler</button><button class="primary">Enregistrer</button></div></form>`);
+  $('svF').onsubmit = async (e) => { e.preventDefault(); const row = { establishment_id: S.est, name: $('svN').value.trim(), unit: $('svU').value, price: Number(String($('svP').value).replace(/[^0-9]/g, '')) || 0, is_active: $('svA').checked };
+    const { error } = x.id ? await sb.from('venue_services').update(row).eq('id', x.id) : await sb.from('venue_services').insert(row);
+    if (error) return toast(errMsg(error), true); closeModal(); toast('Prestation enregistrée.'); renderSalles(); };
+}
+
+function venuePrice(v, mode, start, end){
+  if (!v) return 0;
+  const h = Math.max((end - start) / 36e5, 0), we = [0, 6].includes(start.getDay()) ? 1 + Number(v.weekend_pct || 0) / 100 : 1;
+  const base = mode === 'hour' ? Number(v.rate_hour || 0) * Math.ceil(h) : mode === 'half' ? Number(v.rate_half || 0) : mode === 'day' ? Number(v.rate_day || 0) * Math.max(1, Math.ceil(h / 24)) : mode === 'evening' ? Number(v.rate_evening || 0) : 0;
+  return Math.round(base * we);
+}
+
+async function openEventForm(e){
+  if (!S._venues) { const { data } = await sb.from('venues').select('*').eq('establishment_id', S.est); S._venues = data || []; }
+  const VS = S._venues.filter(v => v.is_active || v.id === e.venue_id);
+  if (!VS.length) return toast('Ajoutez d’abord une salle.', true);
+  const d0 = e.starts_at ? new Date(e.starts_at) : null, d1 = e.ends_at ? new Date(e.ends_at) : null;
+  const ymd = (d) => d ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` : today();
+  const tm = (d, def) => d ? `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}` : def;
+  const { data: GRS } = await sb.from('reservation_groups').select('id,name').eq('establishment_id', S.est).order('created_at', { ascending: false }).limit(50);
+  modal(`<h2 style="font-size:22px;margin-bottom:10px">${e.id ? 'Modifier l’événement n° ' + e.number : 'Nouvel événement'}</h2>
+    <form id="eF" class="grid g2" style="gap:10px">
+      <label>Salle<select id="eV">${VS.map(v => `<option value="${v.id}" ${(e.venue_id || VS[0].id) === v.id ? 'selected' : ''}>${esc(v.name)}</option>`).join('')}</select></label>
+      <label>Type d’événement<select id="eK">${Object.entries(EKIND).map(([k, l]) => `<option value="${k}" ${e.kind === k ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
+      <label style="grid-column:1/-1">Intitulé<input id="eT" required maxlength="120" value="${esc(e.title || '')}" placeholder="ex. Séminaire annuel Banque X"></label>
+      <label>Client ou organisateur<input id="eC" required maxlength="120" value="${esc(e.client_name || '')}"></label>
+      <label>Téléphone<input id="eP" inputmode="tel" value="${esc(e.client_phone || '')}"></label>
+      <label>E-mail<input id="eE" type="email" value="${esc(e.client_email || '')}"></label>
+      <label>Participants<input id="eN" type="number" min="1" value="${e.attendees || ''}"></label>
+      <label>Date<input id="eD" type="date" required value="${ymd(d0)}"></label>
+      <div class="grid" style="grid-template-columns:1fr 1fr;gap:8px"><label>Début<input id="eS" type="time" required value="${tm(d0, '08:00')}"></label><label>Fin<input id="eU" type="time" required value="${tm(d1, '17:00')}"></label></div>
+      <label>Disposition<select id="eL"><option value="">—</option>${Object.entries(LAYOUTS).map(([k, l]) => `<option value="${k}" ${e.layout === k ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
+      <label>État<select id="eSt">${['option', 'confirmed'].concat(e.id ? ['request', 'in_progress', 'done', 'cancelled'] : []).map(k => `<option value="${k}" ${(e.status || 'option') === k ? 'selected' : ''}>${ESTAT[k][0]}</option>`).join('')}</select></label>
+      <label>Option valable jusqu’au<input id="eO" type="date" value="${e.option_until || ''}"></label>
+      <label>Tarif de la salle<select id="eM">${Object.entries(RMODE).map(([k, l]) => `<option value="${k}" ${(e.rate_mode || 'day') === k ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
+      <label>Montant de la salle<input id="eA" inputmode="numeric" value="${e.room_amount ?? ''}"></label>
+      <label>Remise<input id="eR" inputmode="numeric" value="${e.discount || ''}"></label>
+      <label>Groupe de chambres lié (facultatif)<select id="eG"><option value="">—</option>${(GRS || []).map(g => `<option value="${g.id}" ${e.group_id === g.id ? 'selected' : ''}>${esc(g.name)}</option>`).join('')}</select></label>
+      <label style="grid-column:1/-1">Notes<textarea id="eNo" rows="2" maxlength="2000">${esc(e.notes || '')}</textarea></label>
+      <p id="eW" class="muted" style="grid-column:1/-1;margin:0;font-size:13px"></p>
+      <div class="row" style="grid-column:1/-1;justify-content:flex-end;gap:8px"><button type="button" class="ghost" data-close>Annuler</button><button class="primary">Enregistrer</button></div>
+    </form>`);
+  $('modalBody').style.maxWidth = '720px';
+  const bounds = () => { const d = $('eD').value, s = new Date(`${d}T${$('eS').value}`), u = new Date(`${d}T${$('eU').value}`); if (u <= s) u.setDate(u.getDate() + 1); return [s, u]; };
+  const reprice = () => { const v = VS.find(x => x.id === $('eV').value), [s, u] = bounds(); if ($('eM').value !== 'custom') $('eA').value = venuePrice(v, $('eM').value, s, u) || ''; const cap = Math.max(0, ...Object.values((v || {}).capacity || {}).map(Number).filter(Boolean)); $('eW').textContent = cap && +$('eN').value > cap ? `Attention : ${$('eN').value} participants pour une capacité maximale de ${cap}.` : ''; };
+  ['eV', 'eM', 'eD', 'eS', 'eU', 'eN'].forEach(id => $(id).addEventListener('change', reprice));
+  if (!e.id) reprice();
+  $('eF').onsubmit = async (ev) => { ev.preventDefault();
+    const [s, u] = bounds(), v = VS.find(x => x.id === $('eV').value);
+    const row = { establishment_id: S.est, venue_id: v.id, title: $('eT').value.trim(), kind: $('eK').value, client_name: $('eC').value.trim(), client_phone: $('eP').value.trim() || null, client_email: $('eE').value.trim() || null,
+      attendees: +$('eN').value || null, starts_at: s.toISOString(), ends_at: u.toISOString(), setup_before: v.setup_minutes ?? 60, setup_after: v.setup_minutes ?? 60,
+      layout: $('eL').value || null, status: $('eSt').value, option_until: $('eO').value || null, rate_mode: $('eM').value,
+      room_amount: Number(String($('eA').value).replace(/[^0-9]/g, '')) || 0, discount: Number(String($('eR').value).replace(/[^0-9]/g, '')) || 0, group_id: $('eG').value || null, notes: $('eNo').value.trim() || null };
+    const r = e.id ? await sb.from('venue_events').update(row).eq('id', e.id).select('id').single() : await sb.from('venue_events').insert(row).select('id').single();
+    if (r.error) return toast(/no_overlap|exclusion|23P01/.test(JSON.stringify(r.error)) ? 'Cette salle est déjà occupée sur ce créneau (mise en place et rangement compris).' : errMsg(r.error), true);
+    closeModal(); toast('Événement enregistré.'); if (S.view === 'salles') await renderSalles(); openEvent(r.data.id); };
+}
+
+async function openEvent(id){
+  const [{ data: e }, { data: IT }, { data: PM }] = await Promise.all([
+    sb.from('venue_event_balances').select('*').eq('id', id).maybeSingle(),
+    sb.from('venue_event_items').select('*').eq('event_id', id).order('label'),
+    sb.from('cash_movements').select('amount,kind,method,created_at,label').eq('venue_event_id', id).order('created_at')]);
+  if (!e) return toast('Événement introuvable.', true);
+  const due = Math.max(Number(e.total_amount) - Number(e.paid), 0), edit = !['done', 'cancelled'].includes(e.status);
+  const SV = (S._vservices || []).filter(x => x.is_active);
+  const nxt = { request: [['option', 'Mettre en option'], ['confirmed', 'Confirmer'], ['cancelled', 'Refuser']], option: [['confirmed', 'Confirmer'], ['cancelled', 'Annuler']], confirmed: [['in_progress', 'Démarrer'], ['cancelled', 'Annuler']], in_progress: [['done', 'Terminer']] }[e.status] || [];
+  modal(`<div class="row between" style="gap:8px;margin-bottom:4px"><h2 style="font-size:22px">${esc(e.title)}</h2>${epill(e.status)}</div>
+    <p class="muted" style="margin:0 0 12px;font-size:14px">N° ${e.number} · ${esc(e.venue_name)} · <span style="text-transform:capitalize">${dlong(e.starts_at)}</span>, ${hhmm(e.starts_at)} – ${hhmm(e.ends_at)} · ${esc(EKIND[e.kind] || e.kind)}${e.attendees ? ' · ' + e.attendees + ' pers.' : ''}${e.layout ? ' · ' + LAYOUTS[e.layout] : ''}${e.source === 'nuittea' ? ' · via Nuittea.com' : ''}</p>
+    <div class="card" style="padding:12px;margin-bottom:10px"><strong>${esc(e.client_name)}</strong>${e.client_phone ? ` · <a href="tel:${esc(e.client_phone)}">${esc(e.client_phone)}</a> · <a href="https://wa.me/${esc(String(e.client_phone).replace(/[^0-9]/g, ''))}" target="_blank" rel="noopener">WhatsApp</a>` : ''}${e.client_email ? ' · ' + esc(e.client_email) : ''}${e.notes ? `<div class="muted" style="font-size:13px;margin-top:6px;white-space:pre-wrap">${esc(e.notes)}</div>` : ''}${e.option_until && e.status === 'option' ? `<div style="font-size:13px;margin-top:6px;color:#92400E">Option valable jusqu’au ${dfr(e.option_until)}</div>` : ''}</div>
+    <div class="tablewrap"><table class="table"><thead><tr><th>Désignation</th><th style="text-align:right">Qté</th><th style="text-align:right">Prix</th><th style="text-align:right">Montant</th><th></th></tr></thead><tbody>
+      <tr><td>Location ${esc(e.venue_name)} (${esc(RMODE[e.rate_mode])})</td><td style="text-align:right">1</td><td style="text-align:right">${money(e.room_amount)}</td><td style="text-align:right">${money(e.room_amount)}</td><td></td></tr>
+      ${(IT || []).map(i => `<tr><td>${esc(i.label)}</td><td style="text-align:right">${Number(i.qty)}</td><td style="text-align:right">${money(i.unit_price)}</td><td style="text-align:right">${money(i.qty * i.unit_price)}</td><td style="text-align:right">${edit ? `<button class="small ghost" data-itdel="${i.id}" aria-label="Retirer">✕</button>` : ''}</td></tr>`).join('')}
+      ${Number(e.discount) ? `<tr><td colspan="3">Remise</td><td style="text-align:right">− ${money(e.discount)}</td><td></td></tr>` : ''}
+      <tr><td colspan="3"><strong>Total</strong></td><td style="text-align:right"><strong>${money(e.total_amount)}</strong></td><td></td></tr>
+      <tr><td colspan="3">Déjà payé</td><td style="text-align:right">${money(e.paid)}</td><td></td></tr>
+      <tr><td colspan="3"><strong>Reste à payer</strong></td><td style="text-align:right;color:${due ? 'var(--red)' : 'inherit'}"><strong>${money(due)}</strong></td><td></td></tr></tbody></table></div>
+    ${edit ? `<form id="itF" class="row" style="gap:6px;margin:10px 0;flex-wrap:wrap"><select id="itS" style="flex:2 1 180px"><option value="">Prestation libre…</option>${SV.map(x => `<option value="${x.id}">${esc(x.name)} · ${money(x.price)} ${SUNIT[x.unit]}</option>`).join('')}</select><input id="itL" placeholder="Désignation" style="flex:2 1 140px"><input id="itQ" type="number" min="1" step="1" placeholder="Qté" value="${e.attendees || 1}" style="flex:0 1 80px"><input id="itP" inputmode="numeric" placeholder="Prix" style="flex:1 1 90px"><button class="small primary">Ajouter</button></form>` : ''}
+    ${(PM || []).length ? `<p class="muted" style="font-size:13px;margin:6px 0">Paiements : ${PM.map(p => `${dfr(p.created_at)} ${money(p.amount)} (${esc(p.method)})`).join(' · ')}</p>` : ''}
+    <div class="row" style="gap:6px;flex-wrap:wrap;margin-top:10px">
+      ${due > 0 && e.status !== 'cancelled' ? '<button class="primary" id="evPay">Encaisser</button>' : ''}
+      ${nxt.map(([k, l]) => `<button class="${k === 'cancelled' ? 'ghost' : 'primary'}" data-evst="${k}">${l}</button>`).join('')}
+      <button class="ghost" id="evQuote">Devis PDF</button><button class="ghost" id="evWa">Envoyer par WhatsApp</button>
+      ${edit ? '<button class="ghost" id="evEdit">Modifier</button>' : ''}${e.group_id ? '<button class="ghost" id="evGrp">Voir le groupe de chambres</button>' : ''}</div>`);
+  $('modalBody').style.maxWidth = '760px';
+  const reopen = async () => { if (S.view === 'salles') renderSalles(); openEvent(id); };
+  if ($('itS')) $('itS').onchange = () => { const x = SV.find(s => s.id === $('itS').value); if (x) { $('itL').value = x.name; $('itP').value = x.price; if (x.unit !== 'personne') $('itQ').value = 1; } };
+  if ($('itF')) $('itF').onsubmit = async (ev) => { ev.preventDefault(); const label = $('itL').value.trim(); if (!label) return toast('Indiquez la désignation.', true);
+    const { error } = await sb.from('venue_event_items').insert({ event_id: id, service_id: $('itS').value || null, label, qty: +$('itQ').value || 1, unit_price: Number(String($('itP').value).replace(/[^0-9]/g, '')) || 0 });
+    if (error) return toast(errMsg(error), true); reopen(); };
+  document.querySelectorAll('[data-itdel]').forEach(b => b.onclick = async () => { const { error } = await sb.from('venue_event_items').delete().eq('id', b.dataset.itdel); if (error) return toast(errMsg(error), true); reopen(); });
+  document.querySelectorAll('[data-evst]').forEach(b => b.onclick = async () => { const { error } = await sb.from('venue_events').update({ status: b.dataset.evst }).eq('id', id);
+    if (error) return toast(/no_overlap|exclusion|23P01/.test(JSON.stringify(error)) ? 'Impossible : la salle est déjà occupée sur ce créneau.' : errMsg(error), true); toast('État mis à jour.'); reopen(); });
+  if ($('evEdit')) $('evEdit').onclick = () => openEventForm(e);
+  if ($('evGrp')) $('evGrp').onclick = () => openGroup(e.group_id, () => {});
+  if ($('evPay')) $('evPay').onclick = () => {
+    modal(`<h2 style="font-size:22px;margin-bottom:10px">Encaisser · ${esc(e.title)}</h2><form id="epF" class="grid g2" style="gap:10px"><label>Montant<input id="epA" inputmode="numeric" required value="${due}"></label>
+      <label>Moyen<select id="epM"><option value="cash">Espèces</option><option value="wave">Wave</option><option value="orange_money">Orange Money</option><option value="mtn_money">MTN MoMo</option><option value="moov_money">Moov Money</option><option value="card">Carte</option><option value="bank_transfer">Virement</option></select></label>
+      <label style="grid-column:1/-1">Référence (facultatif)<input id="epR"></label><div class="row" style="grid-column:1/-1;justify-content:flex-end;gap:8px"><button type="button" class="ghost" id="epBack">Retour</button><button class="primary">Encaisser</button></div></form>`);
+    $('epBack').onclick = () => openEvent(id);
+    $('epF').onsubmit = async (ev) => { ev.preventDefault(); const amount = Number(String($('epA').value).replace(/[^0-9]/g, '')); if (!amount) return toast('Indiquez un montant.', true);
+      const { error } = await sb.from('cash_movements').insert({ establishment_id: S.est, venue_event_id: id, kind: 'income', method: $('epM').value, amount, label: (Number(e.paid) ? 'Solde' : 'Acompte') + ' événement n° ' + e.number + ' · ' + e.title.slice(0, 60), category: 'Salles', reference: $('epR').value.trim() || null, payment_group: crypto.randomUUID() });
+      if (error) return toast(errMsg(error), true); toast('Paiement encaissé.'); reopen(); };
+  };
+  const estObj = (S.ests || []).find(x => x.id === S.est) || {};
+  $('evQuote').onclick = () => { const w = window.open('', '_blank'); if (!w) return toast('Autorisez les fenêtres pour imprimer le devis.', true);
+    const rows = [[`Location ${e.venue_name} (${RMODE[e.rate_mode]})`, 1, e.room_amount], ...(IT || []).map(i => [i.label, Number(i.qty), i.unit_price])];
+    w.document.write(`<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Devis n° ${e.number}</title><style>body{font-family:Arial,sans-serif;color:#13212C;max-width:760px;margin:30px auto;padding:0 20px}h1{font-size:22px;margin:0}table{width:100%;border-collapse:collapse;margin:18px 0}td,th{padding:8px;border-bottom:1px solid #E3E8EC;text-align:left}th{background:#F5F7F9}.r{text-align:right}.muted{color:#5E6E7A;font-size:13px}.box{border:1px solid #E3E8EC;border-radius:10px;padding:12px;margin-top:14px}</style></head><body>
+      <div style="display:flex;justify-content:space-between;gap:20px"><div><h1>${esc(estObj.public_name || estObj.name || '')}</h1><div class="muted">${esc(estObj.public_address || estObj.address || estObj.city || '')}${estObj.public_phone ? ' · ' + esc(estObj.public_phone) : ''}</div></div><div style="text-align:right"><h1>${['confirmed', 'in_progress', 'done'].includes(e.status) ? 'Bon de commande' : 'Devis'} n° ${e.number}</h1><div class="muted">Émis le ${new Date().toLocaleDateString('fr-FR')}</div></div></div>
+      <div class="box"><strong>Client :</strong> ${esc(e.client_name)}${e.client_phone ? ' · ' + esc(e.client_phone) : ''}${e.client_email ? ' · ' + esc(e.client_email) : ''}<br><strong>Événement :</strong> ${esc(e.title)} (${esc(EKIND[e.kind] || e.kind)})<br><strong>Date :</strong> ${dlong(e.starts_at)}, de ${hhmm(e.starts_at)} à ${hhmm(e.ends_at)} · <strong>Salle :</strong> ${esc(e.venue_name)}${e.attendees ? ' · ' + e.attendees + ' participants' : ''}${e.layout ? ' · disposition ' + LAYOUTS[e.layout] : ''}</div>
+      <table><thead><tr><th>Désignation</th><th class="r">Qté</th><th class="r">Prix unitaire</th><th class="r">Montant</th></tr></thead><tbody>${rows.map(r => `<tr><td>${esc(r[0])}</td><td class="r">${r[1]}</td><td class="r">${money(r[2])}</td><td class="r">${money(r[1] * r[2])}</td></tr>`).join('')}
+      ${Number(e.discount) ? `<tr><td colspan="3">Remise</td><td class="r">− ${money(e.discount)}</td></tr>` : ''}<tr><td colspan="3"><strong>Total</strong></td><td class="r"><strong>${money(e.total_amount)}</strong></td></tr>${Number(e.paid) ? `<tr><td colspan="3">Déjà versé</td><td class="r">${money(e.paid)}</td></tr><tr><td colspan="3"><strong>Reste à payer</strong></td><td class="r"><strong>${money(due)}</strong></td></tr>` : ''}</tbody></table>
+      ${e.option_until && e.status === 'option' ? `<p>Option valable jusqu’au ${dfr(e.option_until)}. La réservation est confirmée à réception de l’acompte.</p>` : ''}<p class="muted">Montants en ${esc(estObj.currency || 'XOF')}.</p><script>window.onload=()=>window.print()<\/script></body></html>`); w.document.close(); };
+  $('evWa').onclick = () => { const t = `Bonjour ${e.client_name},\n\n${['confirmed', 'in_progress'].includes(e.status) ? 'Votre événement est confirmé' : 'Voici notre proposition'} pour « ${e.title} » :\n• Salle : ${e.venue_name}\n• Date : ${dlong(e.starts_at)}, ${hhmm(e.starts_at)} – ${hhmm(e.ends_at)}${e.attendees ? '\n• Participants : ' + e.attendees : ''}\n• Total : ${money(e.total_amount)}${Number(e.paid) ? '\n• Déjà versé : ' + money(e.paid) + '\n• Reste : ' + money(due) : ''}${e.option_until && e.status === 'option' ? '\n\nOption valable jusqu’au ' + dfr(e.option_until) + '.' : ''}\n\n${estObj.public_name || estObj.name || ''}`;
+    const ph = String(e.client_phone || '').replace(/[^0-9]/g, ''); window.open('https://wa.me/' + ph + '?text=' + encodeURIComponent(t), '_blank', 'noopener'); };
+}
+
 /* ---------- Réservation rapide : un seul écran, la chambre libre proposée d'office (objectif : moins de 30 secondes) ---------- */
 function roomTileAction(id, refresh){
   const rm = S.rooms.find(r => r.id === id); if (!rm) return;
@@ -3924,7 +4179,7 @@ async function openResa(id, refresh, focusCheckout){
   const extrasTot = (xs || []).reduce((a, x) => a + Number(x.total), 0);
   const active = ['pending','confirmed','checked_in'].includes(r.status);
   const { data: gl } = await sb.from('reservations').select('group_id, reservation_groups(name)').eq('id', id).maybeSingle();
-  modal(`${gl && gl.group_id ? `<button type="button" class="small ghost" id="aGrp" style="margin-bottom:8px">Groupe : ${esc((gl.reservation_groups || {}).name || '')} · voir le groupe</button>` : ''}<div class="row between"><h2 style="font-size:24px">${esc(r.guest_name)}</h2><span class="pill ${RSTCLS[r.status]}">${RSTATUS[r.status]}</span></div>
+  modal(`${gl && gl.group_id ? `<button type="button" id="aGrp" style="display:flex;width:100%;justify-content:space-between;align-items:center;margin-bottom:10px;padding:10px 12px;border-radius:12px;border:1px solid #BFDBFE;background:#EFF6FF;color:#1E3A8A;font-weight:700;text-align:left"><span>Fait partie du groupe « ${esc((gl.reservation_groups || {}).name || '')} »</span><span style="font-weight:600">Voir le groupe →</span></button>` : ''}<div class="row between"><h2 style="font-size:24px">${esc(r.guest_name)}</h2><span class="pill ${RSTCLS[r.status]}">${RSTATUS[r.status]}</span></div>
     <p class="muted" style="margin:4px 0 14px">Chambre ${esc(r.room_number)} · ${dfr(r.check_in)} → ${dfr(r.check_out)} · ${plur(r.nights, 'nuit', 'nuits')} · ${SOURCE[r.source]}${r.notes ? '<br>' + esc(r.notes) : ''}</p>
     <div class="grid" style="grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;text-align:center">
       <div class="card" style="padding:12px"><div class="muted" style="font-size:12px">Total</div><strong>${money(gtot(r))}</strong>${extrasTot ? `<div class="muted" style="font-size:11px">séjour ${money(r.total_amount)} + annexes ${money(extrasTot)}</div>` : ''}</div>
@@ -4075,6 +4330,8 @@ async function renderPlanning(){
   const mob = window.innerWidth < 640, RC = mob ? 88 : 150, avail = Math.max(320, (el.clientWidth || (window.innerWidth - 300)) - RC - 2);
   const cell = Math.max(PV === 'day' ? (mob ? 110 : 150) : PV === 'month' ? 40 : (mob ? 64 : 96), Math.floor(avail / days)), canMove = can(['owner','admin','manager','receptionist']);
   const RES = data || [];
+  const GNAMES = [...new Set(Object.values(GRP).filter(Boolean))], gcol = (n) => { let h = 0; for (const ch of String(n)) h = (h * 31 + ch.charCodeAt(0)) % 360; return `hsl(${h} 70% 45%)`; };
+  if (S._pg && !GNAMES.includes(S._pg)) S._pg = '';
   const LV = await roomLiveToday(S.rooms);
   const types = [...new Set(S.rooms.map(r => r.room_type).filter(Boolean))], ft = S._pt || '';
   const rooms = S.rooms.filter(r => !ft || r.room_type === ft);
@@ -4084,6 +4341,7 @@ async function renderPlanning(){
   const cellBg = (d, alt) => d === t ? 'var(--pl-today)' : we(d) ? 'var(--pl-we)' : alt ? 'var(--pl-alt)' : 'var(--pl-bg)';
   el.innerHTML = head('Planning', `<div class="toggle" role="group" aria-label="Vue" style="margin:0">${[['day', 'Jour'], ['week', 'Semaine'], ['month', 'Mois']].map(([k, l]) => `<button type="button" data-pv="${k}" class="${PV === k ? 'on' : ''}">${l}</button>`).join('')}</div><button class="ghost small" id="pPrev" aria-label="Période précédente">←</button><button class="ghost small" id="pToday">Aujourd'hui</button><button class="ghost small" id="pNext" aria-label="Période suivante">→</button><strong style="align-self:center;font-size:16px;text-transform:${PV === 'month' ? 'capitalize' : 'none'}">${period}</strong>${types.length > 1 ? `<select id="pType" aria-label="Type de chambre" style="width:auto"><option value="">Tous les types</option>${types.map(x => `<option ${x === ft ? 'selected' : ''}>${esc(x)}</option>`).join('')}</select>` : ''}<button class="primary small" data-newresa>+ Nouvelle réservation</button>`) + `
     <div class="pl-legend">${[['confirmed', 'Confirmée'], ['pending', 'En attente'], ['checked_in', 'En séjour'], ['late', 'Retard / impayé au départ'], ['checked_out', 'Partie']].map(([k, l]) => `<span><i style="background:${col[k][0]}"></i>${l}</span>`).join('')}<span><i style="background:var(--pl-we);border:1px solid var(--pl-line)"></i>Week-end</span><span class="muted">· Pastille : état du jour (${Object.entries(LV_DOT).map(([k, c]) => `<b style="color:${c}">●</b> ${LIVE[k][0]}`).join(', ')})</span></div>
+    ${GNAMES.length ? `<div class="pl-legend" style="flex-wrap:wrap">Groupes : <button type="button" class="small ${S._pg ? 'ghost' : 'primary'}" data-pg="">Tous</button>${GNAMES.map(n => `<button type="button" class="small ${S._pg === n ? 'primary' : 'ghost'}" data-pg="${esc(n)}" style="border-color:${gcol(n)}"><i style="background:${gcol(n)}"></i>${esc(n)}</button>`).join('')}</div>` : ''}
     <div class="pl-wrap"><div style="min-width:${RC + days * cell}px">
       <div class="pl-head" style="grid-template-columns:${RC}px repeat(${days},${cell}px)">
         <div class="pl-h" style="text-align:left;padding-left:12px">Chambre</div>
@@ -4098,7 +4356,7 @@ async function renderPlanning(){
           ${rs.map(x => { const a = Math.max(0, (new Date(x.check_in) - new Date(start)) / 864e5), b = Math.min(days, (new Date(x.check_out) - new Date(start)) / 864e5);
             const movable = x.status !== 'checked_out' && canMove, c = isLate(x) ? col.late : col[x.status];
             const extra = [GRP[x.id] ? 'groupe ' + GRP[x.id] : '', x.status === 'pending' && x.source === 'en_ligne' ? 'demande en ligne' : '', ['pending', 'confirmed'].includes(x.status) && x.check_in < t ? 'arrivée dépassée' : '', x.status === 'checked_in' && Number(x.balance) > 0 ? 'reste ' + money(x.balance) : ''].filter(Boolean).join(' · ');
-            return `<button data-open="${x.id}" data-bar="${x.id}" title="${esc(x.guest_name)} · ${dfr(x.check_in)} → ${dfr(x.check_out)}${extra ? ' · ' + esc(extra) : ''}${movable ? ' · glissez pour déplacer' : ''}" class="pbar${movable ? ' pmove' : ''}" style="--bb:${c[0]};--bc:${c[1]};left:${RC + a * cell + cell / 2}px;width:${Math.max(cell / 2, (b - a) * cell - 4)}px;padding:0 ${movable ? 14 : 10}px">${movable && x.status !== 'checked_in' ? '<span class="pgrip pgl" data-grip="left" aria-hidden="true"></span>' : ''}${esc(x.guest_name)}${extra && PV !== 'month' ? `<span style="font-weight:500;opacity:.9"> · ${esc(extra)}</span>` : ''}${movable ? '<span class="pgrip" data-grip="right" aria-hidden="true"></span>' : ''}</button>`; }).join('')}
+            return `<button data-open="${x.id}" data-bar="${x.id}" title="${esc(x.guest_name)} · ${dfr(x.check_in)} → ${dfr(x.check_out)}${extra ? ' · ' + esc(extra) : ''}${movable ? ' · glissez pour déplacer' : ''}" class="pbar${movable ? ' pmove' : ''}" style="--bb:${c[0]};--bc:${c[1]};left:${RC + a * cell + cell / 2}px;width:${Math.max(cell / 2, (b - a) * cell - 4)}px;padding:0 ${movable ? 14 : 10}px${GRP[x.id] ? `;box-shadow:inset 0 0 0 3px ${gcol(GRP[x.id])}` : ''}${S._pg && GRP[x.id] !== S._pg ? ';opacity:.22' : ''}">${movable && x.status !== 'checked_in' ? '<span class="pgrip pgl" data-grip="left" aria-hidden="true"></span>' : ''}${esc(x.guest_name)}${extra && PV !== 'month' ? `<span style="font-weight:500;opacity:.9"> · ${esc(extra)}</span>` : ''}${movable ? '<span class="pgrip" data-grip="right" aria-hidden="true"></span>' : ''}</button>`; }).join('')}
         </div>`; }).join('') || '<p class="muted" style="padding:16px">Aucune chambre.</p>'}
     </div></div>
     <p class="muted" style="margin-top:10px;font-size:13px">Cliquez sur une case vide pour réserver. Glissez une réservation pour changer de chambre ou de dates ; tirez son bord gauche ou droit pour changer l’arrivée ou le départ.</p>`;
@@ -4106,6 +4364,7 @@ async function renderPlanning(){
   $('pPrev').onclick = () => { S._ps = step ? addDays(start, -step) : shiftM(-1); renderPlanning(); };
   $('pNext').onclick = () => { S._ps = step ? addDays(start, step) : shiftM(1); renderPlanning(); };
   el.querySelectorAll('[data-pv]').forEach(b => b.onclick = () => { S._pv = b.dataset.pv; S._ps = null; renderPlanning(); });
+  el.querySelectorAll('[data-pg]').forEach(b => b.onclick = () => { S._pg = b.dataset.pg; renderPlanning(); });
   $('pToday').onclick = () => { S._ps = null; renderPlanning(); };
   { const pt = $('pType'); if (pt) pt.onchange = () => { S._pt = pt.value; renderPlanning(); }; }
   planningSelect(el, RES, dates, cell, RC);

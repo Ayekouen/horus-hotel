@@ -1024,12 +1024,7 @@ nav.side [data-view="salles"]{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://
     <h1 style="font-size:28px;margin:6px 0 8px">Créez votre établissement</h1>
     <div id="myInvites"></div>
     <p class="muted" style="margin:0 0 18px">Votre période d'essai démarre dès la création.</p>
-    <form id="onboardForm">
-      <div class="field"><label for="orgName">Nom de l'organisation ou du groupe</label><input id="orgName" required minlength="2"></div>
-      <div class="field"><label for="estName">Nom de l'établissement</label><input id="estName" required minlength="2"></div>
-      <div class="field"><label for="estCity">Ville</label><input id="estCity"></div>
-      <button class="primary" style="width:100%">Commencer l'essai gratuit</button>
-    </form>
+    <div id="obw"></div>
     <p style="margin:14px 0 0" class="row between"><a href="#" data-logout>Se déconnecter</a><a href="#" onclick="event.preventDefault();refreshApp()">Actualiser</a><a href="#" id="onboardAdmin" class="hidden">Accéder à l'administration →</a></p>
   </div>
 </div>
@@ -1328,7 +1323,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.11.10-33';
+const APP_VERSION = '2026.11.10-34';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -1779,15 +1774,133 @@ async function doLogout(){
 document.addEventListener('click', e => { if (e.target.closest('[data-logout]')) { e.preventDefault(); doLogout(); } });
 
 $('onboardAdmin').addEventListener('click', e => { e.preventDefault(); S.view = 'admin'; boot(); });
-$('onboardForm').addEventListener('submit', async e => {
-  e.preventDefault();
-  const b = e.submitter; if (b) b.disabled = true;
-  const { error } = await sb.rpc('create_organization', { p_org_name: $('orgName').value.trim(), p_establishment_name: $('estName').value.trim(), p_city: $('estCity').value.trim() || null });
-  if (b) b.disabled = false;
-  if (error) return toast(errMsg(error), true);
+/* ---------- Création guidée du compte ---------- */
+const OB_TYPES = [['hotel','Hôtel','Chambres, réception, équipe'],['residence','Résidence meublée','Studios et appartements meublés'],['appartement','Appartement','Un ou quelques appartements'],['maison_hotes','Maison d’hôtes','Accueil chez l’habitant, table d’hôtes'],['particulier','Particulier (type Airbnb)','Je loue mon logement'],['autre','Autre','Autre type d’hébergement']];
+const OB_COUNTRIES = [['CI','Côte d’Ivoire','+225',7.54,-5.55],['SN','Sénégal','+221',14.5,-14.45],['ML','Mali','+223',12.64,-8],['BF','Burkina Faso','+226',12.37,-1.52],['GN','Guinée','+224',9.64,-13.58],['TG','Togo','+228',6.14,1.21],['BJ','Bénin','+229',6.37,2.39],['NE','Niger','+227',13.51,2.13],['CM','Cameroun','+237',4.05,9.77],['GH','Ghana','+233',5.6,-0.19],['XX','Autre pays','+',7.5,-5.5]];
+const OB_SIZES = [['1','1 logement'],['2-5','2 à 5'],['6-15','6 à 15'],['16-30','16 à 30'],['30+','Plus de 30']];
+const OB_PAY = [['wave','Wave'],['orange_money','Orange Money'],['mtn_money','MTN MoMo'],['moov_money','Moov Money']];
+const OB_ACC = [['cash','Espèces'],['wave','Wave'],['orange_money','Orange Money'],['mtn_money','MTN MoMo'],['moov_money','Moov Money'],['card','Carte bancaire'],['bank_transfer','Virement']];
+const OB_SRC = [['bouche_a_oreille','Bouche-à-oreille'],['facebook','Facebook'],['whatsapp','WhatsApp'],['commercial','Un commercial Nuittea'],['salon','Salon ou événement'],['google','Recherche Google'],['autre','Autre']];
+const OB = { step: 0, d: { country: 'CI', same_wa: true, accepted: ['cash'], checkin: '14:00', checkout: '12:00', contact_role: 'proprietaire' } };
+const OB_STEPS = ['Nom','Type','Pays','Ville','Carte','Contacts','Taille','Paiements','Validation'];
+const obCountry = () => OB_COUNTRIES.find(c => c[0] === OB.d.country) || OB_COUNTRIES[0];
+const obTel = (s) => (s || '').replace(/[^0-9+]/g, '');
+async function obLocs(kind, parent){
+  let q = sb.from('localities').select('id,name,lat,lng').eq('kind', kind).eq('status', 'valide').order('name');
+  q = parent ? q.eq('parent_id', parent) : q.eq('country', OB.d.country);
+  const { data } = await q; return data || [];
+}
+function obField(id, label, html){ return `<div class="field"><label for="${id}">${label}</label>${html}</div>`; }
+async function obRender(){
+  const box = $('obw'); if (!box) return; const d = OB.d, st = OB.step;
+  if (!d.email) { try { const { data } = await sb.auth.getUser(); d.email = data && data.user ? data.user.email : ''; } catch (_) {} }
+  const tiles = (arr, key, multi) => `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px">${arr.map(([k, l, h]) => { const on = multi ? (d[key] || []).includes(k) : d[key] === k; return `<button type="button" class="obt" data-k="${key}" data-v="${k}" data-m="${multi ? 1 : ''}" aria-pressed="${on}" style="text-align:left;padding:12px;border-radius:12px;border:2px solid ${on ? 'var(--green)' : 'var(--line,#d9dee3)'};background:${on ? 'var(--green-l,#eef6f1)' : 'transparent'};color:inherit;cursor:pointer;min-height:64px"><b style="display:block;font-size:14px">${esc(l)}</b>${h ? `<span class="muted" style="font-size:12px">${esc(h)}</span>` : ''}</button>`; }).join('')}</div>`;
+  let body = '';
+  if (st === 0) body = obField('obEst', 'Nom de l’établissement', `<input id="obEst" value="${esc(d.est_name || '')}" minlength="2" autocomplete="organization" placeholder="Ex. Résidence Les Palmiers">`) + `<details style="margin-top:6px"><summary class="muted" style="cursor:pointer;font-size:13px">Options avancées : groupe de plusieurs établissements</summary>${obField('obOrg', 'Nom du groupe ou de la société (facultatif)', `<input id="obOrg" value="${esc(d.org_name || '')}">`)}</details>`;
+  if (st === 1) body = `<p class="muted" style="margin:0 0 10px">Quel type d’hébergement proposez-vous ?</p>` + tiles(OB_TYPES, 'ptype');
+  if (st === 2) body = `<p class="muted" style="margin:0 0 10px">Dans quel pays se trouve l’établissement ?</p>` + tiles(OB_COUNTRIES.map(c => [c[0], c[1], c[2] !== '+' ? c[2] : '']), 'country');
+  if (st === 3) {
+    const villes = await obLocs('ville'); const communes = d.ville_id && d.ville_id !== '__autre' ? await obLocs('commune', d.ville_id) : []; const quartiers = (d.commune_id || (d.ville_id && d.ville_id !== '__autre')) ? await obLocs('quartier', d.commune_id || d.ville_id) : [];
+    OB._villes = villes; OB._communes = communes; OB._quartiers = quartiers;
+    const sel = (id, label, arr, val, ph) => obField(id, label, `<select id="${id}"><option value="">${ph}</option>${arr.map(x => `<option value="${x.id}" ${val === x.id ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}<option value="__autre" ${val === '__autre' ? 'selected' : ''}>Autre…</option></select>`);
+    const villeOk = d.ville_id && d.ville_id !== '__autre';
+    body = (villes.length ? sel('obVille', 'Ville', villes, d.ville_id || '', '— Choisir la ville —') : '')
+      + ((!villes.length || d.ville_id === '__autre') ? obField('obCity', 'Nom de la ville', `<input id="obCity" value="${esc(d.city || '')}">`) : '')
+      + (villeOk && communes.length ? sel('obCommune', 'Commune', communes, d.commune_id, '— Choisir la commune (facultatif) —') : '')
+      + (villeOk ? sel('obQuartier', 'Quartier', quartiers, d.quartier_id, '— Choisir le quartier (facultatif) —') : '')
+      + (d.quartier_id === '__autre' ? obField('obNew', 'Nom du quartier (sera vérifié par Nuittea)', `<input id="obNew" value="${esc(d.new_place || '')}">`) : '')
+      + obField('obLm', 'Point de repère (facultatif)', `<input id="obLm" value="${esc(d.landmark || '')}" placeholder="Ex. derrière la pharmacie du carrefour">`);
+  }
+  if (st === 4) body = `<p class="muted" style="margin:0 0 10px">Indiquez la position exacte : les clients vous trouveront plus facilement.</p><div class="row" style="gap:8px;flex-wrap:wrap;margin-bottom:10px"><button type="button" id="obGeo">Utiliser ma position</button><button type="button" id="obSat">Vue satellite</button></div><div id="obMap" style="height:300px;border-radius:12px;overflow:hidden;background:#e9eef2"></div><p class="muted" id="obPos" style="font-size:13px;margin:8px 0 0">${d.lat ? `Position : ${(+d.lat).toFixed(5)}, ${(+d.lng).toFixed(5)}` : 'Touchez la carte ou déplacez le repère pour placer l’établissement. Étape facultative.'}</p>`;
+  if (st === 5) { const pre = obCountry()[2]; body = obField('obPhone', 'Téléphone (obligatoire)', `<input id="obPhone" type="tel" inputmode="tel" value="${esc(d.phone || pre + ' ')}">`)
+      + `<label style="display:flex;gap:8px;align-items:center;margin:0 0 10px;font-size:14px"><input type="checkbox" id="obSame" ${d.same_wa ? 'checked' : ''}> Le numéro WhatsApp est le même</label>`
+      + (d.same_wa ? '' : obField('obWa', 'WhatsApp (obligatoire)', `<input id="obWa" type="tel" inputmode="tel" value="${esc(d.whatsapp || pre + ' ')}">`))
+      + obField('obMail', 'E-mail', `<input id="obMail" type="email" value="${esc(d.email || '')}">`)
+      + obField('obCn', 'Votre nom', `<input id="obCn" value="${esc(d.contact_name || '')}" autocomplete="name">`)
+      + obField('obCr', 'Votre rôle', `<select id="obCr">${[['proprietaire','Propriétaire'],['gerant','Gérant'],['receptionniste','Réceptionniste'],['autre','Autre']].map(([k, l]) => `<option value="${k}" ${d.contact_role === k ? 'selected' : ''}>${l}</option>`).join('')}</select>`); }
+  if (st === 6) body = `<p class="muted" style="margin:0 0 10px">Combien de ${['residence','appartement','particulier'].includes(d.ptype) ? 'logements' : 'chambres'} proposez-vous ?</p>` + tiles(OB_SIZES, 'size');
+  if (st === 7) body = `<p class="muted" style="margin:0 0 10px">Moyens de paiement acceptés sur place</p>` + tiles(OB_ACC, 'accepted', true)
+      + `<h3 style="font-size:15px;margin:18px 0 6px">Numéro de réception des paiements en ligne (facultatif)</h3><p class="muted" style="font-size:13px;margin:0 0 10px">Nuittea y reverse l’argent des réservations payées en ligne.</p>`
+      + obField('obPm', 'Moyen', `<select id="obPm"><option value="">— Plus tard —</option>${OB_PAY.map(([k, l]) => `<option value="${k}" ${d.payout_method === k ? 'selected' : ''}>${l}</option>`).join('')}</select>`)
+      + obField('obPn', 'Numéro', `<input id="obPn" type="tel" inputmode="tel" value="${esc(d.payout_number || '')}">`)
+      + obField('obPname', 'Nom du titulaire', `<input id="obPname" value="${esc(d.payout_name || d.contact_name || '')}">`);
+  if (st === 8) body = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">${obField('obCi', 'Arrivée à partir de', `<input id="obCi" type="time" value="${esc(d.checkin)}">`)}${obField('obCo', 'Départ avant', `<input id="obCo" type="time" value="${esc(d.checkout)}">`)}</div>`
+      + obField('obSrc', 'Comment avez-vous connu Nuittea ?', `<select id="obSrc"><option value="">— Choisir —</option>${OB_SRC.map(([k, l]) => `<option value="${k}" ${d.source === k ? 'selected' : ''}>${l}</option>`).join('')}</select>`)
+      + obField('obRef', 'Code de parrainage ou nom du commercial (facultatif)', `<input id="obRef" value="${esc(d.referral || '')}">`)
+      + `<details style="margin:4px 0 10px"><summary class="muted" style="cursor:pointer;font-size:13px">Informations légales (facultatif)</summary>${obField('obRccm', 'RCCM', `<input id="obRccm" value="${esc(d.rccm || '')}">`)}${obField('obNcc', 'NCC', `<input id="obNcc" value="${esc(d.ncc || '')}">`)}</details>`
+      + `<div class="muted" style="font-size:13px;border:1px solid var(--line,#d9dee3);border-radius:10px;padding:10px;margin-bottom:10px"><b>${esc(d.est_name || '')}</b> · ${esc((OB_TYPES.find(t => t[0] === d.ptype) || ['', ''])[1])} · ${esc(d.city_label || d.city || '')}, ${esc(obCountry()[1])}<br>Tél. ${esc(d.phone || '')} · WhatsApp ${esc(d.same_wa ? d.phone : d.whatsapp || '')}</div>`
+      + `<label style="display:flex;gap:8px;align-items:flex-start;font-size:14px"><input type="checkbox" id="obTerms" ${d.terms ? 'checked' : ''} style="margin-top:3px"> <span>J’accepte les <a href="#" data-legal="cgu">CGU</a>, les <a href="#" data-legal="cgv">CGV</a> et la <a href="#" data-legal="confidentialite">politique de confidentialité</a>.</span></label>`;
+  box.innerHTML = `<div class="muted" style="font-size:12px;margin-bottom:6px">Étape ${st + 1} sur ${OB_STEPS.length} · ${OB_STEPS[st]}</div><div style="height:4px;background:var(--line,#e3e8ec);border-radius:4px;margin-bottom:16px"><div style="height:4px;width:${Math.round((st + 1) / OB_STEPS.length * 100)}%;background:var(--green);border-radius:4px"></div></div>${body}
+    <div class="row between" style="margin-top:18px;gap:10px">${st ? '<button type="button" id="obBack">Retour</button>' : '<span></span>'}<button type="button" class="primary" id="obNext">${st === OB_STEPS.length - 1 ? 'Commencer l’essai gratuit' : (st === 4 && !d.lat) || st === 7 ? 'Continuer (facultatif)' : 'Continuer'}</button></div>`;
+  box.querySelectorAll('.obt').forEach(b => b.onclick = () => { const k = b.dataset.k, v = b.dataset.v; if (b.dataset.m) { const a = new Set(d[k] || []); a.has(v) ? a.delete(v) : a.add(v); d[k] = [...a]; obRender(); } else { if (k === 'country' && d.country !== v) { d.ville_id = d.commune_id = d.quartier_id = null; d.city = d.new_place = ''; d.lat = d.lng = null; } d[k] = v; OB.step++; obRender(); } });
+  if ($('obBack')) $('obBack').onclick = () => { obSave(); OB.step--; obRender(); };
+  $('obNext').onclick = obNext;
+  if (st === 3) {
+    const on = (id, fn) => { if ($(id)) $(id).onchange = fn; };
+    on('obVille', e => { obSave(); d.ville_id = e.target.value || null; d.commune_id = d.quartier_id = null; d.new_place = ''; d.city = ''; obRender(); });
+    on('obCommune', e => { obSave(); d.commune_id = e.target.value === '__autre' ? null : e.target.value || null; d.quartier_id = null; d.new_place = ''; obRender(); });
+    on('obQuartier', e => { obSave(); d.quartier_id = e.target.value || null; if (d.quartier_id !== '__autre') d.new_place = ''; obRender(); });
+  }
+  if (st === 5) $('obSame').onchange = e => { obSave(); d.same_wa = e.target.checked; obRender(); };
+  if (st === 4) obMap();
+}
+async function obMap(){
+  const d = OB.d; let L0;
+  try { L0 = await loadLeaflet(); } catch (_) { $('obMap').innerHTML = '<p class="muted" style="padding:14px">Carte indisponible pour le moment. Vous pourrez placer l’établissement plus tard dans Réglages.</p>'; return; }
+  const c = obCountry(); const pick = [...(OB._quartiers || []), ...(OB._communes || []), ...(OB._villes || [])].find(x => [d.quartier_id, d.commune_id, d.ville_id].includes(x.id) && x.lat);
+  const center = d.lat ? [d.lat, d.lng] : pick ? [pick.lat, pick.lng] : [c[3], c[4]];
+  const map = L0.map('obMap').setView(center, d.lat ? 17 : pick ? 14 : 6);
+  const osm = L0.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(map);
+  const sat = L0.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19, attribution: '© Esri' });
+  let mk = null;
+  const set = (lat, lng, zoom) => { d.lat = +lat.toFixed(6); d.lng = +lng.toFixed(6); if (!mk) { mk = L0.marker([d.lat, d.lng], { draggable: true }).addTo(map); mk.on('dragend', () => { const p = mk.getLatLng(); set(p.lat, p.lng); }); } else mk.setLatLng([d.lat, d.lng]); if (zoom) map.setView([d.lat, d.lng], zoom); $('obPos').textContent = `Position : ${d.lat.toFixed(5)}, ${d.lng.toFixed(5)}. Déplacez le repère pour ajuster.`; $('obNext').textContent = 'Continuer'; };
+  if (d.lat) set(d.lat, d.lng);
+  map.on('click', e => set(e.latlng.lat, e.latlng.lng));
+  let satOn = false; $('obSat').onclick = () => { satOn = !satOn; if (satOn) { map.removeLayer(osm); sat.addTo(map); $('obSat').textContent = 'Vue plan'; } else { map.removeLayer(sat); osm.addTo(map); $('obSat').textContent = 'Vue satellite'; } };
+  $('obGeo').onclick = () => { if (!navigator.geolocation) return toast('Localisation non disponible sur cet appareil.', true); $('obGeo').disabled = true; navigator.geolocation.getCurrentPosition(p => { $('obGeo').disabled = false; set(p.coords.latitude, p.coords.longitude, 18); }, () => { $('obGeo').disabled = false; toast('Position refusée ou introuvable : placez le repère sur la carte.', true); }, { enableHighAccuracy: true, timeout: 15000 }); };
+  setTimeout(() => map.invalidateSize(), 200);
+}
+function obSave(){
+  const d = OB.d, v = id => $(id) ? $(id).value.trim() : undefined, set = (k, id) => { const x = v(id); if (x !== undefined) d[k] = x; };
+  set('est_name', 'obEst'); set('org_name', 'obOrg'); set('city', 'obCity'); set('new_place', 'obNew'); set('landmark', 'obLm');
+  set('phone', 'obPhone'); set('whatsapp', 'obWa'); set('email', 'obMail'); set('contact_name', 'obCn'); set('contact_role', 'obCr');
+  set('payout_method', 'obPm'); set('payout_number', 'obPn'); set('payout_name', 'obPname'); set('checkin', 'obCi'); set('checkout', 'obCo');
+  set('source', 'obSrc'); set('referral', 'obRef'); set('rccm', 'obRccm'); set('ncc', 'obNcc'); if ($('obTerms')) d.terms = $('obTerms').checked;
+}
+async function obNext(){
+  obSave(); const d = OB.d, st = OB.step, err = (m) => toast(m, true);
+  if (st === 0 && (d.est_name || '').length < 2) return err('Indiquez le nom de l’établissement.');
+  if (st === 1 && !d.ptype) return err('Choisissez le type d’établissement.');
+  if (st === 2 && !d.country) return err('Choisissez le pays.');
+  if (st === 3) {
+    const vl = (OB._villes || []).find(x => x.id === d.ville_id);
+    if (!vl && (d.city || '').length < 2) return err('Choisissez ou indiquez la ville.');
+    if (d.quartier_id === '__autre' && (d.new_place || '').length < 2) return err('Indiquez le nom du quartier.');
+    const q = (OB._quartiers || []).find(x => x.id === d.quartier_id), cm = (OB._communes || []).find(x => x.id === d.commune_id);
+    if (vl) d.city = vl.name;
+    d.city_label = [q && q.name, d.quartier_id === '__autre' ? d.new_place : '', cm && cm.name, d.city].filter(Boolean).join(', ');
+  }
+  if (st === 5) {
+    if (!/^\+?[0-9]{8,15}$/.test(obTel(d.phone))) return err('Indiquez un numéro de téléphone valide (8 chiffres au moins).');
+    if (!d.same_wa && !/^\+?[0-9]{8,15}$/.test(obTel(d.whatsapp))) return err('Indiquez un numéro WhatsApp valide.');
+  }
+  if (st === 7 && d.payout_method && !/^\+?[0-9]{8,15}$/.test(obTel(d.payout_number))) return err('Numéro de réception invalide, ou choisissez « Plus tard ».');
+  if (st < OB_STEPS.length - 1) { OB.step++; return obRender(); }
+  if (!d.terms) return err('Acceptez les conditions d’utilisation pour continuer.');
+  const b = $('obNext'); b.disabled = true;
+  const villeId = d.ville_id && d.ville_id !== '__autre' ? d.ville_id : null, newQ = d.quartier_id === '__autre';
+  const p = { est_name: d.est_name, org_name: d.org_name, ptype: d.ptype, country: d.country === 'XX' ? null : d.country, city: d.city, landmark: d.landmark,
+    locality_id: newQ ? null : (d.quartier_id || d.commune_id || villeId), parent_id: newQ ? (d.commune_id || villeId) : null, new_place: newQ ? d.new_place : null,
+    lat: d.lat, lng: d.lng, phone: d.phone, whatsapp: d.same_wa ? d.phone : d.whatsapp, email: d.email, contact_name: d.contact_name, contact_role: d.contact_role,
+    size: d.size, accepted: d.accepted, payout_method: d.payout_method || null, payout_number: d.payout_method ? d.payout_number : null, payout_name: d.payout_method ? d.payout_name : null,
+    checkin: d.checkin, checkout: d.checkout, source: d.source, referral: d.referral, rccm: d.rccm, ncc: d.ncc, terms: true, ua: navigator.userAgent };
+  const { error } = await sb.rpc('create_establishment_onboarding', { p });
+  b.disabled = false;
+  if (error) return err(errMsg(error));
   toast('Votre essai gratuit de 5 jours a démarré.');
-  await boot();
-});
+  OB.step = 0; await boot();
+}
+obRender();
 
 /* ---------- Chargement ---------- */
 const PUBLIC_SLUG = new URLSearchParams(location.search).get('h');
@@ -6276,6 +6389,21 @@ const moduleOn = (v) => (v === 'resto' && !RESTO_ACTIF) ? false : !MODULES[v] ||
 async function loadOrgPrefs(){
   const { data } = await sb.from('organizations').select('display_currency,enabled_modules').eq('id', S.org).maybeSingle();
   S.currency = (data && data.display_currency) || 'XOF'; S.modules = data && data.enabled_modules ? data.enabled_modules : null;
+  /* Vocabulaire selon le type d'établissement, et coordonnées manquantes des comptes existants */
+  const { data: et } = await sb.from('establishments').select('id,property_type,public_phone,public_whatsapp').eq('organization_id', S.org).order('created_at').limit(1).maybeSingle();
+  S.ptype = et && et.property_type; S.unitWord = ['residence', 'appartement', 'particulier'].includes(S.ptype) ? 'Logements' : 'Chambres';
+  document.querySelectorAll('nav [data-view="chambres"], #mbar [data-view="chambres"]').forEach(b => { if (b.childElementCount === 0) b.textContent = S.unitWord; });
+  if (et && (!et.public_phone || !et.public_whatsapp) && can(['owner', 'admin'])) { let seen = false; try { seen = sessionStorage.getItem('hh_contacts') === S.org; sessionStorage.setItem('hh_contacts', S.org); } catch (_) {} if (!seen) setTimeout(() => askContacts(et), 1500); }
+}
+function askContacts(et){
+  modal(`<h2 style="font-size:20px;margin-bottom:4px">Complétez vos coordonnées</h2><p class="muted" style="margin:0 0 12px;font-size:14px">Le téléphone et WhatsApp permettent à Nuittea et à vos clients de vous joindre.</p>
+    <div class="field"><label for="acP">Téléphone</label><input id="acP" type="tel" inputmode="tel" value="${esc(et.public_phone || '+225 ')}"></div>
+    <div class="field"><label for="acW">WhatsApp</label><input id="acW" type="tel" inputmode="tel" value="${esc(et.public_whatsapp || et.public_phone || '+225 ')}"></div>
+    <div class="row between" style="margin-top:12px"><button type="button" data-close>Plus tard</button><button type="button" class="primary" id="acOk">Enregistrer</button></div>`);
+  $('acOk').onclick = async () => { const p = obTel($('acP').value), w = obTel($('acW').value);
+    if (!/^\+?[0-9]{8,15}$/.test(p) || !/^\+?[0-9]{8,15}$/.test(w)) return toast('Numéros invalides (8 chiffres au moins).', true);
+    const { error } = await sb.from('establishments').update({ public_phone: p, public_whatsapp: w }).eq('id', et.id); if (error) return toast(errMsg(error), true);
+    toast('Coordonnées enregistrées.'); closeModal(); };
 }
 function openModules(){
   const owner = can(['owner', 'admin']);
@@ -7863,7 +7991,7 @@ function openLocalityMerge(x){
     if (error) { $('lxGo').disabled = false; return toast(errMsg(error), true); } closeModal(); toast('Lieux fusionnés.'); renderAdmin(); };
 }
 
-const PROP_TYPES = [['hotel', 'Hôtel'], ['residence', 'Résidence meublée'], ['appartement', 'Appartement'], ['maison_hotes', 'Maison d’hôtes']];
+const PROP_TYPES = [['hotel', 'Hôtel'], ['residence', 'Résidence meublée'], ['appartement', 'Appartement'], ['maison_hotes', 'Maison d’hôtes'], ['particulier', 'Particulier (type Airbnb)']];
 const EST_AMENITIES = [['wifi', 'Wi-Fi'], ['clim', 'Climatisation'], ['eau_chaude', 'Eau chaude'], ['groupe_electrogene', 'Groupe électrogène'], ['parking', 'Parking'], ['piscine', 'Piscine'], ['petit_dejeuner', 'Petit-déjeuner'], ['restaurant', 'Restaurant'], ['tv', 'Télévision'], ['cuisine', 'Cuisine équipée'], ['securite', 'Gardiennage 24 h/24'], ['navette', 'Navette aéroport']];
 function amWidget(box, e, canEdit){
   const cur = new Set(e.amenities || []);

@@ -969,6 +969,8 @@ html[data-theme="foret"] body.navmini nav.side #navCollapse:not(#_a){width:40px!
 .ny-tabs{gap:4px;border-bottom:1px solid var(--line);margin:0 0 16px;overflow-x:auto;flex-wrap:nowrap}#v-naya .ny-tabs button:not(#_a):not(#_b){flex:0 0 auto;background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important;padding:10px 14px!important;font-weight:600;color:var(--muted)!important;min-height:44px}#v-naya .ny-tabs button.on:not(#_a):not(#_b){color:#1F7AB8!important;box-shadow:inset 0 -3px 0 #1F7AB8!important}
 .ny-hero{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;border-radius:16px;padding:16px 18px;border:1px solid var(--line)}.ny-hero.on{background:linear-gradient(135deg,#EAF4FB,#fff);border-color:#B9DAF0}.ny-hero.off{background:#FFF7ED;border-color:#FED7AA}.ny-st{font-weight:800;font-size:16px}.ny-hero.on .ny-st{color:#15803D}.ny-hero.off .ny-st{color:#B45309}.ny-url{font-weight:600;font-size:14px}
 .ny-prev{border:1px solid var(--line);border-radius:12px;overflow:hidden;height:480px;background:#F5F8FB}.ny-prev iframe{width:100%;height:100%;border:0}
+#dRefresh svg,#mRefresh svg{transition:transform .6s}#dRefresh.rf-spin svg,#mRefresh.rf-spin svg{animation:rfspin .8s linear infinite}@keyframes rfspin{to{transform:rotate(360deg)}}
+@media (max-width:1280px){#dRefresh .rf-l{display:none}}
 </style>
 </head>
 <body>
@@ -1098,10 +1100,11 @@ html[data-theme="foret"] body.navmini nav.side #navCollapse:not(#_a){width:40px!
       <button type="button" id="navNotif" class="navsearch" style="justify-content:flex-start;gap:10px;color:var(--ink)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10 21h4"></path></svg>Notifications<span id="notifBadge" class="hidden" style="margin-left:auto;min-width:22px;padding:2px 7px;border-radius:999px;background:var(--green);color:#fff;font-size:12px;font-weight:800;text-align:center"></span></button>
       <button type="button" id="navClock" class="navsearch hidden" style="justify-content:flex-start;gap:8px;color:var(--ink)"></button>
       <select id="estSwitch" class="estsw hidden" aria-label="Établissement"></select>
+      <button type="button" id="dRefresh" class="navsearch" aria-label="Actualiser l’application" title="Actualiser l’application (dernière version)" style="justify-content:center;gap:8px;color:var(--ink)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg><span class="rf-l">Actualiser</span></button>
       <button type="button" id="dAcc" aria-label="Mon compte" title="Mon compte" style="border:0;background:none;padding:0;min-height:0"></button>
       <button type="button" id="navInstall" class="navsearch" style="color:var(--green);font-weight:700;justify-content:flex-start"> Installer l’application</button>
   </header>
-  <header id="mTop" class="mtop"><div class="brand">Nuittea<span class="bm">Manager</span></div><button type="button" id="mSearch" aria-label="Rechercher une action"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4-4"></path></svg></button><button type="button" id="mNotif" aria-label="Notifications" style="position:relative"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10 21h4"></path></svg><span id="mNotifBadge" class="hidden"></span></button><button type="button" id="mAcc" aria-label="Mon compte" style="border:0;background:none;padding:0 0 0 4px;min-height:0"></button></header>
+  <header id="mTop" class="mtop"><div class="brand">Nuittea<span class="bm">Manager</span></div><button type="button" id="mSearch" aria-label="Rechercher une action"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4-4"></path></svg></button><button type="button" id="mRefresh" aria-label="Actualiser l’application"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg></button><button type="button" id="mNotif" aria-label="Notifications" style="position:relative"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10 21h4"></path></svg><span id="mNotifBadge" class="hidden"></span></button><button type="button" id="mAcc" aria-label="Mon compte" style="border:0;background:none;padding:0 0 0 4px;min-height:0"></button></header>
   <nav id="tabbar" class="tabbar" aria-label="Navigation rapide">
     <button data-tab="dashboard"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-8 9 8v10h-6v-6H9v6H3z"></path></svg>Accueil</button>
     <button data-tab="heberg"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 18V7M21 18v-6H3M7 12V9h5v3"></path></svg>Hébergement</button>
@@ -1320,7 +1323,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.11.10-22';
+const APP_VERSION = '2026.11.10-23';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -1963,6 +1966,7 @@ $('navNotif').onclick = () => openNotifs();
 $('navTheme').onclick = () => openThemes();
 $('navGuide').onclick = () => { try { localStorage.removeItem('hh_guide_hidden_' + S.org); } catch (_) {} const nb = $('navMore'); if (nb) nb.open = false; closeModal && closeModal(); go('dashboard'); toast('Guide de démarrage réaffiché.'); };
 $('navRefresh').onclick = () => refreshApp();
+{ const r1 = $('dRefresh'), r2 = $('mRefresh'); [r1, r2].forEach(b => { if (b) b.onclick = () => { b.classList.add('rf-spin'); refreshApp(); }; }); }
 $('navClock').onclick = () => toggleClock();
 $('navAsk').onclick = () => openAssistant();
 $('navLang').onclick = () => openLang();

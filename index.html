@@ -1226,7 +1226,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.11.10-01';
+const APP_VERSION = '2026.11.10-02';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -2238,6 +2238,8 @@ const viewMode = (k, def = 'grid') => { try { return localStorage.getItem('hh_vm
 const viewToggle = (k, def) => { const m = viewMode(k, def); return `<div class="row vmt" style="gap:4px" role="group" aria-label="Affichage"><button type="button" class="small ${m === 'grid' ? 'primary' : 'ghost'}" data-vm="${k}|grid" aria-pressed="${m === 'grid'}">Grille</button><button type="button" class="small ${m === 'list' ? 'primary' : 'ghost'}" data-vm="${k}|list" aria-pressed="${m === 'list'}">Liste</button></div>`; };
 function bindViewToggle(el, redraw){ el.querySelectorAll('[data-vm]').forEach(b => b.onclick = () => { const [k, m] = b.dataset.vm.split('|'); try { localStorage.setItem('hh_vm_' + k, m); } catch (_) {} redraw(); }); }
 /* ---------- Chambres : fiches visuelles ---------- */
+const DEF_AM = ['Climatisation','Wi-Fi','Télévision','Eau chaude'];
+const estDefAm = () => { const e = (S.ests || []).find(x => x.id === S.est); const d = e && e.receipt_settings && e.receipt_settings.default_amenities; return Array.isArray(d) ? d : DEF_AM; };
 const AMENITIES = ['Climatisation','Wi-Fi','Télévision','Eau chaude','Réfrigérateur','Balcon','Coffre-fort','Bureau','Cuisine équipée','Ventilateur','Parking','Petit-déjeuner inclus','Vue piscine'];
 const ROOM_TYPES = ['Standard','Double','Twin (deux lits)','Studio','Chambre salon','Suite','Suite junior','Appartement','Villa','Familiale','Dortoir'];
 // Format des numéros : « CH-01 » → préfixe « CH- » et 2 chiffres ; « 101 » → sans préfixe, 3 chiffres
@@ -2314,7 +2316,7 @@ async function renderChambres(){
             ${(r.amenities || []).length ? `<div class="row" style="gap:4px">${r.amenities.slice(0, 4).map(a => `<span class="pill" style="background:var(--bg);color:var(--muted);font-weight:600">${esc(a)}</span>`).join('')}${r.amenities.length > 4 ? `<span class="pill" style="background:var(--bg);color:var(--muted)">+${r.amenities.length - 4}</span>` : ''}</div>` : ''}
             <div class="row between" style="margin-top:auto;padding-top:6px;flex-wrap:nowrap">
               ${r.is_active ? `<select data-hk="${r.id}" aria-label="État de la chambre ${esc(r.number)}" class="${hkCls[r.housekeeping_status]}" style="min-height:36px;width:auto;border:none;font-weight:700;font-size:13px;border-radius:999px;padding:0 10px">${opt(HKS, r.housekeeping_status)}</select>` : '<span class="pill st-cancelled">Désactivée</span>'}
-              ${canEdit ? `<button class="small ghost" data-edit="${r.id}">Modifier</button>` : ''}
+              ${r.is_active !== false && ['free', 'dirty'].includes((LV[r.id] || {}).st || 'free') && can(['owner','admin','manager','receptionist']) ? `<button class="small primary" data-book="${r.id}">Réserver</button>` : ''}${canEdit ? `<button class="small ghost" data-edit="${r.id}">Modifier</button>` : ''}
             </div>
           </div></article>`; }).join('')}
     </div>`}`}`;
@@ -2324,6 +2326,7 @@ async function renderChambres(){
   $('fSt').onchange = (e) => { S._chf = { ...f, st: e.target.value }; renderChambres(); };
   [$('addRooms'), $('addRooms2')].forEach(b => { if (b) b.onclick = () => openRoomForm(null, renderChambres, types); });
   el.querySelectorAll('[data-edit]').forEach(b => b.onclick = () => openRoomForm(rooms.find(r => r.id === b.dataset.edit), renderChambres, types));
+  el.querySelectorAll('[data-book]').forEach(b => b.onclick = () => openQuickResa({ room_id: b.dataset.book, check_in: today() }, renderChambres));
   el.querySelectorAll('[data-hk]').forEach(sel => sel.onchange = async () => {
     const rm = rooms.find(x => x.id === sel.dataset.hk) || {};
     const { error, queued } = await runOrQueue({ kind: 'update', table: 'rooms', id: sel.dataset.hk, values: { housekeeping_status: sel.value } }, `Ménage · chambre ${rm.number || ''} : ${HKS[sel.value] || sel.value}`);
@@ -2336,7 +2339,7 @@ async function openRoomForm(room, refresh, types, copy){
   if (!room && !can(['owner','admin','manager'])) return;
   if (room && !can(['owner','admin','manager'])) return toast('Modification réservée au gérant ou au propriétaire.', true);
   types = [...new Set(ROOM_TYPES.concat(types || [], S.rooms.map(r => r.room_type).filter(Boolean)))];
-  const r = room || copy || { amenities: [], photos: [], capacity: 2 };
+  const r = room || copy || { amenities: estDefAm(), photos: [], capacity: 2 };
   const extraAm = [...new Set((S.rooms || []).flatMap(x => x.amenities || []).concat(r.amenities || []).filter(a => !AMENITIES.includes(a) && a !== 'Salle de bain privée'))];
   const mask0 = defaultMask(), mk0 = roomMask(mask0), free0 = nextFreeNumbers(mk0, 10);
   let photos = [...(r.photos || [])];
@@ -2354,7 +2357,7 @@ async function openRoomForm(room, refresh, types, copy){
         <div class="field" style="flex:1 1 150px"><label for="rBed">Literie</label><select id="rBed" data-value="${esc(r.bed_type || '')}"><option value="">—</option>${opt(BEDS, r.bed_type)}</select></div>
         <div class="field" style="flex:1 1 90px"><label for="rSize">Surface (m²)</label><input id="rSize" type="number" min="1" max="1000" value="${r.size_m2 ?? ''}"></div></div>
       <fieldset style="border:1px solid var(--line);border-radius:14px;padding:12px;margin:0 0 14px"><legend style="font-size:13px;font-weight:700;color:var(--muted);padding:0 6px">Équipements</legend>
-        <div class="grid" id="amGrid" style="grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:6px">${AMENITIES.concat(extraAm).map(a => `<label style="display:flex;align-items:center;gap:8px;margin:0;font-weight:500;color:var(--ink);font-size:14px;min-height:32px"><input type="checkbox" value="${esc(a)}" class="amen" ${(r.amenities || []).includes(a) ? 'checked' : ''} style="width:18px;min-height:18px"> ${esc(a)}</label>`).join('')}</div><div class="row" style="margin-top:8px;flex-wrap:nowrap"><input id="amNew" maxlength="40" placeholder="Autre équipement (ex. Jacuzzi)" style="flex:1"><button type="button" class="small ghost" id="amAdd">+ Ajouter</button></div></fieldset>
+        <div class="grid" id="amGrid" style="grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:6px">${AMENITIES.concat(extraAm).map(a => `<label style="display:flex;align-items:center;gap:8px;margin:0;font-weight:500;color:var(--ink);font-size:14px;min-height:32px"><input type="checkbox" value="${esc(a)}" class="amen" ${(r.amenities || []).includes(a) ? 'checked' : ''} style="width:18px;min-height:18px"> ${esc(a)}</label>`).join('')}</div><div class="row" style="margin-top:8px;flex-wrap:nowrap"><input id="amNew" maxlength="40" placeholder="Autre équipement (ex. Jacuzzi)" style="flex:1"><button type="button" class="small ghost" id="amAdd">+ Ajouter</button></div><p style="margin:8px 0 0;font-size:13px"><a href="#" id="amDef">Utiliser ces cases comme choix par défaut des nouvelles chambres</a></p></fieldset>
       <div class="field"><label for="rDesc">Description (visible sur votre page publique)</label><textarea id="rDesc" rows="3" maxlength="1000" style="width:100%;border:1px solid #D9C8AE;border-radius:12px;padding:10px;font:inherit">${esc(r.description || '')}</textarea></div>
       <div class="field"><label>Photos (8 maximum, la première sert de couverture)</label>
         <div id="phList" class="row" style="gap:8px;align-items:flex-start"></div>
@@ -2368,6 +2371,10 @@ async function openRoomForm(room, refresh, types, copy){
   const prev = () => { if (!$('rmMask')) return; const mk = roomMask($('rmMask').value || 'CH-01'); const nums = nextFreeNumbers(mk, Math.min(200, Math.max(1, +$('rmCount').value || 1)), +$('rmFrom').value || 0); $('rPrev').textContent = nums.length ? `Numéros créés : ${nums.slice(0, 6).join(', ')}${nums.length > 6 ? ' … ' + nums[nums.length - 1] : ''} (les numéros déjà pris sont sautés)` : ''; };
   ['rmMask', 'rmFrom', 'rmCount'].forEach(id => { const i = $(id); if (i) i.oninput = prev; }); prev();
   $('amAdd').onclick = () => { const v = $('amNew').value.trim(); if (!v) return; if (![...document.querySelectorAll('#rmF .amen')].some(c => c.value.toLowerCase() === v.toLowerCase())) $('amGrid').insertAdjacentHTML('beforeend', `<label style="display:flex;align-items:center;gap:8px;margin:0;font-weight:500;color:var(--ink);font-size:14px;min-height:32px"><input type="checkbox" value="${esc(v)}" class="amen" checked style="width:18px;height:18px;min-height:0"> ${esc(v)}</label>`); $('amNew').value = ''; };
+  $('amDef').onclick = async (e) => { e.preventDefault(); const e2 = (S.ests || []).find(x => x.id === S.est); if (!e2) return;
+    const list = [...document.querySelectorAll('#rmF .amen:checked')].map(c => c.value); const val = { ...(e2.receipt_settings || {}), default_amenities: list };
+    const { error } = await sb.from('establishments').update({ receipt_settings: val }).eq('id', e2.id);
+    if (error) return toast(errMsg(error), true); e2.receipt_settings = val; toast(list.length ? 'Choix par défaut enregistré : ' + list.join(', ') + '.' : 'Aucun équipement ne sera coché par défaut.'); };
   $('amNew').onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); $('amAdd').click(); } };
   const dup = $('rmDup'); if (dup) dup.onclick = () => openRoomForm(null, refresh, types, { ...room, number: '', id: undefined });
   if (copy) setTimeout(() => { const b = document.querySelector('#rmF [data-mode="many"]'); if (b) { b.click(); $('rmCount').value = 1; const mk = roomMask(copy.number_mask || defaultMask()); $('rmFrom').value = mk.start; prev(); } }, 0);
@@ -2953,7 +2960,7 @@ async function renderDashboardCore(){
     </div>`;
   const gh = $('gHide'); if (gh) gh.onclick = () => { try { localStorage.setItem('hh_guide_hidden_' + S.org, '1'); } catch (_) {} const sec = gh.closest('section'); if (sec) sec.remove(); toast('Guide de démarrage masqué. Vous pouvez le réafficher dans Réglages.'); };
   bindResaActions(el, renderDashboard);
-  el.querySelectorAll('[data-room]:not([data-open])').forEach(b => b.onclick = () => openRoomForm(S.rooms.find(r => r.id === b.dataset.room), renderDashboard));
+  el.querySelectorAll('[data-room]:not([data-open])').forEach(b => b.onclick = () => roomTileAction(b.dataset.room, renderDashboard));
 }
 
 /* ---------- Guidage : démarrage, rappels du jour, recherche d'actions ---------- */
@@ -3231,6 +3238,17 @@ async function renderNaya(){
   draw();
 }
 /* ---------- Réservation rapide : un seul écran, la chambre libre proposée d'office (objectif : moins de 30 secondes) ---------- */
+function roomTileAction(id, refresh){
+  const rm = S.rooms.find(r => r.id === id); if (!rm) return;
+  const canBook = can(['owner','admin','manager','receptionist']) && rm.is_active !== false && rm.housekeeping_status !== 'out_of_service';
+  if (!canBook) return openRoomForm(rm, refresh);
+  modal(`<h2 style="font-size:22px;margin-bottom:4px">Chambre ${esc(rm.number)}</h2><p class="muted" style="margin:0 0 14px">${esc(rm.room_type || '')}${rm.base_rate != null ? ' · ' + money(rm.base_rate) + ' / nuit' : ''}</p>
+    <div style="display:flex;flex-direction:column;gap:8px"><button class="primary" id="tkB" style="min-height:48px">Réserver cette chambre</button><button class="ghost" id="tkW" style="min-height:46px">Client sur place : réserver + check-in</button>
+    ${can(['owner','admin','manager']) ? '<button class="ghost" id="tkE" style="min-height:44px">Modifier la chambre</button>' : ''}<button class="ghost" data-close style="min-height:44px">Fermer</button></div>`);
+  $('tkB').onclick = () => openQuickResa({ room_id: id, check_in: today() }, refresh);
+  $('tkW').onclick = () => openQuickResa({ room_id: id, walkin: true }, refresh);
+  const e = $('tkE'); if (e) e.onclick = () => openRoomForm(rm, refresh);
+}
 async function openQuickResa(pre, refresh){
   if (!S.rooms.length) await loadEst();
   if (!S.rooms.length) return toast('Ajoutez d’abord des chambres.', true);
@@ -3285,6 +3303,7 @@ async function openQuickResa(pre, refresh){
         <div class="field"><label for="qNo">Notes</label><input id="qNo" value="${esc(st.notes)}" placeholder="Heure d’arrivée, demande particulière…"></div>
       </details>
       <button class="primary" id="qGo" style="width:100%;min-height:50px;font-size:16px" ${n < 1 || !f.length ? 'disabled' : ''}>${pre.walkin ? 'Créer et faire le check-in' : 'Créer la réservation'} · ${money(total())}</button>
+      ${!pre.walkin && st.ci === today() && n > 0 && f.length ? `<button type="button" class="ghost" id="qGoIn" style="width:100%;min-height:46px;margin-top:8px">Réserver + check-in maintenant</button>` : ''}
       <p style="text-align:center;margin:10px 0 0;font-size:13px"><a href="#" id="qFull">Choisir la chambre sur photos</a></p>
       </form>`;
     bind();
@@ -3305,7 +3324,8 @@ async function openQuickResa(pre, refresh){
     ['qDp', 'qDm', 'qRt', 'qDs'].forEach(id => { const x = $(id); if (x) x.onchange = () => { save(); draw(); }; });
     $('qMore').ontoggle = () => { st.more = $('qMore').open; };
     $('qFull').onclick = (e) => { e.preventDefault(); save(); openResaForm({ ...pre, check_in: st.ci, check_out: st.co, adults: st.adults, room_id: st.room, guest_name: st.name, guest_phone: st.phone, full: true }, refresh); };
-    $('qForm').onsubmit = (e) => { e.preventDefault(); create(); };
+    $('qForm').onsubmit = (e) => { e.preventDefault(); st.ckin = false; create(); };
+    const gi = $('qGoIn'); if (gi) gi.onclick = () => { st.ckin = true; create(); };
   };
   const create = async () => {
     save();
@@ -3325,14 +3345,14 @@ async function openQuickResa(pre, refresh){
       const res = await sb.from('reservations').insert(row).select('id').single();
       if (res.error) { if ((res.error.message || '').includes('no_double_booking')) { st.rateKey = ''; await refreshAvail(); throw new Error('Cette chambre vient d’être réservée : une autre chambre libre vous est proposée.'); } throw res.error; }
       const id = res.data.id; let depErr = null;
-      if (pre.walkin) { const c = await sb.rpc('check_in_reservation', { p_reservation: id }); if (c.error) throw c.error; }
+      if (pre.walkin || st.ckin) { const c = await sb.rpc('check_in_reservation', { p_reservation: id }); if (c.error) throw c.error; }
       if (st.dep > 0) { const p = await sb.from('cash_movements').insert({ establishment_id: S.est, reservation_id: id, kind: 'payment', method: st.depM, amount: st.dep, label: 'Acompte', reference: (st.depR || '').trim() || null, payment_group: crypto.randomUUID() }); depErr = p.error; }
       refresh && refresh();
       const { data: r } = await sb.from('reservation_balances').select('*').eq('id', id).maybeSingle();
       const ph = r && waPhone(r.guest_phone);
-      nextStep(pre.walkin ? 'Client enregistré en chambre' : 'Réservation créée',
+      nextStep(pre.walkin || st.ckin ? 'Client enregistré en chambre' : 'Réservation créée',
         `${esc(r ? r.guest_name : '')} · chambre ${esc(r ? r.room_number : '')} · ${dfr(st.ci)} → ${dfr(st.co)} · ${money(r ? r.total_amount : total())}.${depErr ? `<br><span style="color:var(--red)">L’acompte n’a pas été enregistré : ${esc(errMsg(depErr))}</span>` : ''} ${r && r.balance > 0 ? `Reste à payer : <strong>${money(r.balance)}</strong>.` : ''}`,
-        [...(depErr ? [{ label: 'Ouvrir la caisse et enregistrer l’acompte', fn: () => askOpenCash(() => recordDeposit(id, st.dep, st.depM, st.depR, refresh)) }] : []), ...(ph && !pre.walkin ? [{ label: 'Envoyer la confirmation WhatsApp', href: `https://wa.me/${ph}?text=${encodeURIComponent(waConfirmText(r))}` }] : []), { label: 'Ouvrir la réservation', fn: () => openResa(id, refresh) }, { label: 'Nouvelle réservation', fn: () => openQuickResa({}, refresh) }]);
+        [...(depErr ? [{ label: 'Ouvrir la caisse et enregistrer l’acompte', fn: () => askOpenCash(() => recordDeposit(id, st.dep, st.depM, st.depR, refresh)) }] : []), ...(ph && !pre.walkin && !st.ckin ? [{ label: 'Envoyer la confirmation WhatsApp', href: `https://wa.me/${ph}?text=${encodeURIComponent(waConfirmText(r))}` }] : []), { label: 'Ouvrir la réservation', fn: () => openResa(id, refresh) }, { label: 'Nouvelle réservation', fn: () => openQuickResa({}, refresh) }]);
     } catch (err) { const b = $('qGo'); if (b) b.disabled = false; toast(errMsg(err), true); }
   };
   await loadBusy(); pickRoom(); await price(); draw();

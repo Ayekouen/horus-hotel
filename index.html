@@ -908,6 +908,47 @@ html[data-theme="nuit"],html[data-theme="sombre"]{--pl-bg:#1B1F27;--pl-alt:#2025
 #v-caisse .k-a2.k-p{background:var(--ink)!important;color:#fff!important;border-color:var(--ink)!important}
 .k-tiles{display:flex;gap:10px;overflow-x:auto;margin-bottom:8px;padding-bottom:2px}.k-tile{flex:1 0 150px;border-radius:14px;padding:12px 14px;color:#fff;display:flex;flex-direction:column}.k-tile b{font-size:21px;font-weight:800}.k-tile small{opacity:.92;font-size:12px}
 .k-tag{display:inline-block;font-size:11px;font-weight:700;border-radius:99px;padding:1px 8px;margin-left:4px;background:#EEF1F6;color:#334155;vertical-align:1px}.k-payment{background:#DCFCE7;color:#14532D}.k-income{background:#DBEAFE;color:#1E3A8A}.k-expense,.k-refund{background:#FEE2E2;color:#991B1B}.k-deposit{background:#E0E7FF;color:#3730A3}.k-transfer_in,.k-transfer_out{background:#F3E8FF;color:#6B21A8}
+/* ===== Charte Nuittea (couche finale, thème unique) : bleu Nuittea, bleu nuit, or, Inter ===== */
+html[data-theme="foret"]{--bg:#F5F8FB;--card:#FFFFFF;--ink:#111827;--muted:#5A6574;--line:#E2E7ED;--green:#1F7AB8;--green-d:#17629A;--green-l:#EAF4FB;--ok:#15803D;--ok-l:#DCFCE7;--gold:#F2A93B;--gold-l:#FEF3DD;--amber:#B45309;--amber-l:#FEF3C7;--red:#B42318;--red-l:#FEE2E2;--blue:#1F7AB8;--blue-l:#EAF4FB;--navy:#0F2A3D;--sky:#3F9ED8;--nav:#0F2A3D;--display:"Inter",system-ui,sans-serif;--body:"Inter",system-ui,sans-serif;--shadow:0 1px 2px rgba(16,24,40,.04),0 4px 12px rgba(16,24,40,.05)}
+html[data-theme="foret"] body{font-family:"Inter",system-ui,sans-serif;background:var(--bg);color:var(--ink)}
+html[data-theme="foret"] h1,html[data-theme="foret"] h2,html[data-theme="foret"] h3{font-family:"Inter",system-ui,sans-serif;letter-spacing:-.015em;color:var(--ink)}
+/* Menu latéral bleu nuit */
+html[data-theme="foret"] nav.side{background:#0F2A3D!important;border-right:0!important;color:#C7D3DF}
+html[data-theme="foret"] nav.side .brand{color:#fff!important}
+html[data-theme="foret"] nav.side .brand::before{background-color:#3F9ED8!important;border-radius:9px;box-shadow:none!important}
+html[data-theme="foret"] nav.side .org{background:rgba(255,255,255,.06)!important;border:1px solid rgba(255,255,255,.1)!important;color:#C7D3DF!important}
+html[data-theme="foret"] nav.side button,html[data-theme="foret"] nav.side details.more summary{color:#C7D3DF!important;font-weight:500;background:transparent!important}
+html[data-theme="foret"] nav.side button:hover,html[data-theme="foret"] nav.side details.more summary:hover,html[data-theme="foret"] nav.side details.more[open] summary{background:rgba(255,255,255,.07)!important;color:#fff!important}
+html[data-theme="foret"] nav.side button.active,html[data-theme="foret"] nav.side details.more.active summary{background:rgba(63,158,216,.18)!important;color:#fff!important;font-weight:600;box-shadow:inset 3px 0 0 #3F9ED8!important}
+html[data-theme="foret"] nav.side .ghead{color:#7F93A8!important;letter-spacing:.08em}
+html[data-theme="foret"] nav.side .ghead:hover{color:#fff!important}
+html[data-theme="foret"] nav.side #navCollapse{color:#7F93A8!important}
+html[data-theme="foret"] nav.side *{border-color:rgba(255,255,255,.1)}
+/* En-tête */
+html[data-theme="foret"] .dtop,html[data-theme="foret"] .mtop{background:rgba(255,255,255,.96)!important;border-bottom:1px solid var(--line)!important}
+/* Cartes */
+html[data-theme="foret"] .card{background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow)}
+/* Boutons : coins 12 px, une action principale bleue, rouge réservé au danger */
+html[data-theme="foret"] :is(section[id^="v-"],#modal,.dtop,#onboard,#auth) :is(button,.btn):not(.gstep):not(.loc-sug button):not([role="tab"]):not(.toggle button):not(.ghead):not(.pbar):not(.pl-slot):not(.k-a2):not(.k-tile):not(.lv-tile):not(.lv-chip){border-radius:12px}
+html[data-theme="foret"] :is(section[id^="v-"],#modal,.dtop,#onboard,#auth) :is(button,.btn).primary{background:#1F7AB8!important;border-color:#1F7AB8!important;color:#fff!important}
+html[data-theme="foret"] :is(section[id^="v-"],#modal,.dtop,#onboard,#auth) :is(button,.btn).primary:hover{background:#17629A!important;border-color:#17629A!important}
+html[data-theme="foret"] #v-caisse .k-a2.k-p,html[data-theme="foret"] #v-caisse .k-regs button.on{background:#0F2A3D!important;border-color:#0F2A3D!important}
+html[data-theme="foret"] .k-hero2{background:linear-gradient(135deg,#0F2A3D,#1F7AB8)}
+html[data-theme="foret"] .k-hero2 .k-steps span.on{color:#0F2A3D}
+@media (max-width:899px){html[data-theme="foret"] :is(section[id^="v-"],#modal) :is(button,.btn):not(.small):not(.pl-slot):not(.pbar){min-height:48px}}
+/* Statuts : mêmes couleurs partout */
+html[data-theme="foret"] .pill.st-trial{background:#DBEAFE!important;color:#1E3A8A!important}
+html[data-theme="foret"] .pill.st-pending{background:#FEF3C7!important;color:#92400E!important}
+html[data-theme="foret"] .pill.st-active,html[data-theme="foret"] .pill.st-succeeded{background:#DCFCE7!important;color:#14532D!important}
+html[data-theme="foret"] .pill.st-expired,html[data-theme="foret"] .pill.st-failed,html[data-theme="foret"] .pill.st-past_due{background:#FEE2E2!important;color:#991B1B!important}
+html[data-theme="foret"] .pill.st-cancelled,html[data-theme="foret"] .pill.st-suspended{background:#F1F5F9!important;color:#475467!important}
+/* Champs */
+html[data-theme="foret"] :is(input,select,textarea){border-radius:10px;border-color:#D0D7E2}
+html[data-theme="foret"] :is(input,select,textarea):focus{outline:2px solid rgba(31,122,184,.35);outline-offset:0;border-color:#1F7AB8}
+/* Thème sombre « Nuittea Nuit » aux mêmes couleurs de marque */
+html[data-theme="nuit"]{--green:#63B3E8;--green-d:#8CC8F0;--green-l:#14324A;--blue:#63B3E8;--gold:#F2A93B;--display:"Inter",system-ui,sans-serif;--body:"Inter",system-ui,sans-serif}
+html[data-theme="nuit"] body{font-family:"Inter",system-ui,sans-serif}
+html[data-theme="nuit"] nav.side button.active{box-shadow:inset 3px 0 0 #3F9ED8!important}
 </style>
 </head>
 <body>
@@ -1259,7 +1300,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.11.10-15';
+const APP_VERSION = '2026.11.10-16';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -6817,48 +6858,7 @@ function openPrinterSetup(role = 'caisse'){
 }
 function printKitchenHtml(o){
   const w = openDocWin(); if (!w) return toast("Autorisez l'ouverture de fenêtres pour imprimer.", true);
-  w.document.write(`<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Bon ${esc(o.ref)}</title><style>body{font:15px/1.4 ui-monospace,Menlo,monospace;max-width:300px;margin:12px auto;padding:0 8px}h1{text-align:center;font-size:22px;margin:0}.b{font-size:18px;font-weight:700;margin:6px 0}.m{font-size:12px}${printCss('ticket')}/* ===== Charte Nuittea (couche finale, thème unique) : bleu Nuittea, bleu nuit, or, Inter ===== */
-html[data-theme="foret"]{--bg:#F5F8FB;--card:#FFFFFF;--ink:#111827;--muted:#5A6574;--line:#E2E7ED;--green:#1F7AB8;--green-d:#17629A;--green-l:#EAF4FB;--ok:#15803D;--ok-l:#DCFCE7;--gold:#F2A93B;--gold-l:#FEF3DD;--amber:#B45309;--amber-l:#FEF3C7;--red:#B42318;--red-l:#FEE2E2;--blue:#1F7AB8;--blue-l:#EAF4FB;--navy:#0F2A3D;--sky:#3F9ED8;--nav:#0F2A3D;--display:"Inter",system-ui,sans-serif;--body:"Inter",system-ui,sans-serif;--shadow:0 1px 2px rgba(16,24,40,.04),0 4px 12px rgba(16,24,40,.05)}
-html[data-theme="foret"] body{font-family:"Inter",system-ui,sans-serif;background:var(--bg);color:var(--ink)}
-html[data-theme="foret"] h1,html[data-theme="foret"] h2,html[data-theme="foret"] h3{font-family:"Inter",system-ui,sans-serif;letter-spacing:-.015em;color:var(--ink)}
-/* Menu latéral bleu nuit */
-html[data-theme="foret"] nav.side{background:#0F2A3D!important;border-right:0!important;color:#C7D3DF}
-html[data-theme="foret"] nav.side .brand{color:#fff!important}
-html[data-theme="foret"] nav.side .brand::before{background-color:#3F9ED8!important;border-radius:9px;box-shadow:none!important}
-html[data-theme="foret"] nav.side .org{background:rgba(255,255,255,.06)!important;border:1px solid rgba(255,255,255,.1)!important;color:#C7D3DF!important}
-html[data-theme="foret"] nav.side button,html[data-theme="foret"] nav.side details.more summary{color:#C7D3DF!important;font-weight:500;background:transparent!important}
-html[data-theme="foret"] nav.side button:hover,html[data-theme="foret"] nav.side details.more summary:hover,html[data-theme="foret"] nav.side details.more[open] summary{background:rgba(255,255,255,.07)!important;color:#fff!important}
-html[data-theme="foret"] nav.side button.active,html[data-theme="foret"] nav.side details.more.active summary{background:rgba(63,158,216,.18)!important;color:#fff!important;font-weight:600;box-shadow:inset 3px 0 0 #3F9ED8!important}
-html[data-theme="foret"] nav.side .ghead{color:#7F93A8!important;letter-spacing:.08em}
-html[data-theme="foret"] nav.side .ghead:hover{color:#fff!important}
-html[data-theme="foret"] nav.side #navCollapse{color:#7F93A8!important}
-html[data-theme="foret"] nav.side *{border-color:rgba(255,255,255,.1)}
-/* En-tête */
-html[data-theme="foret"] .dtop,html[data-theme="foret"] .mtop{background:rgba(255,255,255,.96)!important;border-bottom:1px solid var(--line)!important}
-/* Cartes */
-html[data-theme="foret"] .card{background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow)}
-/* Boutons : coins 12 px, une action principale bleue, rouge réservé au danger */
-html[data-theme="foret"] :is(section[id^="v-"],#modal,.dtop,#onboard,#auth) :is(button,.btn):not(.gstep):not(.loc-sug button):not([role="tab"]):not(.toggle button):not(.ghead):not(.pbar):not(.pl-slot):not(.k-a2):not(.k-tile):not(.lv-tile):not(.lv-chip){border-radius:12px}
-html[data-theme="foret"] :is(section[id^="v-"],#modal,.dtop,#onboard,#auth) :is(button,.btn).primary{background:#1F7AB8!important;border-color:#1F7AB8!important;color:#fff!important}
-html[data-theme="foret"] :is(section[id^="v-"],#modal,.dtop,#onboard,#auth) :is(button,.btn).primary:hover{background:#17629A!important;border-color:#17629A!important}
-html[data-theme="foret"] #v-caisse .k-a2.k-p,html[data-theme="foret"] #v-caisse .k-regs button.on{background:#0F2A3D!important;border-color:#0F2A3D!important}
-html[data-theme="foret"] .k-hero2{background:linear-gradient(135deg,#0F2A3D,#1F7AB8)}
-html[data-theme="foret"] .k-hero2 .k-steps span.on{color:#0F2A3D}
-@media (max-width:899px){html[data-theme="foret"] :is(section[id^="v-"],#modal) :is(button,.btn):not(.small):not(.pl-slot):not(.pbar){min-height:48px}}
-/* Statuts : mêmes couleurs partout */
-html[data-theme="foret"] .pill.st-trial{background:#DBEAFE!important;color:#1E3A8A!important}
-html[data-theme="foret"] .pill.st-pending{background:#FEF3C7!important;color:#92400E!important}
-html[data-theme="foret"] .pill.st-active,html[data-theme="foret"] .pill.st-succeeded{background:#DCFCE7!important;color:#14532D!important}
-html[data-theme="foret"] .pill.st-expired,html[data-theme="foret"] .pill.st-failed,html[data-theme="foret"] .pill.st-past_due{background:#FEE2E2!important;color:#991B1B!important}
-html[data-theme="foret"] .pill.st-cancelled,html[data-theme="foret"] .pill.st-suspended{background:#F1F5F9!important;color:#475467!important}
-/* Champs */
-html[data-theme="foret"] :is(input,select,textarea){border-radius:10px;border-color:#D0D7E2}
-html[data-theme="foret"] :is(input,select,textarea):focus{outline:2px solid rgba(31,122,184,.35);outline-offset:0;border-color:#1F7AB8}
-/* Thème sombre « Nuittea Nuit » aux mêmes couleurs de marque */
-html[data-theme="nuit"]{--green:#63B3E8;--green-d:#8CC8F0;--green-l:#14324A;--blue:#63B3E8;--gold:#F2A93B;--display:"Inter",system-ui,sans-serif;--body:"Inter",system-ui,sans-serif}
-html[data-theme="nuit"] body{font-family:"Inter",system-ui,sans-serif}
-html[data-theme="nuit"] nav.side button.active{box-shadow:inset 3px 0 0 #3F9ED8!important}
-</style></head><body>
+  w.document.write(`<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Bon ${esc(o.ref)}</title><style>body{font:15px/1.4 ui-monospace,Menlo,monospace;max-width:300px;margin:12px auto;padding:0 8px}h1{text-align:center;font-size:22px;margin:0}.b{font-size:18px;font-weight:700;margin:6px 0}.m{font-size:12px}${printCss('ticket')}</style></head><body>
     <h1>${o.outlet === 'bar' ? 'BAR' : 'CUISINE'}</h1><p style="text-align:center">Bon n° ${esc(o.ref)} · ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</p>
     ${o.table ? `<div class="b">Table : ${esc(o.table)}</div>` : ''}${o.server ? `<div>Serveur : ${esc(o.server)}</div>` : ''}<hr>
     ${o.items.map(i => `<div class="b">${+i.qty} × ${esc(i.name)}</div>${i.prep ? `<div class="m">~ ${i.prep} min</div>` : ''}${i.note ? `<div class="m">› ${esc(i.note)}</div>` : ''}`).join('')}

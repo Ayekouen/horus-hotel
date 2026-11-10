@@ -966,6 +966,9 @@ html[data-theme="foret"] body.navmini nav.side #navCollapse:not(#_a){width:40px!
 #auth [data-oauth] svg{flex:none;display:block}
 #auth [data-oauth]:hover{background:#F5F8FB!important}
 #auth a{color:#1F7AB8;font-weight:600}
+.ny-tabs{gap:4px;border-bottom:1px solid var(--line);margin:0 0 16px;overflow-x:auto;flex-wrap:nowrap}#v-naya .ny-tabs button:not(#_a):not(#_b){flex:0 0 auto;background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important;padding:10px 14px!important;font-weight:600;color:var(--muted)!important;min-height:44px}#v-naya .ny-tabs button.on:not(#_a):not(#_b){color:#1F7AB8!important;box-shadow:inset 0 -3px 0 #1F7AB8!important}
+.ny-hero{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;border-radius:16px;padding:16px 18px;border:1px solid var(--line)}.ny-hero.on{background:linear-gradient(135deg,#EAF4FB,#fff);border-color:#B9DAF0}.ny-hero.off{background:#FFF7ED;border-color:#FED7AA}.ny-st{font-weight:800;font-size:16px}.ny-hero.on .ny-st{color:#15803D}.ny-hero.off .ny-st{color:#B45309}.ny-url{font-weight:600;font-size:14px}
+.ny-prev{border:1px solid var(--line);border-radius:12px;overflow:hidden;height:480px;background:#F5F8FB}.ny-prev iframe{width:100%;height:100%;border:0}
 </style>
 </head>
 <body>
@@ -1317,7 +1320,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.11.10-21';
+const APP_VERSION = '2026.11.10-22';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -3338,50 +3341,104 @@ const openNaya = () => go('naya');
 async function renderNaya(){
   const el = $('v-naya'); keepOrSkel(el); if (!S.est) await loadEst();
   const owner = can(['owner','admin']);
-  const est = S.ests.find(x => x.id === S.est) || {};
   const m0 = new Date(); const mStart = `${m0.getFullYear()}-${String(m0.getMonth() + 1).padStart(2, '0')}-01`;
-  const st = { month: mStart };
-  const [{ data: lst }, { data: e2 }] = await Promise.all([
+  const st = S._ny || (S._ny = { month: mStart, tab: 'apercu', f: 'tous' });
+  const [{ data: lst }, { data: e2 }, { data: rmP }] = await Promise.all([
     sb.from('marketplace_listings').select('*').eq('establishment_id', S.est).maybeSingle(),
-    sb.from('establishments').select('slug').eq('id', S.est).maybeSingle()]);
+    sb.from('establishments').select('slug,public_description,public_photos,public_cover_url,public_address,public_phone,public_whatsapp,latitude,amenities,checkin_time,checkout_time,public_conditions').eq('id', S.est).maybeSingle(),
+    sb.from('rooms').select('id,photos').eq('establishment_id', S.est).eq('is_active', true)]);
   let L = lst || { listed: false, commission_pct: 8, auto_confirm: false }, slug = e2 && e2.slug;
+  const E = e2 || {};
+  const ficheUrl = slug ? `${NAYA_URL}/hotel/${slug}` : NAYA_URL;
+  const photos = (Array.isArray(E.public_photos) ? E.public_photos.length : 0) + (E.public_cover_url ? 1 : 0);
+  const roomsWithPhoto = (rmP || []).filter(r => Array.isArray(r.photos) && r.photos.length).length, nRooms = (rmP || []).length;
+  const checks = [
+    ['Description de l’établissement', (E.public_description || '').trim().length >= 80],
+    ['Au moins 5 photos de l’établissement', photos >= 5],
+    ['Photos sur toutes les chambres', nRooms > 0 && roomsWithPhoto === nRooms],
+    ['Adresse et position sur la carte', !!(E.public_address && E.latitude)],
+    ['Téléphone ou WhatsApp', !!(E.public_phone || E.public_whatsapp)],
+    ['Équipements renseignés', Array.isArray(E.amenities) && E.amenities.length >= 3],
+    ['Heures d’arrivée et de départ', !!(E.checkin_time && E.checkout_time)],
+    ['Conditions (annulation, paiement)', !!(E.public_conditions && String(E.public_conditions).trim())]];
+  const score = Math.round(checks.filter(c => c[1]).length * 100 / checks.length);
+  const SCOL = { pending:['#FEF3C7','#92400E'], confirmed:['#DBEAFE','#1E3A8A'], checked_in:['#DCFCE7','#14532D'], checked_out:['#F1F5F9','#475467'], cancelled:['#FEE2E2','#991B1B'], no_show:['#FEE2E2','#991B1B'] };
+  const pill = (s) => `<span class="pill" style="background:${(SCOL[s] || SCOL.checked_out)[0]};color:${(SCOL[s] || SCOL.checked_out)[1]}">${esc(RSTATUS[s] || s)}</span>`;
+  const shift = (k) => { const d = new Date(st.month + 'T00:00:00'); d.setMonth(d.getMonth() + k); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`; };
   const draw = async () => {
-    const end = addDays(st.month, 40).slice(0, 8) + '01';
-    const { data: rs } = await sb.from('reservation_balances').select('id,guest_name,room_number,check_in,check_out,status,total_amount,paid,balance,created_at')
-      .eq('establishment_id', S.est).eq('source', 'naya').gte('check_in', st.month).lt('check_in', end).order('check_in');
-    const { data: pc } = await sb.from('reservations').select('id,commission_pct').eq('establishment_id', S.est).eq('source', 'naya').gte('check_in', st.month).lt('check_in', end);
-    const P = Object.fromEntries((pc || []).map(x => [x.id, Number(x.commission_pct) || 0]));
-    const R = rs || [], due = R.filter(r => !['cancelled','no_show','pending'].includes(r.status));
-    const ca = due.reduce((a, r) => a + Number(r.total_amount), 0), com = due.reduce((a, r) => a + Math.round(Number(r.total_amount) * (P[r.id] || 0) / 100), 0);
-    const mLabel = new Date(st.month + 'T00:00:00').toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
-    const { data: BAL } = await sb.rpc('naya_commission_balance', { p_org: S.org });
+    const end = shift(1), prevM = shift(-1);
+    const [{ data: rs }, { data: pc }, { data: prs }, { data: pend }, { data: BAL }] = await Promise.all([
+      sb.from('reservation_balances').select('id,guest_name,guest_phone,room_number,check_in,check_out,status,total_amount,paid,balance,created_at').eq('establishment_id', S.est).eq('source', 'naya').gte('check_in', st.month).lt('check_in', end).order('check_in'),
+      sb.from('reservations').select('id,commission_pct').eq('establishment_id', S.est).eq('source', 'naya').gte('check_in', prevM).lt('check_in', end),
+      sb.from('reservation_balances').select('id,status,total_amount').eq('establishment_id', S.est).eq('source', 'naya').gte('check_in', prevM).lt('check_in', st.month),
+      sb.from('reservation_balances').select('id,guest_name,room_number,check_in,check_out,total_amount,created_at').eq('establishment_id', S.est).eq('source', 'naya').eq('status', 'pending').gte('check_out', today()).order('created_at'),
+      sb.rpc('naya_commission_balance', { p_org: S.org })]);
     if (S.view !== 'naya') return;
-    el.innerHTML = (`${nayaBalanceCard(BAL, false)}${head('Nuittea', `<a class="small ghost btn" style="text-decoration:none" href="${NAYA_URL}" target="_blank" rel="noopener">Ouvrir le site Nuittea</a>`)}
-      <p class="muted" style="margin:0 0 14px">Les voyageurs trouvent et réservent votre établissement sur <a href="${NAYA_URL}" target="_blank" rel="noopener">Nuittea</a>. Les réservations arrivent directement dans votre planning avec l’origine « Nuittea ».</p>
-      <div class="card" style="margin-bottom:14px;${L.listed ? 'border-color:var(--green)' : ''}">
-        <div class="row between" style="gap:10px"><div><strong>${L.listed ? 'Publié sur Nuittea' : 'Non publié'}</strong><div class="muted" style="font-size:13px">Commission Nuittea : <strong>${Number(L.commission_pct)} %</strong> du séjour, uniquement sur les réservations venues de Nuittea et honorées. Vos réservations directes restent sans commission.</div></div>
-        ${owner ? `<button class="${L.listed ? 'ghost' : 'primary'}" id="nyToggle">${L.listed ? 'Retirer de Nuittea' : 'Publier sur Nuittea'}</button>` : ''}</div>
-        ${L.listed ? `<label class="row" style="gap:8px;margin:12px 0 0;font-weight:600;flex-wrap:nowrap;color:var(--ink)"><input type="checkbox" id="nyAuto" ${L.auto_confirm ? 'checked' : ''} ${owner ? '' : 'disabled'} style="width:20px;min-height:20px"> Confirmer automatiquement les réservations Nuittea</label>
-          <p class="muted" style="font-size:12px;margin:4px 0 0">Sinon, elles arrivent « en attente » dans Réservations → Demandes en ligne, et vous les confirmez.</p>
-          ${slug ? `<p style="font-size:13px;margin:10px 0 0">Votre fiche : <a href="${NAYA_URL}/hotel/${esc(slug)}" target="_blank" rel="noopener">${NAYA_URL.replace("https://", "")}/hotel/${esc(slug)}</a></p>` : ''}` : (owner ? `<p class="muted" style="font-size:12px;margin:10px 0 0">En publiant, vous acceptez la commission indiquée et les conditions partenaires Nuittea. Pensez à ajouter des photos de vos chambres.</p>` : '')}
-      </div>
-      <div class="row between" style="margin-bottom:8px;gap:8px"><h3 style="font-size:18px">Réservations Nuittea · ${mLabel}</h3><div class="row" style="gap:6px"><button class="small ghost" id="nyPrev" aria-label="Mois précédent">←</button><button class="small ghost" id="nyNext" aria-label="Mois suivant">→</button></div></div>
-      <div class="grid" style="grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:12px">
-        <div class="card" style="padding:12px"><div class="muted" style="font-size:12px">Réservations</div><div style="font-weight:800;font-size:20px">${R.length}</div></div>
-        <div class="card" style="padding:12px"><div class="muted" style="font-size:12px">Chiffre d’affaires</div><div style="font-weight:800;font-size:20px">${money(ca)}</div></div>
-        <div class="card" style="padding:12px"><div class="muted" style="font-size:12px">Commission Nuittea</div><div style="font-weight:800;font-size:20px">${money(com)}</div></div></div>
-      ${R.length ? `<div class="tablewrap"><table class="table"><thead><tr><th>Client</th><th>Séjour</th><th>Statut</th><th style="text-align:right">Total</th><th style="text-align:right">Commission</th></tr></thead><tbody>
-        ${R.map(r => { const c = ['cancelled','no_show','pending'].includes(r.status) ? 0 : Math.round(Number(r.total_amount) * (P[r.id] || 0) / 100); return `<tr><td><strong>${esc(r.guest_name)}</strong></td><td>Ch. ${esc(r.room_number)} · ${dfr(r.check_in)} → ${dfr(r.check_out)}</td><td>${esc(RSTATUS[r.status] || r.status)}</td><td style="text-align:right;white-space:nowrap">${money(r.total_amount)}</td><td style="text-align:right;white-space:nowrap">${c ? money(c) : '<span class="muted">—</span>'}</td></tr>`; }).join('')}
-      </tbody></table></div><p class="muted" style="font-size:12px;margin:8px 0 0">La commission ne compte pas les demandes en attente, les annulations ni les absences.</p>` : '<p class="muted">Aucune réservation Nuittea ce mois-ci.</p>'}`);
-    const tg = $('nyToggle'); if (tg) tg.onclick = async () => { tg.disabled = true;
-      const { data, error } = await sb.rpc('marketplace_set_listing', { p_establishment: S.est, p_listed: !L.listed, p_auto_confirm: null });
-      if (error) { tg.disabled = false; return toast(errMsg(error), true); }
-      L = { ...L, listed: data.listed, commission_pct: data.commission_pct, auto_confirm: data.auto_confirm }; slug = data.slug;
-      toast(data.listed ? 'Votre établissement est publié sur Nuittea.' : 'Votre établissement est retiré de Nuittea.'); draw(); };
-    const au = $('nyAuto'); if (au) au.onchange = async () => { const { data, error } = await sb.rpc('marketplace_set_listing', { p_establishment: S.est, p_listed: true, p_auto_confirm: au.checked });
-      if (error) { au.checked = !au.checked; return toast(errMsg(error), true); } L.auto_confirm = data.auto_confirm; toast(data.auto_confirm ? 'Réservations Nuittea confirmées automatiquement.' : 'Réservations Nuittea à confirmer par vous.'); };
-    $('nyPrev').onclick = () => { const d = new Date(st.month + 'T00:00:00'); d.setMonth(d.getMonth() - 1); st.month = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`; draw(); };
-    $('nyNext').onclick = () => { const d = new Date(st.month + 'T00:00:00'); d.setMonth(d.getMonth() + 1); st.month = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`; draw(); };
+    const P = Object.fromEntries((pc || []).map(x => [x.id, Number(x.commission_pct) || 0]));
+    const R = rs || [], honored = (arr) => (arr || []).filter(r => !['cancelled','no_show','pending'].includes(r.status));
+    const com = (r) => ['cancelled','no_show','pending'].includes(r.status) ? 0 : Math.round(Number(r.total_amount) * (P[r.id] || Number(L.commission_pct) || 0) / 100);
+    const ca = honored(R).reduce((a, r) => a + Number(r.total_amount), 0), cm = honored(R).reduce((a, r) => a + com(r), 0);
+    const pca = honored(prs).reduce((a, r) => a + Number(r.total_amount), 0), pcm = honored(prs).reduce((a, r) => a + com(r), 0), pn = (prs || []).length;
+    const dl = (v, p) => { if (!p) return v ? '<span class="dl up">nouveau</span>' : ''; const d = Math.round((v - p) / Math.abs(p) * 100); return `<span style="font-size:12px;font-weight:700;color:${d >= 0 ? '#027A48' : '#B42318'}">${d >= 0 ? '▲' : '▼'} ${Math.abs(d)} %</span> <span class="muted" style="font-size:12px">vs mois précédent</span>`; };
+    const mLabel = new Date(st.month + 'T00:00:00').toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+    const kpi = (l, v, sub) => `<div class="card" style="padding:14px 16px"><div class="muted" style="font-size:12px;font-weight:600">${l}</div><div style="font-weight:800;font-size:24px;letter-spacing:-.02em">${v}</div><div>${sub || ''}</div></div>`;
+    const monthNav = `<div class="row" style="gap:6px;align-items:center"><button class="small ghost" id="nyPrev" aria-label="Mois précédent">←</button><strong style="text-transform:capitalize;min-width:130px;text-align:center">${mLabel}</strong><button class="small ghost" id="nyNext" aria-label="Mois suivant">→</button></div>`;
+    const TABS = [['apercu', 'Vue d’ensemble'], ['resas', `Réservations · ${R.length}`], ['fiche', `Ma fiche · ${score} %`], ['reglages', 'Réglages et commission']];
+    const share = `https://wa.me/?text=${encodeURIComponent(`Réservez directement chez nous sur Nuittea : ${ficheUrl}`)}`;
+    let body = '';
+    if (st.tab === 'apercu') {
+      body = `<div class="ny-hero ${L.listed ? 'on' : 'off'}"><div><div class="ny-st">● ${L.listed ? 'En ligne sur Nuittea' : 'Hors ligne : votre établissement n’apparaît pas sur Nuittea'}</div>
+          ${slug ? `<a href="${ficheUrl}" target="_blank" rel="noopener" class="ny-url">${ficheUrl.replace('https://', '')}</a>` : ''}
+          <div class="muted" style="font-size:13px;margin-top:4px">${L.listed ? (L.auto_confirm ? 'Réservations confirmées automatiquement' : 'Réservations à confirmer par vous') + ' · commission ' + Number(L.commission_pct) + ' % sur les séjours honorés' : 'Publiez votre établissement pour recevoir des réservations en ligne.'}</div></div>
+        <div class="row" style="gap:6px">${L.listed && slug ? `<a class="btn small" href="${ficheUrl}" target="_blank" rel="noopener" style="text-decoration:none">Voir ma fiche</a><button type="button" class="small ghost" id="nyCopy">Copier le lien</button><a class="btn small" href="${share}" target="_blank" rel="noopener" style="text-decoration:none">Partager sur WhatsApp</a>` : owner ? '<button type="button" class="primary" id="nyPub">Publier sur Nuittea</button>' : ''}</div></div>
+        <div class="row between" style="margin:16px 0 8px"><h3 style="font-size:18px">Résultats</h3>${monthNav}</div>
+        <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-bottom:16px">
+          ${kpi('Réservations', R.length, dl(R.length, pn))}${kpi('Chiffre d’affaires honoré', money(ca), dl(ca, pca))}${kpi('Commission Nuittea', money(cm), dl(cm, pcm))}${kpi('Net pour l’hôtel', `<span style="color:#15803D">${money(ca - cm)}</span>`, `<span class="muted" style="font-size:12px">${ca ? Math.round((ca - cm) * 100 / ca) : 100} % du chiffre</span>`)}</div>
+        <div class="grid g2" style="gap:14px;align-items:start">
+          <div class="card"><div class="row between"><h3 style="font-size:17px">À confirmer</h3><span class="pill" style="background:#FEF3C7;color:#92400E">${(pend || []).length}</span></div>
+            ${(pend || []).length ? (pend || []).map(r => `<div class="row" style="padding:10px 0;border-bottom:1px dashed var(--line);flex-wrap:nowrap;gap:10px"><div style="flex:1;min-width:0"><strong>${esc(r.guest_name)}</strong><div class="muted" style="font-size:12px">Ch. ${esc(r.room_number)} · ${dfr(r.check_in)} → ${dfr(r.check_out)} · ${money(r.total_amount)}</div></div><button class="small primary" data-open="${r.id}">Traiter</button></div>`).join('') : '<p class="muted" style="margin:8px 0 0">Aucune demande en attente.</p>'}</div>
+          <div class="card"><div class="row between"><h3 style="font-size:17px">Votre fiche</h3><strong style="font-size:20px;color:${score >= 80 ? '#15803D' : score >= 50 ? '#B45309' : '#B42318'}">${score} %</strong></div>
+            <div style="height:8px;border-radius:99px;background:#E5E7EB;margin:8px 0 10px;overflow:hidden"><i style="display:block;height:100%;width:${score}%;background:${score >= 80 ? '#15803D' : score >= 50 ? '#F59E0B' : '#DC2626'}"></i></div>
+            ${checks.filter(c => !c[1]).slice(0, 3).map(c => `<div style="font-size:13px;padding:3px 0">○ ${c[0]}</div>`).join('') || '<p class="muted" style="margin:0">Fiche complète.</p>'}
+            ${score < 100 ? '<button class="small ghost" style="margin-top:10px" data-nytab="fiche">Compléter ma fiche</button>' : ''}</div></div>`;
+    } else if (st.tab === 'resas') {
+      const F = [['tous', 'Toutes'], ['pending', 'À confirmer'], ['confirmed', 'Confirmées'], ['checked_in', 'En séjour'], ['checked_out', 'Terminées'], ['ko', 'Annulées ou absences']];
+      const rows = R.filter(r => st.f === 'tous' || (st.f === 'ko' ? ['cancelled', 'no_show'].includes(r.status) : r.status === st.f));
+      body = `<div class="row between" style="margin-bottom:10px;gap:8px"><div class="row" style="gap:6px">${F.map(([k, l]) => { const n = k === 'tous' ? R.length : R.filter(r => k === 'ko' ? ['cancelled','no_show'].includes(r.status) : r.status === k).length; return `<button class="small ${st.f === k ? 'primary' : 'ghost'}" data-nyf="${k}">${l} · ${n}</button>`; }).join('')}</div><div class="row" style="gap:6px">${monthNav}<button class="small ghost" id="nyCsv">Export Excel</button></div></div>
+        ${rows.length ? `<div class="tablewrap"><table class="table"><thead><tr><th>Client</th><th>Séjour</th><th>Statut</th><th style="text-align:right">Total</th><th style="text-align:right">Commission</th><th style="text-align:right">Net hôtel</th></tr></thead><tbody>
+          ${rows.map(r => { const c = com(r), ok = !['cancelled','no_show','pending'].includes(r.status); return `<tr data-open="${r.id}" style="cursor:pointer"><td><strong>${esc(r.guest_name)}</strong></td><td>Ch. ${esc(r.room_number)} · ${dfr(r.check_in)} → ${dfr(r.check_out)}</td><td>${pill(r.status)}</td><td style="text-align:right;white-space:nowrap">${money(r.total_amount)}</td><td style="text-align:right;white-space:nowrap">${c ? money(c) : '<span class="muted">—</span>'}</td><td style="text-align:right;white-space:nowrap">${ok ? money(Number(r.total_amount) - c) : '<span class="muted">—</span>'}</td></tr>`; }).join('')}
+        </tbody></table></div><p class="muted" style="font-size:12px;margin:8px 0 0">La commission ne s’applique qu’aux séjours honorés : pas sur les demandes en attente, les annulations ni les absences. Cliquez sur une ligne pour ouvrir la réservation.</p>` : '<p class="muted">Aucune réservation dans cette catégorie ce mois-ci.</p>'}`;
+    } else if (st.tab === 'fiche') {
+      body = `<div class="grid g2" style="gap:14px;align-items:start">
+        <div class="card"><h3 style="font-size:17px;margin-bottom:8px">Ce que voient les voyageurs</h3>
+          ${slug && L.listed ? `<div class="ny-prev"><iframe src="${ficheUrl}" title="Aperçu de la fiche Nuittea" loading="lazy"></iframe></div><div class="row" style="gap:6px;margin-top:10px"><a class="btn small" href="${ficheUrl}" target="_blank" rel="noopener" style="text-decoration:none">Ouvrir en grand</a><button type="button" class="small ghost" id="nyCopy">Copier le lien</button></div>` : '<p class="muted">L’aperçu s’affiche une fois l’établissement publié sur Nuittea.</p>'}</div>
+        <div class="card"><div class="row between"><h3 style="font-size:17px">Qualité de la fiche</h3><strong style="font-size:20px">${score} %</strong></div>
+          <p class="muted" style="font-size:13px;margin:4px 0 10px">Une fiche complète avec de belles photos reçoit nettement plus de réservations.</p>
+          ${checks.map(c => `<div class="row" style="padding:7px 0;border-bottom:1px dashed var(--line);flex-wrap:nowrap;gap:10px"><span style="width:22px;height:22px;flex:none;border-radius:50%;display:grid;place-items:center;font-size:13px;font-weight:800;background:${c[1] ? '#DCFCE7' : '#FEF3C7'};color:${c[1] ? '#14532D' : '#92400E'}">${c[1] ? '✓' : '!'}</span><span style="flex:1">${c[0]}</span></div>`).join('')}
+          <div class="row" style="gap:6px;margin-top:12px">${allowed('mapage') ? '<button class="primary small" id="nyEdit">Modifier ma fiche</button>' : ''}<button class="small ghost" id="nyRooms">Photos des chambres</button></div></div></div>`;
+    } else {
+      body = `<div class="card" style="margin-bottom:14px"><div class="row between" style="gap:10px"><div><strong>${L.listed ? 'Publié sur Nuittea' : 'Non publié'}</strong><div class="muted" style="font-size:13px">${L.listed ? 'Votre établissement est visible et réservable sur Nuittea.com.' : 'Votre établissement n’est pas visible sur Nuittea.com.'}</div></div>${owner ? `<button class="${L.listed ? 'ghost' : 'primary'}" id="nyToggle">${L.listed ? 'Retirer de Nuittea' : 'Publier sur Nuittea'}</button>` : ''}</div>
+          ${L.listed ? `<label class="row" style="gap:8px;margin:14px 0 0;font-weight:600;flex-wrap:nowrap;color:var(--ink)"><input type="checkbox" id="nyAuto" ${L.auto_confirm ? 'checked' : ''} ${owner ? '' : 'disabled'} style="width:20px;min-height:20px"> Confirmer automatiquement les réservations Nuittea</label><p class="muted" style="font-size:12px;margin:4px 0 0">Sinon, elles arrivent « à confirmer » dans la vue d’ensemble et dans Réservations → Demandes en ligne.</p>` : (owner ? '<p class="muted" style="font-size:12px;margin:10px 0 0">En publiant, vous acceptez la commission indiquée et les conditions partenaires Nuittea.</p>' : '')}</div>
+        <div class="card" style="margin-bottom:14px"><h3 style="font-size:17px;margin-bottom:6px">Commission</h3><p style="margin:0"><strong>${Number(L.commission_pct)} %</strong> du montant du séjour, uniquement sur les réservations venues de Nuittea et honorées. Vos réservations directes, au comptoir ou par téléphone, restent sans commission.</p></div>
+        <div class="card" style="margin-bottom:14px"><h3 style="font-size:17px;margin-bottom:6px">Paiement en ligne</h3><p class="muted" style="margin:0;font-size:14px">Les voyageurs peuvent payer un acompte ou la totalité par Mobile Money ou carte. Les frais de transaction sont affichés au client avant validation ; le paiement en ligne est proposé à partir de 2 000 F.</p></div>
+        ${nayaBalanceCard(BAL, false)}`;
+    }
+    el.innerHTML = head('Nuittea', `<a class="small ghost btn" style="text-decoration:none" href="${NAYA_URL}" target="_blank" rel="noopener">Ouvrir Nuittea.com</a>`) +
+      `<div class="row ny-tabs" role="tablist" aria-label="Nuittea">${TABS.map(([k, l]) => `<button type="button" role="tab" aria-selected="${st.tab === k}" class="${st.tab === k ? 'on' : ''}" data-nytab="${k}">${l}</button>`).join('')}</div>` + body;
+    el.querySelectorAll('[data-nytab]').forEach(b => b.onclick = () => { st.tab = b.dataset.nytab; draw(); });
+    el.querySelectorAll('[data-nyf]').forEach(b => b.onclick = () => { st.f = b.dataset.nyf; draw(); });
+    bindResaActions(el, () => draw());
+    const a = (id, fn) => { const b = $(id); if (b) b.onclick = fn; };
+    a('nyPrev', () => { st.month = shift(-1); draw(); }); a('nyNext', () => { st.month = shift(1); draw(); });
+    a('nyCopy', async () => { try { await navigator.clipboard.writeText(ficheUrl); toast('Lien copié.'); } catch (_) { toast(ficheUrl); } });
+    a('nyEdit', () => go('mapage')); a('nyRooms', () => go('chambres'));
+    a('nyCsv', () => { const lines = [['Client', 'Chambre', 'Arrivée', 'Départ', 'Statut', 'Total', 'Commission', 'Net hôtel']].concat(R.map(r => { const c = com(r), ok = !['cancelled','no_show','pending'].includes(r.status); return [r.guest_name, r.room_number, r.check_in, r.check_out, RSTATUS[r.status] || r.status, r.total_amount, c, ok ? Number(r.total_amount) - c : 0]; }));
+      const csv = '﻿' + lines.map(l => l.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(';')).join('\n');
+      const x = document.createElement('a'); x.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' })); x.download = `nuittea-${st.month.slice(0, 7)}.csv`; x.click(); });
+    const setL = async (listed, auto) => { const { data, error } = await sb.rpc('marketplace_set_listing', { p_establishment: S.est, p_listed: listed, p_auto_confirm: auto }); if (error) { toast(errMsg(error), true); return null; } L = { ...L, listed: data.listed, commission_pct: data.commission_pct, auto_confirm: data.auto_confirm }; slug = data.slug; return data; };
+    a('nyPub', async () => { const d = await setL(true, null); if (d) { toast('Votre établissement est publié sur Nuittea.'); draw(); } });
+    const tg = $('nyToggle'); if (tg) tg.onclick = async () => { tg.disabled = true; const d = await setL(!L.listed, null); if (!d) { tg.disabled = false; return; } toast(d.listed ? 'Votre établissement est publié sur Nuittea.' : 'Votre établissement est retiré de Nuittea.'); draw(); };
+    const au = $('nyAuto'); if (au) au.onchange = async () => { const d = await setL(true, au.checked); if (!d) { au.checked = !au.checked; return; } toast(d.auto_confirm ? 'Réservations Nuittea confirmées automatiquement.' : 'Réservations Nuittea à confirmer par vous.'); };
   };
   draw();
 }

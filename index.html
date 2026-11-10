@@ -1226,7 +1226,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.11.09-19';
+const APP_VERSION = '2026.11.10-01';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -1248,10 +1248,25 @@ async function checkUpdate(){
       d.innerHTML = '<span> Nouvelle version disponible</span><button type="button" class="primary small" style="min-height:36px">Actualiser</button><button type="button" aria-label="Plus tard" style="background:none;border:0;color:#fff;min-height:36px;padding:0 6px">✕</button>';
       d.children[1].onclick = refreshApp; d.children[2].onclick = () => d.remove();
       document.body.appendChild(d);
+      UPD_PENDING = true;
     }
   } catch (_) {}
 }
-setTimeout(checkUpdate, 4000); setInterval(checkUpdate, 15 * 60 * 1000);
+/* Mise à jour automatique : appliquée seulement à un moment sans risque (aucune saisie, fenêtre ou opération en cours) */
+let UPD_PENDING = false, LAST_ACT = Date.now(), WAS_HIDDEN = false;
+['pointerdown','keydown','input','scroll','touchstart'].forEach(ev => document.addEventListener(ev, () => { LAST_ACT = Date.now(); }, { passive: true, capture: true }));
+function safeToUpdate(){
+  if (!$('modal').classList.contains('hidden')) return false;
+  const a = document.activeElement; if (a && a.matches && a.matches('input,textarea,select,[contenteditable="true"]')) return false;
+  if (document.querySelector('.is-busy,[aria-busy="true"]')) return false;
+  const d = $('dirty'); if (d && /non enregistr/i.test(d.textContent)) return false;
+  if (typeof NET !== 'undefined' && NET.n > 0) return false;
+  return true;
+}
+function autoUpdate(reason){ if (UPD_PENDING && safeToUpdate()) { UPD_PENDING = false; refreshApp(); } }
+setInterval(() => { if (UPD_PENDING && Date.now() - LAST_ACT > 120000) autoUpdate('idle'); }, 15000);
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') WAS_HIDDEN = true; else if (WAS_HIDDEN) { WAS_HIDDEN = false; setTimeout(() => autoUpdate('return'), 1500); } });
+setTimeout(checkUpdate, 4000); setInterval(checkUpdate, 5 * 60 * 1000);
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') checkUpdate(); });
 const isStandalone = () => window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
 window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); INSTALL_EVT = e; const b = $('navInstall'); if (b) b.classList.remove('hidden'); });

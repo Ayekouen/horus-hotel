@@ -1323,7 +1323,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.11.10-23';
+const APP_VERSION = '2026.11.10-24';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -2833,6 +2833,25 @@ const srcOpts = (cur) => cur === 'naya' ? opt({ naya: 'Nuittea' }, 'naya') : opt
 const PMETHOD = { cash:'Espèces', orange_money:'Orange Money', mtn_money:'MTN MoMo', moov_money:'Moov Money', wave:'Wave', card:'Carte', bank_transfer:'Virement', geniuspay:'Paiement en ligne' };
 const HKS = { clean:'Propre', dirty:'Sale', cleaning:'En nettoyage', ready:'Prête', out_of_service:'Hors service' };
 const money = (n) => { if (S.maskMoney && S.view === 'dashboard') return '••• ' + (((typeof CURRENCIES !== 'undefined' && CURRENCIES[S.currency]) || [0, 'F'])[1]); const c = (typeof CURRENCIES !== 'undefined' && CURRENCIES[S.currency]) || [0, 'F', 0]; const v = Number(n || 0); const t = new Intl.NumberFormat('fr-FR', { minimumFractionDigits: c[2] && v % 1 ? 2 : 0, maximumFractionDigits: c[2] }).format(c[2] ? v : Math.round(v)).replace(/[\u202f\u00a0 ]/g, '\u00a0'); return c[1] === '$' ? '$' + t : t + '\u00a0' + c[1]; };
+
+/* Séparateur de milliers dans les champs de montant : « 25 000 » s'affiche, le code lit toujours « 25000 » */
+(function(){
+  const D = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value');
+  const fmt = (raw) => { raw = String(raw ?? ''); const neg = raw.trim().startsWith('-'); const d = raw.replace(/[^\d]/g, ''); if (!d) return neg ? '-' : ''; return (neg ? '-' : '') + d.replace(/^0+(?=\d)/, '').replace(/\B(?=(\d{3})+(?!\d))/g, ' '); };
+  const raw = (v) => String(v ?? '').replace(/[\s  ]/g, '');
+  function conv(i){
+    if (i._sep || i.type !== 'number') return; const st = i.getAttribute('step'); if (st && (st === 'any' || st.includes('.'))) return;
+    i._sep = true; const v0 = D.get.call(i); const ph = i.getAttribute('placeholder');
+    i.type = 'text'; i.setAttribute('inputmode', 'numeric'); i.setAttribute('autocomplete', 'off'); if (ph) i.setAttribute('placeholder', fmt(ph) || ph);
+    Object.defineProperty(i, 'value', { configurable: true, get(){ return raw(D.get.call(this)); }, set(v){ D.set.call(this, fmt(v)); } });
+    D.set.call(i, fmt(v0));
+    i.addEventListener('input', () => { const el = i, old = D.get.call(el), pos = el.selectionStart, before = old.slice(0, pos).replace(/[^\d-]/g, '').length; const nv = fmt(old); if (nv === old) return; D.set.call(el, nv);
+      let k = 0, c = 0; while (k < nv.length && c < before) { if (/[\d-]/.test(nv[k])) c++; k++; } try { el.setSelectionRange(k, k); } catch (_) {} }, true);
+  }
+  const scan = (root) => { if (root.querySelectorAll) root.querySelectorAll('input[type=number]').forEach(conv); };
+  new MutationObserver(ms => ms.forEach(m => m.addedNodes.forEach(n => { if (n.nodeType === 1) { if (n.matches && n.matches('input[type=number]')) conv(n); scan(n); } }))).observe(document.documentElement, { childList: true, subtree: true });
+  document.addEventListener('DOMContentLoaded', () => scan(document)); scan(document);
+})();
 const iso = (d) => { const x = new Date(d); x.setMinutes(x.getMinutes() - x.getTimezoneOffset()); return x.toISOString().slice(0,10); };
 const today = () => iso(new Date());
 const addDays = (s, n) => { const d = new Date(s + 'T00:00:00'); d.setDate(d.getDate() + n); return iso(d); };

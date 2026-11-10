@@ -1226,7 +1226,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.11.10-03';
+const APP_VERSION = '2026.11.10-04';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -3113,6 +3113,15 @@ function afterCheckOut(r, refresh){
   nextStep('Départ enregistré', `La chambre ${esc(r.room_number)} passe « à nettoyer ». ${r.balance > 0 ? `Attention : ${money(r.balance)} restent impayés.` : 'Pensez à remettre la facture au client.'}`,
     [{ label: 'Demander un avis', fn: () => askReview(r) }, { label: 'Facture', fn: async () => { const { data, error } = await sb.rpc('issue_guest_invoice', { p_reservation: r.id }); if (error) return toast(errMsg(error), true); const { data: inv } = await sb.from('guest_invoices').select('*').eq('id', data).single(); printGuestInvoice(inv); } }, ...(r.balance > 0 ? [{ label: 'Encaisser', fn: () => openEncaisser(r, refresh) }] : [])]);
 }
+async function receiptLink(id){ const { data, error } = await sb.functions.invoke('receipt', { body: { action: 'link', reservation_id: id } }); if (error) throw new Error(await fnErr(error)); return data.url; }
+async function sendReceiptWA(r, extra){
+  const ph = waPhone(r.guest_phone); const w = window.open('', '_blank');
+  try { const url = await receiptLink(r.id); const est = (S.ests || []).find(x => x.id === S.est) || {};
+    const txt = (extra || `${est.name || 'Nuittea Manager'}\nBonjour ${(r.guest_name || '').split(' ')[0]}, voici le reçu de votre séjour (chambre ${r.room_number}) :`) + `\n${url}\nMerci de votre confiance.`;
+    const target = `https://wa.me/${ph || ''}?text=${encodeURIComponent(txt)}`; if (w) w.location = target; else location.href = target;
+    if (!ph) toast('Aucun numéro WhatsApp sur la fiche : choisissez le contact dans WhatsApp.');
+  } catch (e) { if (w) w.close(); toast(errMsg(e), true); }
+}
 function waConfirmText(r){
   const est = S.ests.find(x => x.id === S.est) || {};
   return `Bonjour ${r.guest_name}, votre réservation à ${est.name || 'notre établissement'} est confirmée : chambre ${r.room_number}, du ${dfr(r.check_in)} au ${dfr(r.check_out)} (${plur(r.nights, 'nuit', 'nuits')}), total ${money(r.total_amount)}. À très bientôt !`;
@@ -3559,6 +3568,7 @@ async function openResa(id, refresh, focusCheckout){
       ${['pending','confirmed'].includes(r.status) ? `<button class="${r.status === 'pending' ? '' : 'primary'}" id="aIn">Check-in</button>` : ''}
       ${r.status === 'checked_in' ? `<button class="primary" id="aOut">Check-out</button>` : ''}
       ${r.status !== 'cancelled' ? `<button id="aInv">Facture</button>` : ''}
+      ${r.status !== 'cancelled' ? `<button class="ghost" id="aRcWa">Reçu par WhatsApp</button>` : ''}
       ${active ? `<button class="ghost" id="aEdit">Modifier / prolonger</button>` : ''}
       ${['pending','confirmed'].includes(r.status) && r.check_in < today() ? `<button class="ghost" id="aNoShow">Client absent (no-show)</button>` : ''}
       ${['pending','confirmed'].includes(r.status) ? `<button class="ghost" id="aCancel">Annuler la réservation</button>` : ''}
@@ -3579,6 +3589,7 @@ async function openResa(id, refresh, focusCheckout){
     if (navigator.onLine && !$('aOut').dataset.mb) { const { data: mb } = await sb.from('extra_items').select('id,label,price,minibar_qty,photo_url,promo_price,promo_from,promo_to,happy_price,happy_start,happy_end,stock').eq('establishment_id', r.establishment_id || S.est).eq('in_minibar', true).eq('is_active', true).order('label');
       if ((mb || []).length) return openMinibar(r, mb, doOut); }
     doOut(); });
+  a('aRcWa', () => sendReceiptWA(r));
   a('aInv', async () => { const { data, error } = await sb.rpc('issue_guest_invoice', { p_reservation: r.id }); if (error) return toast(errMsg(error), true); const { data: inv } = await sb.from('guest_invoices').select('*').eq('id', data).single(); printGuestInvoice(inv); });
   a('aEdit', () => openResaForm(r, refresh));
   a('aNoShow', async () => { if (!$('aNoShow').dataset.confirm) { $('aNoShow').dataset.confirm = 1; $('aNoShow').textContent = 'Confirmer : client non venu'; return; }
@@ -4148,8 +4159,9 @@ function openEncaisser(b, done){
     modal(`<div style="text-align:center;padding:8px 0"><div style="width:64px;height:64px;border-radius:50%;background:var(--ok-l);color:var(--ok);display:grid;place-items:center;margin:0 auto 10px;font-size:30px;font-weight:800">✓</div>
       <h2 style="font-size:24px;margin-bottom:4px">Paiement enregistré</h2><p style="margin:0 0 6px">${money(t)} reçu de <strong>${esc(b.guest_name)}</strong>. ${rest > 0 ? 'Reste ' + money(rest) + '.' : 'Séjour soldé.'}</p>
       ${change > 0 ? `<p style="font-size:20px;font-weight:800;color:var(--ok);margin:6px 0">Monnaie à rendre : ${money(change)}</p>` : ''}</div>
-      <div class="row" style="justify-content:center;margin-top:8px"><button class="primary" id="enP">Imprimer le reçu</button><a class="btn" target="_blank" rel="noopener" href="https://wa.me/${phone}?text=${encodeURIComponent(msg)}">Envoyer par WhatsApp</a><button class="ghost" data-close>Fermer</button></div>`);
+      <div class="row" style="justify-content:center;margin-top:8px"><button class="primary" id="enP">Imprimer le reçu</button><button type="button" class="ghost" id="enW">Envoyer par WhatsApp</button><button class="ghost" data-close>Fermer</button></div>`);
     $('enP').onclick = () => printReceipt(group);
+    $('enW').onclick = () => sendReceiptWA(b, msg.replace(/\nMerci de votre confiance\.$/, '') + '\nReçu détaillé :');
     done();
   };
   draw();

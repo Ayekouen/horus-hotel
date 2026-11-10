@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex">
+<title>Reçu de séjour</title>
+<style>
+:root{--ink:#14181F;--mute:#5B6472;--line:#E3E7EE;--bg:#F5F7FB;--card:#fff;--green:#14532D}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:640px;margin:0 auto;padding:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px}
+h1{font-size:22px;margin:0}h2{font-size:15px;margin:18px 0 6px;color:var(--mute);text-transform:uppercase;letter-spacing:.04em}
+.row{display:flex;justify-content:space-between;gap:12px;padding:6px 0;border-bottom:1px dashed var(--line)}
+.tot{font-size:18px;font-weight:800;border-bottom:0}.mute{color:var(--mute);font-size:13px}
+.bar{display:flex;gap:8px;margin:14px 0}button{flex:1;min-height:46px;border-radius:12px;border:0;background:var(--ink);color:#fff;font:inherit;font-weight:700;cursor:pointer}
+.logo{max-height:56px;max-width:160px;margin-bottom:8px}.st{display:inline-block;padding:2px 10px;border-radius:99px;font-size:13px;font-weight:700}
+@media print{body{background:#fff}.bar{display:none}.card{border:0;padding:0}main{padding:0}}
+</style></head>
+<body><main><div id="app" class="card"><p class="mute">Chargement du reçu…</p></div>
+<div class="bar"><button type="button" onclick="print()">Imprimer ou enregistrer en PDF</button></div>
+<p class="mute" style="text-align:center">Reçu émis avec Nuittea Manager</p></main>
+<script>
+const U='https://kuuyhtvdnoqyikrcbpot.supabase.co/functions/v1/receipt', K='sb_publishable_0AT6IoJyfnTlANz0Lf-erg_Sj85F1yT';
+const PM={cash:'Espèces',orange_money:'Orange Money',mtn_money:'MTN MoMo',moov_money:'Moov Money',wave:'Wave',card:'Carte',bank_transfer:'Virement',geniuspay:'Paiement en ligne'};
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const F=n=>new Intl.NumberFormat('fr-FR').format(Math.round(Number(n)||0)).replace(/ | /g,' ')+' F';
+const D=d=>d?new Date(d).toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'}):'';
+(async()=>{const el=document.getElementById('app');
+ try{const t=new URLSearchParams(location.search).get('t')||'';
+  const r=await fetch(U,{method:'POST',headers:{'Content-Type':'application/json',apikey:K,Authorization:'Bearer '+K},body:JSON.stringify({action:'get',t})});
+  const j=await r.json(); if(!r.ok) throw new Error(j.error||'Reçu indisponible.');
+  const x=j.reservation,e=j.establishment||{},nm=e.public_name||e.name||'Établissement';
+  const lodging=Number(x.nights||0)*Number(x.nightly_rate||0), extras=(j.extras||[]).reduce((a,s)=>a+Number(s.total||0),0);
+  const paid=Number(x.paid||0), bal=Number(x.balance||0), total=paid+bal;
+  document.title='Reçu · '+nm;
+  el.innerHTML=(e.public_logo_url?'<img class="logo" src="'+esc(e.public_logo_url)+'" alt="">':'')+
+  '<h1>'+esc(nm)+'</h1><div class="mute">'+esc([e.public_address||e.address,e.city].filter(Boolean).join(', '))+(e.public_phone||e.phone?' · '+esc(e.public_phone||e.phone):'')+'</div>'+
+  '<h2>Reçu de séjour</h2><div class="row"><span>Client</span><strong>'+esc(x.guest_name)+'</strong></div>'+
+  '<div class="row"><span>Chambre</span><span>'+esc(x.room_number)+'</span></div>'+
+  '<div class="row"><span>Séjour</span><span>'+D(x.check_in)+' → '+D(x.check_out)+'</span></div>'+
+  '<div class="row"><span>Référence</span><span>'+esc(String(x.id).slice(0,8).toUpperCase())+'</span></div>'+
+  '<h2>Détail</h2><div class="row"><span>Hébergement · '+x.nights+' nuit'+(x.nights>1?'s':'')+' × '+F(x.nightly_rate)+'</span><span>'+F(lodging)+'</span></div>'+
+  (Number(x.discount)?'<div class="row"><span>Remise</span><span>− '+F(x.discount)+'</span></div>':'')+
+  (j.extras||[]).map(s=>'<div class="row"><span>'+esc(s.label)+(Number(s.qty)>1?' × '+s.qty:'')+'</span><span>'+F(s.total)+'</span></div>').join('')+
+  '<div class="row tot"><span>Total</span><span>'+F(total)+'</span></div>'+
+  '<h2>Paiements</h2>'+((j.payments||[]).length?(j.payments).map(p=>'<div class="row"><span>'+D(p.created_at)+' · '+esc(PM[p.method]||p.method)+(p.kind==='refund'?' (remboursement)':'')+'</span><span>'+(p.kind==='refund'?'− ':'')+F(p.amount)+'</span></div>').join(''):'<p class="mute">Aucun paiement enregistré.</p>')+
+  '<div class="row tot"><span>'+(bal>0?'Reste à payer':'Séjour soldé')+'</span><span>'+(bal>0?F(bal):'<span class="st" style="background:#DCFCE7;color:#14532D">Réglé</span>')+'</span></div>'+
+  '<p class="mute" style="margin-top:14px">Émis le '+D(new Date())+'. Merci de votre confiance.</p>';
+ }catch(err){el.innerHTML='<h1>Reçu indisponible</h1><p class="mute">'+esc(err.message)+' Demandez un nouveau lien à l’établissement.</p>';}
+})();
+</script></body></html>

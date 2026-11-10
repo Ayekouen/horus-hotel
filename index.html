@@ -1328,7 +1328,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.11.10-29';
+const APP_VERSION = '2026.11.10-30';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -1606,6 +1606,23 @@ $('sUser').addEventListener('input', () => { const v = $('sUser').value.trim(); 
 $('sUser').addEventListener('change', () => $('sUser').dispatchEvent(new Event('input')));
 $('navPwd').onclick = () => { const md = (S.session && S.session.user.user_metadata) || {}; const nb = $('navMore'); if (nb) nb.open = false; if (md.staff) { forcePinChange(); delete $('modal').dataset.locked; } else openNewPassword(false); };
 
+
+/* ---------- Choix d'espace pour l'équipe Nuittea : console ou hôtel ---------- */
+try { const u = new URL(location.href); if (u.searchParams.get('hotel') === '1') { sessionStorage.setItem('hh_skip_space', '1'); u.searchParams.delete('hotel'); history.replaceState(null, '', u.pathname + u.search + u.hash); } } catch (_) {}
+function spaceChooser(){
+  if (!S.isStaff || !S.member) return;
+  let skip = false, pref = null; try { skip = sessionStorage.getItem('hh_skip_space') === '1'; pref = localStorage.getItem('hh_space'); } catch (_) {}
+  if (skip) return;
+  if (pref === 'console') { location.replace('admin.html'); return; }
+  if (pref === 'hotel') return;
+  modal(`<h2 style="font-size:22px;margin-bottom:6px">Quel espace ouvrir ?</h2><p class="muted" style="margin:0 0 14px">Votre compte fait partie de l’équipe Nuittea et d’un établissement.</p>
+    <div style="display:grid;gap:10px"><button type="button" class="primary" id="spC" style="min-height:56px;font-size:16px">Console Nuittea<br><small style="font-weight:500;opacity:.85">Clients, publications, assistance, finances</small></button>
+    <button type="button" class="ghost" id="spH" style="min-height:56px;font-size:16px">Mon hôtel · ${esc((S.member.organizations || {}).name || 'Nuittea Manager')}</button></div>
+    <label class="row" style="gap:8px;margin-top:14px;flex-wrap:nowrap;font-weight:600"><input type="checkbox" id="spR" style="width:20px;min-height:20px"> Retenir mon choix sur cet appareil</label>
+    <p class="muted" style="font-size:12px;margin:6px 0 0">Vous pourrez changer d’espace à tout moment : menu « Console Nuittea » dans l’application, « Mon hôtel » dans la console.</p>`);
+  const pick = (v) => { try { sessionStorage.setItem('hh_skip_space', '1'); if ($('spR').checked) localStorage.setItem('hh_space', v); } catch (_) {} closeModal(); if (v === 'console') location.href = 'admin.html'; };
+  $('spC').onclick = () => pick('console'); $('spH').onclick = () => pick('hotel');
+}
 /* ---------- Annonces Nuittea, mode démonstration et assistance ---------- */
 const PB_LV = { info: ['#E4F0F9', '#1F7AB8'], important: ['#FCF1DE', '#9A6408'], maintenance: ['#FBE6E3', '#C0392B'] };
 async function platformExtras(){
@@ -1751,6 +1768,7 @@ $('authForm').addEventListener('submit', async e => {
 });
 /* Déconnexion fiable : la session est effacée sur l'appareil même si le serveur ne répond pas (réseau faible, jeton expiré). */
 async function doLogout(){
+  try { sessionStorage.removeItem('hh_skip_space'); } catch (_) {}
   try { delete $('modal').dataset.locked; closeModal(); } catch (_) {}
   try { await clearDataCache(); } catch (_) {}
   try { await Promise.race([sb.auth.signOut({ scope: 'local' }), new Promise(r => setTimeout(r, 2500))]); } catch (_) {}
@@ -1793,14 +1811,16 @@ async function boot(){
   S.member = mem.data && mem.data[0];
   if (mem.error && isNetErr(mem.error)) { const c = cacheGet('member_' + session.user.id); if (c) { S.member = c; S.offlineBoot = true; } }
   else if (S.member) cacheSet('member_' + session.user.id, S.member);
-  $('navAdmin').classList.toggle('hidden', !S.isAdmin); drawAcc();
-  if (!S.isAdmin) sb.rpc('staff_can', { p_perm: 'dashboard' }).then(({ data }) => { if (data === true) $('navAdmin').classList.remove('hidden'); }, () => {});
-  $('navAdmin').onclick = () => { const nb = $('navMore'); if (nb) nb.open = false; window.open('admin.html', '_blank', 'noopener'); };
+  S.isStaff = S.isAdmin;
+  if (!S.isAdmin && navigator.onLine) { try { const { data } = await sb.rpc('staff_can', { p_perm: 'dashboard' }); S.isStaff = data === true; } catch (_) {} }
+  $('navAdmin').classList.toggle('hidden', !S.isStaff); drawAcc();
+  $('navAdmin').onclick = () => { const nb = $('navMore'); if (nb) nb.open = false; location.href = 'admin.html'; };
   if (!S.member && mem.error) { show('auth'); renderAuth(); return toast('Connexion impossible : vérifiez votre réseau.', true); }
   if (!S.member && (session.user.user_metadata || {}).staff) {
     await sb.auth.signOut();
     return toast('Ce compte personnel est suspendu. Contactez votre responsable.', true);
   }
+  if (!S.member && S.isStaff) { location.replace('admin.html'); return; }
   if (!S.member) {
     $('onboardAdmin').classList.toggle('hidden', !S.isAdmin);
     // Administrateur plateforme sans hôtel : accès direct au tableau de bord, menus d'hôtel masqués.
@@ -1816,6 +1836,7 @@ async function boot(){
   await loadCommon();
   go(S.offlineBoot && !navigator.onLine && allowed('resto') ? 'resto' : S.view);
   platformExtras();
+  spaceChooser();
   setTimeout(() => preloadViews(), 6000);
   if (S.member.must_change_password) forcePinChange();
 }

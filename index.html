@@ -890,6 +890,10 @@ html[data-theme="nuit"],html[data-theme="sombre"]{--pl-bg:#1B1F27;--pl-alt:#2025
 #v-planning .pl-slot{background:var(--sb)!important;min-height:52px!important;height:52px;border:0!important;border-left:1px solid var(--pl-line)!important;border-radius:0!important;padding:0!important;box-shadow:none!important;cursor:pointer}
 #v-planning .pl-slot:hover{outline:2px solid #93C5FD;outline-offset:-2px}
 #v-planning .pbar{position:absolute;top:8px;height:36px!important;min-height:36px!important;background:var(--bb)!important;color:var(--bc)!important;border:0!important;border-radius:8px!important;font-size:13px!important;font-weight:700!important;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;text-align:left;box-shadow:0 1px 2px rgba(0,0,0,.18)!important;z-index:2;display:block!important;line-height:36px}
+#v-planning .pl-ghost{position:absolute;top:8px;height:36px;line-height:36px;border-radius:8px;background:rgba(37,99,235,.18);border:2px dashed #2563EB;color:#1E3A8A;font-weight:700;font-size:13px;padding:0 10px;white-space:nowrap;overflow:hidden;z-index:3;pointer-events:none}
+#v-planning .pl-row.pl-sel .pl-rm{box-shadow:inset 4px 0 0 #2563EB}
+.pl-hint{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(24px + env(safe-area-inset-bottom));z-index:50;background:#14181F;color:#fff;border-radius:14px;padding:10px 12px 10px 16px;display:flex;gap:12px;align-items:center;max-width:94vw;font-size:14px;box-shadow:0 8px 24px rgba(0,0,0,.25)}.pl-hint button{color:#fff!important;background:transparent!important;border-color:rgba(255,255,255,.4)!important}
+#v-planning .pl-slot{user-select:none;-webkit-user-select:none}
 #v-planning .pbar:hover{filter:brightness(1.07)}
 </style>
 </head>
@@ -1242,7 +1246,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.11.10-09';
+const APP_VERSION = '2026.11.10-10';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -3336,7 +3340,8 @@ async function openQuickResa(pre, refresh){
       <div class="row" style="gap:10px"><div class="field" style="flex:1 1 140px;margin-bottom:8px"><label for="qIn">Arrivée</label><input id="qIn" type="date" value="${st.ci}" ${pre.walkin ? 'readonly' : ''}></div>
         <div class="field" style="flex:1 1 140px;margin-bottom:8px"><label for="qOut">Départ</label><input id="qOut" type="date" value="${st.co}" min="${addDays(st.ci, 1)}"></div>
         <div class="field" style="flex:0 1 96px;margin-bottom:8px"><label for="qAd">Personnes</label><input id="qAd" type="number" min="1" inputmode="numeric" value="${st.adults}"></div></div>
-      <div class="row" style="gap:6px;margin-bottom:14px">${[1, 2, 3, 7].map(d => `<button type="button" class="small ${n === d ? 'primary' : 'ghost'}" data-nn="${d}">${d === 7 ? '1 semaine' : plur(d, 'nuit', 'nuits')}</button>`).join('')}</div>
+      <div class="row" style="gap:6px;margin-bottom:6px">${[1, 2, 3, 7].map(d => `<button type="button" class="small ${n === d ? 'primary' : 'ghost'}" data-nn="${d}">${d === 7 ? '1 semaine' : plur(d, 'nuit', 'nuits')}</button>`).join('')}${pre.walkin ? '' : '<button type="button" class="small ghost" data-we="1">Week-end</button>'}<button type="button" class="small ghost" data-nadj="-1" aria-label="Une nuit de moins" ${n <= 1 ? 'disabled' : ''}>−1 nuit</button><button type="button" class="small ghost" data-nadj="1" aria-label="Une nuit de plus">+1 nuit</button></div>
+      <p class="muted" style="margin:0 0 14px;font-size:13px">${n > 0 ? `Arrivée le ${new Date(st.ci + 'T00:00:00').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}, départ le <strong style="color:var(--ink)">${new Date(st.co + 'T00:00:00').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}</strong>` : ''}</p>
       <div class="field"><label for="qRm">Chambre ${n > 0 ? `<span class="muted" style="font-weight:500">· ${plur(f.length, 'libre', 'libres')} sur ces dates</span>` : ''}</label>
         ${n < 1 ? '<p style="color:var(--red);font-weight:600;margin:0">La date de départ doit suivre la date d’arrivée.</p>' : f.length ? `<select id="qRm">${f.map(r => `<option value="${r.id}" ${r.id === st.room ? 'selected' : ''}>${esc(r.number)}${r.room_type ? ' · ' + esc(r.room_type) : ''} · ${money(r.base_rate || 0)} / nuit${r.capacity && r.capacity < st.adults ? ' · prévue pour ' + plur(r.capacity, 'personne', 'personnes') : ''}${['dirty', 'cleaning'].includes(r.housekeeping_status) ? ' · à nettoyer' : ''}</option>`).join('')}</select>` : '<p style="color:var(--red);font-weight:600;margin:0">Aucune chambre libre sur ces dates : changez les dates.</p>'}</div>
       <div class="row" style="gap:10px"><div class="field" style="flex:1 1 180px"><label for="qPh">Téléphone du client</label><input id="qPh" type="tel" inputmode="tel" autocomplete="off" value="${esc(st.phone)}" placeholder="07 07 00 00 01"></div>
@@ -3369,6 +3374,8 @@ async function openQuickResa(pre, refresh){
     $('qOut').onchange = () => { save(); st.co = v('qOut'); refreshAvail(); };
     $('qAd').onchange = () => { save(); st.adults = Math.max(1, +v('qAd') || 1); pickRoom(); draw(); };
     document.querySelectorAll('[data-nn]').forEach(b => b.onclick = () => { save(); st.co = addDays(st.ci, +b.dataset.nn); refreshAvail(); });
+    document.querySelectorAll('[data-nadj]').forEach(b => b.onclick = () => { save(); const c = addDays(st.co, +b.dataset.nadj); if (c > st.ci) { st.co = c; refreshAvail(); } });
+    document.querySelectorAll('[data-we]').forEach(b => b.onclick = () => { save(); const d = new Date(st.ci + 'T00:00:00'), k = (5 - d.getDay() + 7) % 7; st.ci = addDays(st.ci, k); st.co = addDays(st.ci, 2); refreshAvail(); });
     const rm = $('qRm'); if (rm) rm.onchange = async () => { save(); st.room = rm.value; await price(); draw(); };
     const ph = $('qPh'); ph.oninput = () => { const d = ph.value.replace(/\D/g, ''); st.phone = ph.value;
       const g = d.length >= 8 ? G.find(x => (x.phone || '').replace(/\D/g, '').endsWith(d.slice(-8))) : null;
@@ -3859,10 +3866,47 @@ async function renderPlanning(){
   el.querySelectorAll('[data-pv]').forEach(b => b.onclick = () => { S._pv = b.dataset.pv; S._ps = null; renderPlanning(); });
   $('pToday').onclick = () => { S._ps = null; renderPlanning(); };
   { const pt = $('pType'); if (pt) pt.onchange = () => { S._pt = pt.value; renderPlanning(); }; }
-  el.querySelectorAll('[data-slot]').forEach(b => b.onclick = () => { const [room, d] = b.dataset.slot.split('|'); openQuickResa({ room_id: room, check_in: d }, renderPlanning); });
+  planningSelect(el, RES, dates, cell, RC);
   bindResaActions(el, renderPlanning);
   if (canMove) planningDrag(el, RES, start, cell, RC);
   if (!S._plRz) { S._plRz = true; let tm; window.addEventListener('resize', () => { clearTimeout(tm); tm = setTimeout(() => { if (S.view === 'planning') renderPlanning(); }, 300); }); }
+}
+/* Sélection des dates dans le planning : tracer le séjour (souris) ou deux clics (arrivée puis départ) */
+function planningSelect(el, RES, dates, cell, RC){
+  const canBook = can(['owner','admin','manager','receptionist']);
+  const busy = (room, d) => RES.some(x => x.room_id === room && x.status !== 'checked_out' && x.check_in <= d && x.check_out > d);
+  let sel = null, ghost = null, hint = null;
+  const clear = () => { if (ghost) ghost.remove(); ghost = null; if (hint) hint.remove(); hint = null; el.querySelectorAll('.pl-row.pl-sel').forEach(r => r.classList.remove('pl-sel')); sel = null; };
+  const range = (room, i0, i1) => { const a = Math.min(i0, i1), b = Math.max(i0, i1); let e = a;
+    if (i1 >= i0) { while (e < b && !busy(room, dates[e + 1])) e++; return [i0, e]; }
+    let s0 = i0; while (s0 > a && !busy(room, dates[s0 - 1])) s0--; return [s0, i0]; };
+  const draw = (room, i0, i1) => { const row = el.querySelector(`[data-prow="${room}"]`); if (!row) return; const [a, b] = range(room, i0, i1), n = b - a + 1, rm = S.rooms.find(r => r.id === room) || {};
+    if (!ghost) { ghost = document.createElement('div'); ghost.className = 'pl-ghost'; row.appendChild(ghost); }
+    ghost.style.left = (RC + a * cell + 2) + 'px'; ghost.style.width = (n * cell - 4) + 'px';
+    ghost.textContent = `${plur(n, 'nuit', 'nuits')}${rm.base_rate ? ' · ' + money(n * rm.base_rate) : ''}`; return [a, b]; };
+  const done = (room, a, b) => { const ci = dates[a], co = addDays(dates[b], 1); clear(); openQuickResa({ room_id: room, check_in: ci, check_out: co }, renderPlanning); };
+  const slotAt = (x, y) => { const t = document.elementFromPoint(x, y); return t && t.closest && t.closest('[data-slot]'); };
+  el.querySelectorAll('[data-slot]').forEach(b => {
+    const [room, d] = b.dataset.slot.split('|'), i = dates.indexOf(d);
+    b.addEventListener('pointerdown', (e) => {
+      if (!canBook || e.button > 0) return;
+      if (busy(room, d)) return toast('Cette nuit est déjà réservée pour cette chambre.', true);
+      if (sel && sel.mode === 'click') { if (sel.room === room && i !== sel.i0) { e.preventDefault(); const [a, b2] = range(room, sel.i0, i); return done(room, a, b2); } if (sel.room === room && i === sel.i0) { e.preventDefault(); const [a, b2] = range(room, i, i); return done(room, a, b2); } clear(); }
+      sel = { room, i0: i, i1: i, moved: false, mode: e.pointerType === 'touch' ? 'touch' : 'drag' };
+      if (sel.mode === 'drag') { e.preventDefault(); draw(room, i, i); }
+    });
+  });
+  const onMove = (e) => { if (!sel || sel.mode !== 'drag') return; const s2 = slotAt(e.clientX, e.clientY); if (!s2) return; const [room, d] = s2.dataset.slot.split('|'); if (room !== sel.room) return; const i = dates.indexOf(d); if (i !== sel.i1) { sel.i1 = i; sel.moved = true; draw(sel.room, sel.i0, i); } };
+  const onUp = () => { if (!sel || sel.mode === 'click') return;
+    if (sel.mode === 'drag' && sel.moved) { const [a, b] = range(sel.room, sel.i0, sel.i1); return done(sel.room, a, b); }
+    const room = sel.room, i0 = sel.i0; clear(); sel = { room, i0, mode: 'click' }; draw(room, i0, i0);
+    const row = el.querySelector(`[data-prow="${room}"]`); if (row) row.classList.add('pl-sel');
+    hint = document.createElement('div'); hint.className = 'pl-hint'; hint.innerHTML = `Arrivée le <strong>${dfr(dates[i0])}</strong> : touchez le jour de départ (dernière nuit), ou la même case pour 1 nuit. <button type="button" class="small ghost">Annuler</button>`;
+    hint.querySelector('button').onclick = clear; el.appendChild(hint); };
+  document.addEventListener('pointermove', onMove); document.addEventListener('pointerup', onUp);
+  const onKey = (e) => { if (e.key === 'Escape' && sel) clear(); }; document.addEventListener('keydown', onKey);
+  const cleanup = new MutationObserver(() => { if (!document.body.contains(el.querySelector('.pl-wrap'))) { document.removeEventListener('pointermove', onMove); document.removeEventListener('pointerup', onUp); document.removeEventListener('keydown', onKey); cleanup.disconnect(); } });
+  cleanup.observe(el, { childList: true });
 }
 /* Glisser-déposer dans le planning : déplacer (chambre et dates) ou tirer le bord droit (date de départ). Souris et écran tactile. */
 function planningDrag(el, RES, start, cell){

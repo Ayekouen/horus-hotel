@@ -897,6 +897,17 @@ html[data-theme="nuit"],html[data-theme="sombre"]{--pl-bg:#1B1F27;--pl-alt:#2025
 @media (max-width:639px){#v-planning .pl-row{height:46px}#v-planning .pl-slot{min-height:46px!important;height:46px}#v-planning .pbar{top:6px;height:34px!important;min-height:34px!important;line-height:34px;font-size:12px!important}.pl-rm{padding:0 6px;gap:5px;font-size:14px}.pl-rm small{font-size:11px}.pl-legend{font-size:12px;gap:4px 10px}}
 #tabbar{transform:translateZ(0);-webkit-transform:translateZ(0)}
 #v-planning .pbar:hover{filter:brightness(1.07)}
+.k-stat{font-weight:700;border-radius:99px;padding:6px 14px;font-size:14px}.k-on{background:#DCFCE7;color:#14532D}.k-off{background:#FEE2E2;color:#991B1B}
+.k-regs{display:flex;gap:8px;overflow-x:auto;margin:0 0 14px;padding-bottom:2px}#v-caisse .k-regs button{flex:0 0 auto;text-align:left;border-radius:12px;padding:8px 14px;min-height:52px;display:flex;flex-direction:column;align-items:flex-start;gap:2px}#v-caisse .k-regs button span{font-size:12px;opacity:.75;font-weight:500}
+#v-caisse .k-regs button.on{background:var(--ink)!important;color:#fff!important;border-color:var(--ink)!important}
+.k-top2{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:14px;margin-bottom:14px}@media (max-width:820px){.k-top2{grid-template-columns:1fr}}
+.k-hero2{background:linear-gradient(135deg,#0F3D2E,#15803D);color:#fff;border-radius:18px;padding:18px 20px}.k-hero2 .l{font-size:14px;opacity:.9}.k-hero2 .v{font-family:var(--display);font-size:clamp(34px,6vw,46px);font-weight:800;letter-spacing:-.02em;line-height:1.15}.k-hero2 .f{font-size:13px;opacity:.9}
+.k-steps{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:14px}.k-steps span{background:rgba(255,255,255,.14);border-radius:10px;padding:7px 4px;font-size:12px;text-align:center}.k-steps span.on{background:#fff;color:#0F3D2E;font-weight:700}.k-steps span.done{background:rgba(255,255,255,.3)}
+.k-acts2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+#v-caisse .k-a2{border-radius:14px!important;padding:12px 14px!important;min-height:76px!important;display:flex!important;flex-direction:column;align-items:flex-start;justify-content:center;gap:2px;text-align:left}#v-caisse .k-a2 small{font-weight:500;opacity:.75;font-size:12px}
+#v-caisse .k-a2.k-p{background:var(--ink)!important;color:#fff!important;border-color:var(--ink)!important}
+.k-tiles{display:flex;gap:10px;overflow-x:auto;margin-bottom:8px;padding-bottom:2px}.k-tile{flex:1 0 150px;border-radius:14px;padding:12px 14px;color:#fff;display:flex;flex-direction:column}.k-tile b{font-size:21px;font-weight:800}.k-tile small{opacity:.92;font-size:12px}
+.k-tag{display:inline-block;font-size:11px;font-weight:700;border-radius:99px;padding:1px 8px;margin-left:4px;background:#EEF1F6;color:#334155;vertical-align:1px}.k-payment{background:#DCFCE7;color:#14532D}.k-income{background:#DBEAFE;color:#1E3A8A}.k-expense,.k-refund{background:#FEE2E2;color:#991B1B}.k-deposit{background:#E0E7FF;color:#3730A3}.k-transfer_in,.k-transfer_out{background:#F3E8FF;color:#6B21A8}
 </style>
 </head>
 <body>
@@ -1248,7 +1259,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.11.10-13';
+const APP_VERSION = '2026.11.10-14';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -2842,7 +2853,7 @@ async function drawCA(k){
     <label class="sr-only" for="caSel">Période</label><select id="caSel" class="casel" style="min-height:32px;width:auto;padding:2px 26px 2px 10px;font-size:13px;background-color:rgba(255,255,255,.12);color:inherit;border-color:rgba(255,255,255,.25)">${CA_PERIODS.map(([v, l]) => `<option value="${v}" ${v === k ? 'selected' : ''} style="color:#111">${l}</option>`).join('')}</select></div>
     <div style="font-family:var(--display);font-weight:800;font-size:34px;letter-spacing:-.02em" id="caVal">…</div><div style="font-size:13px;opacity:.75" id="caSub">&nbsp;</div><div id="caDays"></div>`;
   $('caSel').onchange = (e) => drawCA(e.target.value);
-  if (k === 'today' && can(['owner','admin','manager','receptionist','accountant'])) sb.from('cash_sessions').select('id').eq('establishment_id', S.est).eq('status', 'open').maybeSingle().then(({ data: cs, error: ce }) => {
+  if (k === 'today' && can(['owner','admin','manager','receptionist','accountant'])) sb.from('cash_sessions').select('id').eq('establishment_id', S.est).eq('status', 'open').limit(1).maybeSingle().then(({ data: cs, error: ce }) => {
     if (ce || cs || S._caP !== 'today' || !$('caSub')) return;
     const w = document.createElement('div'); w.className = 'ca-open';
     w.innerHTML = `<span>La caisse est fermée.</span><button type="button" class="small" data-go="caisse">Ouvrir la caisse</button>`;
@@ -3017,7 +3028,7 @@ async function dashGuide(R){
   const t = today(), isMgr = can(['owner','admin','manager']), cashRole = can(['owner','admin','manager','receptionist','accountant']);
   const [est, sess, team, dues, nres] = await Promise.all([
     sb.from('establishments').select('slug,public_enabled').eq('id', S.est).maybeSingle(),
-    cashRole ? sb.from('cash_sessions').select('id').eq('establishment_id', S.est).eq('status', 'open').maybeSingle() : { data: null },
+    cashRole ? sb.from('cash_sessions').select('id').eq('establishment_id', S.est).eq('status', 'open').limit(1).maybeSingle() : { data: null },
     can(['owner','admin']) ? sb.rpc('org_team', { p_org: S.org }) : { data: null },
     can(['owner','admin','manager','accountant']) && hasF('expenses') ? sb.from('expenses').select('label,amount,due_date').eq('establishment_id', S.est).eq('status', 'due').lte('due_date', addDays(t, 7)).order('due_date').limit(3) : { data: [] },
     sb.from('reservations').select('id', { count: 'exact', head: true }).eq('establishment_id', S.est)
@@ -3228,14 +3239,32 @@ function bindResaActions(el, refresh){
 }
 
 /* Caisse fermée au moment d'un encaissement en espèces : proposer de l'ouvrir sur place, puis reprendre l'action */
-async function cashIsOpen(){ const { data } = await sb.from('cash_sessions').select('id').eq('establishment_id', S.est).eq('status', 'open').maybeSingle(); return !!data; }
+async function cashIsOpen(){ const c = await curSession(); return !!c.sess; }
+/* ---------- Multicaisse ---------- */
+const regKey = () => 'hh_reg_' + S.est;
+async function curSession(){
+  const [rg, os] = await Promise.all([sb.from('cash_registers').select('*').eq('establishment_id', S.est).order('sort_order').order('created_at'), sb.from('cash_sessions').select('*').eq('establishment_id', S.est).eq('status', 'open')]);
+  const regs = (rg.data || []).filter(r => r.is_active), open = os.data || [];
+  let want = null; try { want = localStorage.getItem(regKey()); } catch (_) {}
+  if (want && !regs.some(r => r.id === want)) want = null;
+  const me = S.session && S.session.user.id, mine = S.member && S.member.cash_register_id;
+  let sess = (want && open.find(x => x.register_id === want)) || null;
+  if (!sess && !want) sess = open.find(x => x.opened_by === me) || (mine && open.find(x => x.register_id === mine)) || (open.length === 1 ? open[0] : null);
+  const reg = want || (sess && sess.register_id) || mine || (regs[0] && regs[0].id) || null;
+  S._sessId = sess ? sess.id : null; S._regs = regs;
+  return { sess, open, regs, reg };
+}
+function setMyReg(id){ try { localStorage.setItem(regKey(), id); } catch (_) {} }
+const regName = (id) => ((S._regs || []).find(r => r.id === id) || {}).name || 'Caisse';
+/* Les mouvements en espèces partent dans la caisse choisie à l'écran */
+{ const _from = sb.from.bind(sb); sb.from = (t) => { const q = _from(t); if (t === 'cash_movements') { const ins = q.insert.bind(q); const fix = (r) => r && r.method === 'cash' && !r.session_id && S._sessId ? { ...r, session_id: S._sessId } : r; q.insert = (rows, o) => ins(Array.isArray(rows) ? rows.map(fix) : fix(rows), o); } return q; }; }
 function askOpenCash(onDone, reason){
   modal(`<h2 style="font-size:22px;margin-bottom:6px">Ouvrir la caisse</h2><p class="muted" style="margin:0 0 14px">${esc(reason || 'La caisse du jour n’est pas encore ouverte. Ouvrez-la pour enregistrer ce paiement en espèces.')}</p>
     <form id="ocF"><div class="field"><label for="ocFund">Fond de caisse (espèces déjà dans le tiroir)</label><input id="ocFund" type="number" min="0" inputmode="numeric" value="0"></div>
     <div class="row"><button type="button" class="ghost" data-close>Annuler</button><button class="primary" id="ocGo" style="margin-left:auto">Ouvrir la caisse et continuer</button></div></form>`);
   $('ocFund').select();
   $('ocF').onsubmit = async (e) => { e.preventDefault(); const b = $('ocGo'); b.disabled = true;
-    const { error } = await sb.from('cash_sessions').insert({ establishment_id: S.est, opening_balance: +$('ocFund').value || 0 });
+    const c0 = await curSession(); const { error } = await sb.from('cash_sessions').insert({ establishment_id: S.est, opening_balance: +$('ocFund').value || 0, register_id: c0.reg });
     if (error && !(await cashIsOpen())) { b.disabled = false; return toast(errMsg(error), true); }
     closeModal(); toast('Caisse ouverte.'); onDone && onDone(); };
 }
@@ -4069,8 +4098,8 @@ async function idPurge(){
 /* ---------- Caisse ---------- */
 /* ================= Caisse ================= */
 const MOMO = ['orange_money','mtn_money','moov_money','wave'];
-const KIND = { payment:'Paiement', income:'Entrée', expense:'Dépense', refund:'Remboursement', deposit:'Versement banque' };
-const OUT_KINDS = ['expense','refund','deposit'];
+const KIND = { payment:'Paiement', income:'Entrée', expense:'Dépense', refund:'Remboursement', deposit:'Versement banque', transfer_in:'Transfert reçu', transfer_out:'Transfert envoyé' };
+const OUT_KINDS = ['expense','refund','deposit','transfer_out'];
 const EXP_CATS = {
   operational: ['Entretien & produits','Réparations','Linge & blanchisserie','Petit-déjeuner & achats','Carburant & transport','Fournitures','Autre'],
   fixed: ['Loyer','Salaires','Électricité (CIE)','Eau (SODECI)','Internet','Gardiennage','TV / abonnements','Assurance','Impôts & taxes','Autre charge fixe']
@@ -4122,7 +4151,7 @@ async function renderCaisse(){
   const el = $('v-caisse'); keepOrSkel(el);
   if (!can(['owner','admin','manager','receptionist','accountant'])) { el.innerHTML = head('Caisse') + '<p class="muted">Accès réservé.</p>'; return; }
   await loadEst(); await teamNames();
-  const { data: sess } = await sb.from('cash_sessions').select('*').eq('establishment_id', S.est).eq('status', 'open').maybeSingle();
+  const CS = await curSession(), sess = CS.sess, regs = CS.regs, multi = regs.length > 1;
   const since = sess ? sess.opened_at : today() + 'T00:00:00';
   const [mvR, balR, histR] = await Promise.all([
     sb.from('cash_movements').select('*').eq('establishment_id', S.est).gte('created_at', since).order('created_at', { ascending: false }),
@@ -4133,7 +4162,7 @@ async function renderCaisse(){
   const mv = mvR.data || [], bal = balR.data || [], hist = histR.data || [];
   const cash = mv.filter(m => m.method === 'cash' && (!sess || m.session_id === sess.id));
   const sum = (arr, kinds) => arr.filter(m => kinds.includes(m.kind)).reduce((a, m) => a + Number(m.amount), 0);
-  const cashIn = sum(cash, ['payment','income']), cashOut = sum(cash, OUT_KINDS);
+  const cashIn = sum(cash, ['payment','income','transfer_in']), cashOut = sum(cash, OUT_KINDS);
   const expected = (sess ? Number(sess.opening_balance) : 0) + cashIn - cashOut;
   const ins = mv.filter(m => ['payment','income'].includes(m.kind));
   const totalIn = sum(mv, ['payment','income']);
@@ -4149,7 +4178,7 @@ async function renderCaisse(){
   const BARC = { cash:'#2B1E16', orange_money:'#D9822B', wave:'#2C6FB0', mtn_money:'#C9A227', moov_money:'#4C7A3A', card:'#B4532A', bank_transfer:'#6E5A4A' };
   const st = S.caisseFilter || { kind:'all', by:'all' }; S.caisseFilter = st;
   const people = [...new Set(mv.map(m => m.created_by).filter(Boolean))];
-  const rows = mv.filter(m => (st.kind === 'all' || (st.kind === 'in' ? ['payment','income'].includes(m.kind) : st.kind === 'out' ? ['expense','refund'].includes(m.kind) : m.kind === 'deposit')) && (st.by === 'all' || m.created_by === st.by));
+  const rows = mv.filter(m => (st.kind === 'all' || (st.kind === 'in' ? ['payment','income'].includes(m.kind) : st.kind === 'out' ? ['expense','refund'].includes(m.kind) : st.kind === 'tr' ? ['transfer_in','transfer_out'].includes(m.kind) : m.kind === 'deposit')) && (st.by === 'all' || m.created_by === st.by));
   const mgr = can(['owner','admin','manager']);
   const reversed = new Set(mv.filter(m => (m.reference || '').startsWith('ANN:')).map(m => m.reference.slice(4)));
   const canRev = (m) => memberCan('cancel_payment') && sess && ['payment','income','expense'].includes(m.kind) && !(m.reference || '').startsWith('ANN:') && !reversed.has(m.id) && (m.method !== 'cash' || m.session_id === sess.id);
@@ -4163,22 +4192,30 @@ async function renderCaisse(){
   const isRev = (m) => reversed.has(m.id);
   const out = (m) => OUT_KINDS.includes(m.kind);
   const pct = (v) => totalIn ? Math.round(v * 100 / totalIn) : 0;
-  el.innerHTML = `<div class="row between" style="margin-bottom:6px;align-items:flex-end"><h1 style="font-size:32px">Caisse</h1>${mgr ? '<button type="button" class="small ghost" id="kOpt">Options</button>' : ''}</div>` + readOnlyNote() +
-    (sess ? `<p class="muted" style="margin:0 0 14px;font-size:14px">Ouverte le ${new Date(sess.opened_at).toLocaleString('fr-FR', { dateStyle:'short', timeStyle:'short' })} par <strong>${esc(who(sess.opened_by))}</strong></p>`
-      : `<div class="card" style="margin:8px 0 16px"><h3 style="font-size:20px;margin-bottom:8px">La caisse est fermée</h3><p class="muted" style="margin:0 0 12px">Ouvrez la caisse avec le fond initial pour enregistrer des espèces. Les paiements Mobile Money, carte et virement restent possibles.</p>
-      <form id="kOpen" class="row" style="align-items:flex-end"><div style="flex:0 1 200px"><label for="kFund">Fond de caisse (F)</label><input id="kFund" type="number" min="0" value="0"></div><button class="primary">Ouvrir la caisse</button></form></div>`) +
-    `<div class="k-top">
-      <div class="k-hero"><div class="l">Espèces attendues dans le tiroir</div><div class="v">${money(expected)}</div>
-        <div class="f">${sess ? `<span>Fond <b>${money(sess.opening_balance)}</b></span><span>+ Entrées <b>${money(cashIn)}</b></span><span>− Sorties <b>${money(cashOut)}</b></span>` : '<span>Caisse fermée</span>'}</div></div>
-      <div class="k-side"><button type="button" class="primary k-cta" id="kPay">Encaisser un client</button><button type="button" class="k-cta" id="kExtra" style="margin-top:8px">Ventes annexes${(() => { const n = xHold().length; return n ? ` · ${n} en attente` : ''; })()}</button>
-        ${sess ? `<div class="k-acts">${act('kExp', 'Dépense', '<path d="M5 12h14"></path>')}${act('kInc', 'Entrée', '<path d="M12 5v14M5 12h14"></path>')}${act('kDep', 'Versement', '<path d="M3 21h18M5 21V10M19 21V10M12 3l9 6H3z"></path>', mgr)}${act('kClose', 'Clôturer', '<rect x="4" y="11" width="16" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path>')}</div>` : ''}</div>
-    </div>
-    <div class="k-kpis">
-      <div class="k-k"><div class="l">Encaissé</div><div class="v">${money(totalIn)}</div><div class="s">${plur(ins.length, 'opération', 'opérations')} ${sess ? 'dans la session' : "aujourd'hui"}</div></div>
-      <div class="k-k"><div class="l">Dépenses</div><div class="v" style="color:var(--red)">${money(sum(mv, ['expense']))}</div><div class="s">${plur(mv.filter(m => m.kind === 'expense').length, 'dépense', 'dépenses')}</div></div>
-      <div class="k-k k-wide"><div class="l">Reste à encaisser</div><div class="v">${money(balTotal)}</div><div class="s">${plur(bal.filter(b => balGroup(b) !== 'avenir').length, 'client', 'clients')} présents ou partis${balAvenir ? ' · ' + money(balAvenir) + ' sur les arrivées à venir' : ''}</div></div>
-    </div>` +
-    (byMethod.length ? `<div class="card" style="margin-bottom:16px"><h3 style="font-size:20px;margin-bottom:12px">Par moyen de paiement</h3><div class="k-pm">${byMethod.sort((x, y) => y[1] - x[1]).map(([k, v]) => `<div><div class="row between" style="flex-wrap:nowrap;font-weight:600;font-size:15px"><span>${PMETHOD[k]}</span><span>${money(v)} <span class="muted" style="font-weight:500">· ${pct(v)} %</span></span></div><div class="k-bar"><span style="width:${Math.max(3, pct(v))}%;background:${BARC[k]}"></span></div></div>`).join('')}</div></div>` : '') +
+  const stepN = !sess ? 1 : 2;
+  const MCOL = { cash:'#15803D', orange_money:'#F97316', wave:'#0EA5E9', mtn_money:'#CA8A04', moov_money:'#4D7C0F', card:'#6366F1', bank_transfer:'#57534E', geniuspay:'#7C3AED' };
+  const nBy = (k) => ins.filter(m => m.method === k).length;
+  const outAll = sum(mv, ['expense','refund','deposit']);
+  const regState = (r) => { const o = CS.open.find(x => x.register_id === r.id); return o ? `ouverte · ${esc(who(o.opened_by))}` : 'fermée'; };
+  el.innerHTML = `<div class="row between" style="margin-bottom:10px;align-items:center;gap:10px"><div class="row" style="gap:10px;align-items:center"><h1 style="font-size:32px;margin:0">Caisse</h1>
+      ${sess ? `<span class="k-stat k-on">● ${multi ? esc(regName(sess.register_id)) + ' · ' : ''}ouverte par ${esc(who(sess.opened_by))} · depuis ${hm(sess.opened_at)}</span>` : `<span class="k-stat k-off">● ${multi ? esc(regName(CS.reg)) + ' · fermée' : 'Caisse fermée'}</span>`}</div>
+      <div class="row" style="gap:6px">${CS.open.length > 1 && sess ? '<button type="button" class="small ghost" id="kTr">Transfert entre caisses</button>' : ''}${mgr ? '<button type="button" class="small ghost" id="kRegs">Caisses</button><button type="button" class="small ghost" id="kOpt">Options</button>' : ''}</div></div>` + readOnlyNote() +
+    (multi ? `<div class="k-regs" role="tablist" aria-label="Caisses">${regs.map(r => `<button type="button" role="tab" aria-selected="${r.id === CS.reg}" data-reg="${r.id}" class="${r.id === CS.reg ? 'on' : ''}"><strong>${esc(r.name)}</strong><span>${regState(r)}</span></button>`).join('')}${mgr ? '<button type="button" data-reg="__all">Toutes les caisses<span>montants des tiroirs</span></button>' : ''}</div>` : '') +
+    (sess ? '' : `<div class="card" style="margin:0 0 16px;border-left:4px solid var(--red)"><h3 style="font-size:20px;margin-bottom:6px">${multi ? 'La caisse « ' + esc(regName(CS.reg)) + ' » est fermée' : 'La caisse est fermée'}</h3><p class="muted" style="margin:0 0 12px">Ouvrez-la avec le fond initial (espèces déjà dans le tiroir) pour enregistrer des espèces. Mobile Money, carte et virement restent possibles.</p>
+      <form id="kOpen" class="row" style="align-items:flex-end"><div style="flex:0 1 200px"><label for="kFund">Fond de caisse (F)</label><input id="kFund" type="number" min="0" inputmode="numeric" value="0"></div><button class="primary">Ouvrir la caisse</button></form></div>`) +
+    `<div class="k-top2">
+      <div class="k-hero2"><div class="l">Argent attendu dans le tiroir (espèces)</div><div class="v">${money(expected)}</div>
+        <div class="f">${sess ? `Fond ${money(sess.opening_balance)} + entrées ${money(cashIn)} − sorties ${money(cashOut)}` : 'Caisse fermée'}</div>
+        <div class="k-steps">${['Ouvrir', 'Encaisser la journée', 'Compter', 'Clôturer'].map((l, i) => `<span class="${i + 1 === stepN ? 'on' : i + 1 < stepN ? 'done' : ''}">${i + 1} · ${l}</span>`).join('')}</div></div>
+      <div class="k-acts2">
+        <button type="button" class="k-a2 k-p" id="kPay"><b>Encaisser un client</b><small>séjour, acompte, solde</small></button>
+        <button type="button" class="k-a2" id="kExtra"><b>Vente annexe${(() => { const n = xHold().length; return n ? ` · ${n} en attente` : ''; })()}</b><small>boissons, petit-déjeuner…</small></button>
+        ${sess ? `<button type="button" class="k-a2" id="kOutM"><b>Sortie de caisse</b><small>dépense, versement, transfert</small></button><button type="button" class="k-a2" id="kClose"><b>Compter et clôturer</b><small>billets et pièces, ticket Z</small></button>` : `<button type="button" class="k-a2" id="kInc"><b>Autre entrée</b><small>hors séjour</small></button><button type="button" class="k-a2" id="kOpenF"><b>Ouvrir la caisse</b><small>saisir le fond</small></button>`}
+      </div></div>
+    <div class="k-tiles">${byMethod.sort((x, y) => y[1] - x[1]).map(([k, v]) => `<div class="k-tile" style="background:${MCOL[k] || '#57534E'}"><small>${PMETHOD[k]}</small><b>${money(v)}</b><small>${plur(nBy(k), 'paiement', 'paiements')}</small></div>`).join('')}
+      <div class="k-tile" style="background:#DC2626"><small>Sorties</small><b>${money(outAll)}</b><small>${plur(mv.filter(m => ['expense','refund','deposit'].includes(m.kind)).length, 'opération', 'opérations')}</small></div>
+      <div class="k-tile" style="background:#1E293B"><small>Reste à encaisser</small><b>${money(balTotal)}</b><small>${plur(bal.filter(b => balGroup(b) !== 'avenir').length, 'client', 'clients')}${balAvenir ? ' · + ' + money(balAvenir) + ' à venir' : ''}</small></div></div>
+    <p class="muted" style="font-size:12px;margin:0 0 14px">${byMethod.length ? `Encaissé ${sess ? 'depuis l’ouverture' : 'aujourd’hui'} : <strong style="color:var(--ink)">${money(totalIn)}</strong>, tous moyens de paiement confondus.` : 'Aucun encaissement pour le moment.'}</p>` +
     `<div class="card" style="margin-bottom:16px"><div class="row between" style="gap:10px;margin-bottom:4px"><h3 style="font-size:20px">Soldes clients</h3><span class="muted" style="font-size:14px">Total dû : <strong style="color:var(--ink)">${money(sumBal(bal))}</strong></span></div>
       <p class="muted" style="font-size:13px;margin:0 0 12px">Qui doit combien : séjours non soldés, du plus urgent au plus lointain.</p>
       <div class="row" style="gap:6px;margin-bottom:12px">${[['tous', 'Tous'], ['sejour', 'En séjour'], ['arrivee', 'Arrivés'], ['avenir', 'À venir'], ['parti', 'Partis']].map(([k, l]) => { const n = k === 'tous' ? bal.length : bal.filter(b => balGroup(b) === k).length; return n || k === 'tous' ? `<button class="small ${sf === k ? 'primary' : 'ghost'}" data-sf="${k}">${l} · ${n}</button>` : ''; }).join('')}</div>
@@ -4186,11 +4223,11 @@ async function renderCaisse(){
           <div class="kj-m"><div class="kj-t">${esc(b0.guest_name)} <span class="pill ${ps[1]}" style="font-size:11px">${ps[0]}</span></div><div class="kj-d">Ch. ${esc(b0.room_number)} · ${dfr(b0.check_in)} → ${dfr(b0.check_out)} · payé ${money(b0.paid)} / ${money(gtot(b0))}</div><div class="kj-d">${BALG[g]}</div></div>
           <div class="kj-r"><div class="kj-a" style="color:var(--red)">${money(b0.balance)}</div><div class="kj-btns"><button class="small primary" data-bal="${i}">${g === 'avenir' ? 'Acompte' : 'Encaisser'}</button>${wa ? `<a class="btn" style="min-height:34px;padding:0 10px;font-size:13px" href="${wa}" target="_blank" rel="noopener">Relancer</a>` : ''}</div></div></div>`; }).join('')}</div>` : '<p class="muted">Aucun solde en attente dans cette catégorie.</p>'}
     </div>
-    <div class="card" style="margin-bottom:16px;min-width:0"><div class="row between" style="margin-bottom:10px;gap:10px"><h3 style="font-size:20px">Journal</h3>
-        <div class="row" style="gap:6px">${[['all','Tout'],['in','Paiements'],['out','Dépenses'],['dep','Versements']].map(([k, l]) => `<button class="small ${st.kind === k ? 'primary' : 'ghost'}" data-kf="${k}">${l}</button>`).join('')}
+    <div class="card" style="margin-bottom:16px;min-width:0"><div class="row between" style="margin-bottom:10px;gap:10px"><h3 style="font-size:20px">Fil de la journée</h3>
+        <div class="row" style="gap:6px">${[['all','Tout'],['in','Paiements'],['out','Dépenses'],['dep','Versements'],['tr','Transferts']].map(([k, l]) => `<button class="small ${st.kind === k ? 'primary' : 'ghost'}" data-kf="${k}">${l}</button>`).join('')}
         ${people.length > 1 ? `<select id="kBy" aria-label="Caissier" style="width:auto;height:36px"><option value="all">Tous les caissiers</option>${people.map(p => `<option value="${p}" ${st.by === p ? 'selected' : ''}>${esc(who(p))}</option>`).join('')}</select>` : ''}</div></div>
       ${rows.length === 0 ? '<p class="muted">Aucun mouvement.</p>' : `<div class="k-list">${rows.map(m => `<div class="kj-row${isRev(m) ? ' kj-rev' : ''}"><span class="kj-time">${hm(m.created_at)}</span>
-          <div class="kj-m"><div class="kj-t">${KIND[m.kind]} · ${esc(m.label)}${m.category ? ` <span class="muted" style="font-weight:500">(${esc(m.category)})</span>` : ''}</div>
+          <div class="kj-m"><div class="kj-t">${esc(m.label)} <span class="k-tag k-${m.kind}">${KIND[m.kind]}${m.category && m.category !== 'Transfert' ? ' · ' + esc(m.category) : ''}</span>${multi && m.method === 'cash' && m.session_id && sess && m.session_id !== sess.id ? ' <span class="k-tag">autre caisse</span>' : ''}</div>
             <div class="kj-d">${chip(m.method)} · ${esc(who(m.created_by))}${m.reference && !m.reference.startsWith('ANN:') ? ` · réf. ${esc(m.reference)}` : ''}${isRev(m) ? ' · <strong style="color:var(--red)">annulé</strong>' : ''}</div></div>
           <div class="kj-r"><div class="kj-a" style="color:${out(m) ? 'var(--red)' : 'var(--ok)'}">${out(m) ? '−' : '+'}${money(m.amount)}</div></div>${mvActions(m) ? `<div class="kj-btns kj-b">${mvActions(m)}</div>` : ''}</div>`).join('')}</div>`}
     </div>` +
@@ -4201,7 +4238,7 @@ async function renderCaisse(){
         <div class="kj-r"><div class="kj-btns"><button class="small ghost" data-hist="${i}">Rapport</button><button class="small ghost" type="button" data-histz="${i}">Ticket Z</button></div></div></div>`).join('')}
       </div></div>` : '');
 
-  const o = $('kOpen'); if (o) o.onsubmit = async (e) => { e.preventDefault(); const { error } = await sb.from('cash_sessions').insert({ establishment_id: S.est, opening_balance: +$('kFund').value || 0 }); if (error) return toast(errMsg(error), true); toast('Caisse ouverte.'); renderCaisse(); };
+  const o = $('kOpen'); if (o) o.onsubmit = async (e) => { e.preventDefault(); const { error } = await sb.from('cash_sessions').insert({ establishment_id: S.est, opening_balance: +$('kFund').value || 0, register_id: CS.reg }); if (error) return toast(errMsg(error), true); toast('Caisse ouverte.'); renderCaisse(); };
   el.querySelectorAll('[data-kf]').forEach(b => b.onclick = () => { st.kind = b.dataset.kf; renderCaisse(); });
   el.querySelectorAll('[data-sf]').forEach(b => b.onclick = () => { S.soldeFilter = b.dataset.sf; renderCaisse(); });
   const by = $('kBy'); if (by) by.onchange = () => { st.by = by.value; renderCaisse(); };
@@ -4222,6 +4259,14 @@ async function renderCaisse(){
     $('pkQ').oninput = drawL; drawL(); $('pkQ').focus();
   };
   const a = (id, fn) => { const b = $(id); if (b) b.onclick = fn; };
+  el.querySelectorAll('[data-reg]').forEach(b => b.onclick = () => { if (b.dataset.reg === '__all') return openAllRegisters(); setMyReg(b.dataset.reg); renderCaisse(); });
+  a('kOpenF', () => { const f = $('kFund'); if (f) { f.focus(); f.select(); } });
+  a('kOutM', () => { modal(`<h2 style="font-size:22px;margin-bottom:10px">Sortie de caisse</h2><div style="display:grid;gap:8px"><button class="primary" id="soE" style="min-height:48px">Dépense (achat, frais)</button>${mgr ? '<button id="soD" style="min-height:48px">Versement à la banque</button>' : ''}${CS.open.length > 1 ? '<button id="soT" style="min-height:48px">Transfert vers une autre caisse</button>' : ''}<button class="ghost" data-close>Fermer</button></div>`);
+    $('soE').onclick = () => hasF('expenses') ? openExpenseForm({ fromCaisse: true, onDone: renderCaisse }) : openSimpleMove('expense', renderCaisse);
+    const d2 = $('soD'); if (d2) d2.onclick = () => openSimpleMove('deposit', renderCaisse);
+    const t2 = $('soT'); if (t2) t2.onclick = () => openTransfer(CS, renderCaisse); });
+  a('kTr', () => openTransfer(CS, renderCaisse));
+  a('kRegs', () => openRegisters(renderCaisse));
   a('kExp', () => hasF('expenses') ? openExpenseForm({ fromCaisse: true, onDone: renderCaisse }) : openSimpleMove('expense', renderCaisse));
   a('kInc', () => openSimpleMove('income', renderCaisse));
   a('kExtra', () => openExtras(renderCaisse));
@@ -4231,6 +4276,46 @@ async function renderCaisse(){
   el.querySelectorAll('[data-rev]').forEach(b => b.onclick = () => openReverse(mv.find(m => m.id === b.dataset.rev), renderCaisse));
 }
 
+function openTransfer(CS, done){
+  const others = CS.open.filter(x => x.id !== (CS.sess && CS.sess.id));
+  if (!CS.sess || !others.length) return toast('Il faut au moins deux caisses ouvertes.', true);
+  modal(`<h2 style="font-size:22px;margin-bottom:4px">Transfert entre caisses</h2><p class="muted" style="margin:0 0 12px">Espèces sortant de « ${esc(regName(CS.sess.register_id))} ».</p>
+    <form id="trF"><div class="field"><label for="trTo">Vers</label><select id="trTo">${others.map(o => `<option value="${o.id}">${esc(regName(o.register_id))}</option>`).join('')}</select></div>
+    <div class="field"><label for="trA">Montant (F)</label><input id="trA" type="number" min="1" inputmode="numeric" required></div>
+    <div class="field"><label for="trN">Motif (facultatif)</label><input id="trN" maxlength="80" placeholder="Fin de service, fond de rendu…"></div>
+    <div class="row"><button type="button" class="ghost" data-close>Annuler</button><button class="primary" id="trGo" style="margin-left:auto">Transférer</button></div></form>`);
+  $('trF').onsubmit = async (e) => { e.preventDefault(); $('trGo').disabled = true;
+    const { error } = await sb.rpc('cash_transfer', { p_from_session: CS.sess.id, p_to_session: $('trTo').value, p_amount: +$('trA').value || 0, p_note: $('trN').value.trim() || null });
+    if (error) { $('trGo').disabled = false; return toast(errMsg(error), true); } closeModal(); toast('Transfert enregistré.'); done && done(); };
+}
+async function openRegisters(done){
+  const { data } = await sb.from('cash_registers').select('*').eq('establishment_id', S.est).order('sort_order').order('created_at');
+  const regs = data || [];
+  modal(`<h2 style="font-size:22px;margin-bottom:4px">Caisses de l’établissement</h2><p class="muted" style="margin:0 0 12px">Une caisse par poste (Réception, Bar, Nuit…). Chacune s’ouvre, se compte et se clôture séparément.</p>
+    <div>${regs.map(r => `<div class="row" style="gap:8px;margin-bottom:8px;flex-wrap:nowrap"><input data-rgn="${r.id}" value="${esc(r.name)}" maxlength="40" aria-label="Nom de la caisse" style="flex:1"${r.is_active ? '' : ' disabled'}><button type="button" class="small ghost" data-rga="${r.id}">${r.is_active ? 'Désactiver' : 'Réactiver'}</button></div>`).join('')}</div>
+    <form id="rgF" class="row" style="gap:8px;margin-top:10px;flex-wrap:nowrap"><input id="rgNew" maxlength="40" placeholder="Nouvelle caisse (ex. : Bar)" style="flex:1"><button class="primary">Ajouter</button></form>
+    <button type="button" class="ghost" data-close style="width:100%;margin-top:12px">Fermer</button>`);
+  document.querySelectorAll('[data-rgn]').forEach(i => i.onchange = async () => { const v = i.value.trim(); if (v.length < 2) return toast('Nom trop court.', true);
+    const { error } = await sb.from('cash_registers').update({ name: v }).eq('id', i.dataset.rgn); if (error) return toast(errMsg(error), true); toast('Caisse renommée.'); done && done(); });
+  document.querySelectorAll('[data-rga]').forEach(b => b.onclick = async () => { const r = regs.find(x => x.id === b.dataset.rga);
+    if (r.is_active && regs.filter(x => x.is_active).length < 2) return toast('Gardez au moins une caisse active.', true);
+    const { data: op } = await sb.from('cash_sessions').select('id').eq('register_id', r.id).eq('status', 'open').limit(1);
+    if (r.is_active && op && op.length) return toast('Clôturez d’abord cette caisse.', true);
+    const { error } = await sb.from('cash_registers').update({ is_active: !r.is_active }).eq('id', r.id); if (error) return toast(errMsg(error), true); openRegisters(done); done && done(); });
+  $('rgF').onsubmit = async (e) => { e.preventDefault(); const v = $('rgNew').value.trim(); if (v.length < 2) return toast('Indiquez un nom.', true);
+    const { error } = await sb.from('cash_registers').insert({ organization_id: S.org, establishment_id: S.est, name: v, sort_order: regs.length });
+    if (error) return toast(/duplicate|unique/i.test(error.message || '') ? 'Une caisse porte déjà ce nom.' : errMsg(error), true); toast(`Caisse « ${v} » ajoutée.`); openRegisters(done); done && done(); };
+}
+async function openAllRegisters(){
+  const [{ data: regs }, { data: open }] = await Promise.all([sb.from('cash_registers').select('*').eq('establishment_id', S.est).eq('is_active', true).order('sort_order'), sb.from('cash_sessions').select('*').eq('establishment_id', S.est).eq('status', 'open')]);
+  const ids = (open || []).map(o => o.id);
+  const { data: mv } = ids.length ? await sb.from('cash_movements').select('session_id,kind,amount').in('session_id', ids).eq('method', 'cash') : { data: [] };
+  const exp = (o) => Number(o.opening_balance) + (mv || []).filter(m => m.session_id === o.id).reduce((a, m) => a + (['payment','income','transfer_in'].includes(m.kind) ? 1 : -1) * Number(m.amount), 0);
+  let tot = 0;
+  const rows = (regs || []).map(r => { const o = (open || []).find(x => x.register_id === r.id); const v = o ? exp(o) : 0; tot += v;
+    return `<div class="row between" style="padding:10px 0;border-bottom:1px dashed var(--line);flex-wrap:nowrap"><div><strong>${esc(r.name)}</strong><div class="muted" style="font-size:12px">${o ? `ouverte par ${esc(who(o.opened_by))} à ${hm(o.opened_at)}` : 'fermée'}</div></div><strong style="font-size:18px">${o ? money(v) : '—'}</strong></div>`; }).join('');
+  modal(`<h2 style="font-size:22px;margin-bottom:8px">Toutes les caisses</h2>${rows}<div class="row between" style="padding:12px 0 0"><span style="font-weight:700">Total des tiroirs</span><strong style="font-size:22px">${money(tot)}</strong></div><button class="ghost" data-close style="width:100%;margin-top:12px">Fermer</button>`);
+}
 function cashOpts(){ const est = (S.ests || []).find(x => x.id === S.est) || {}; return rcpt(est); }
 function openCashOptions(done){
   const est = (S.ests || []).find(x => x.id === S.est); if (!est) return;

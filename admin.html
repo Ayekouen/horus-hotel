@@ -115,13 +115,13 @@ const rpc = async (fn, args, ok) => { const { data, error } = await sb.rpc(fn, a
 
 async function boot(){
   const { data: { session } } = await sb.auth.getSession();
-  if (!session) return showLogin();
+  if (!session) { location.replace('./'); return; }
   const { data, error } = await sb.rpc('admin_console_data');
   if (error) {
     const { data: aal } = await sb.auth.mfa.getAuthenticatorAssuranceLevel();
     if (aal && aal.nextLevel === 'aal2' && aal.currentLevel === 'aal1') return showLogin(true);
     showLogin(); $('lerr').innerHTML = 'Ce compte (' + esc(session.user.email) + ') n\'a pas accès à la console. <a href="#" id="lo">Changer de compte</a>';
-    $('lo').onclick = async e => { e.preventDefault(); await sb.auth.signOut(); location.reload(); }; return;
+    $('lo').onclick = async e => { e.preventDefault(); await sb.auth.signOut(); location.replace('./'); }; return;
   }
   D = data; D.email = session.user.email; $('login').hidden = true; $('app').hidden = false; render();
 }
@@ -161,7 +161,7 @@ function render(){
   document.querySelectorAll('[data-mv]').forEach(b => b.onclick = () => { V = b.dataset.mv; Q = ''; document.body.classList.remove('navopen'); render(); window.scrollTo(0, 0); });
   $('mmore').onclick = () => document.body.classList.toggle('navopen');
   document.querySelectorAll('[data-v]').forEach(b => b.onclick = () => { V = b.dataset.v; Q = ''; document.body.classList.remove('navopen'); render(); window.scrollTo(0, 0); });
-  $('out').onclick = async e => { e.preventDefault(); await sb.auth.signOut(); location.reload(); };
+  $('out').onclick = async e => { e.preventDefault(); await sb.auth.signOut(); location.replace('./'); };
   $('rf').onclick = e => { e.preventDefault(); reload(); };
   ({ reversements: vPayouts, apercu: vApercu, revenus: vRevenus, clients: vClients, commissions: vCom, publications: vPub, avis: vAvis, signalements: vRep, crm: vCrm, taches: vTasks, support: vSupport, annonces: vAnn, demo: vDemo, equipe: vTeam, journal: vJournal, reglages: vSettings })[V]();
 }

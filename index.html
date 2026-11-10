@@ -738,7 +738,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 
 /* ---- Direction B « Net et professionnel » (boutons, onglets, retours) ---- */
 :root{--b-r:10px;--b-ink:#111827;--b-line:#D0D5DD}
-:is(section[id^="v-"],#modal,.dtop,#onboard,#auth) :is(button,.btn):not(.gstep):not(.loc-sug button):not([role=tab]):not(.toggle button):not(.ghead):not(.leaflet-control *):not(.ck *):not(.lv-chip):not(.lv-tile):not(.xitem):not(.pcard):not(.ccard):not([data-part]):not([data-mode]){
+:is(section[id^="v-"],#modal,.dtop,#onboard,#auth) :is(button,.btn):not(.gstep):not(.loc-sug button):not([role=tab]):not(.toggle button):not(.ghead):not(.leaflet-control *):not(.ck *):not(.lv-chip):not(.lv-tile):not(.xitem):not(.pcard):not(.ccard):not([data-part]):not([data-mode]):not(.pbar):not(.pl-slot){
   border-radius:var(--b-r)!important;font-weight:600!important;letter-spacing:0!important;transition:background-color .12s,border-color .12s,box-shadow .12s,transform .06s!important;
   background:#fff!important;color:var(--b-ink)!important;border:1px solid var(--b-line)!important;box-shadow:0 1px 2px rgba(16,24,40,.05)!important}
 :is(section[id^="v-"],#modal,.dtop,#onboard,#auth) :is(button,.btn):not(.gstep):not([role=tab]):not(.toggle button):hover{background:#F9FAFB!important;border-color:#98A2B3!important}
@@ -887,10 +887,10 @@ html[data-theme="nuit"],html[data-theme="sombre"]{--pl-bg:#1B1F27;--pl-alt:#2025
 .pl-o{padding:4px;text-align:center;font-size:12px;font-weight:700;border-left:1px solid var(--pl-line);border-bottom:1px solid var(--pl-line)}.pl-o:first-of-type{border-left:0}
 .pl-row{display:grid;position:relative;height:52px;border-bottom:1px solid var(--pl-line)}
 .pl-rm{display:flex;align-items:center;gap:8px;padding:0 10px;font-weight:700;position:sticky;left:0;z-index:3;border-right:1px solid var(--pl-line)}.pl-rm small{display:block;font-weight:500;font-size:12px;opacity:.7;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.pl-slot{background:var(--sb)!important;min-height:52px!important;height:52px;border:0!important;border-left:1px solid var(--pl-line)!important;border-radius:0!important;padding:0!important;box-shadow:none!important;cursor:pointer}
-.pl-slot:hover{outline:2px solid #93C5FD;outline-offset:-2px}
-.pbar{position:absolute;top:8px;height:36px!important;min-height:36px!important;background:var(--bb)!important;color:var(--bc)!important;border:0!important;border-radius:8px!important;font-size:13px!important;font-weight:700!important;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;text-align:left;box-shadow:0 1px 2px rgba(0,0,0,.18)!important;z-index:2;display:block!important;line-height:36px}
-.pbar:hover{filter:brightness(1.07)}
+#v-planning .pl-slot{background:var(--sb)!important;min-height:52px!important;height:52px;border:0!important;border-left:1px solid var(--pl-line)!important;border-radius:0!important;padding:0!important;box-shadow:none!important;cursor:pointer}
+#v-planning .pl-slot:hover{outline:2px solid #93C5FD;outline-offset:-2px}
+#v-planning .pbar{position:absolute;top:8px;height:36px!important;min-height:36px!important;background:var(--bb)!important;color:var(--bc)!important;border:0!important;border-radius:8px!important;font-size:13px!important;font-weight:700!important;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;text-align:left;box-shadow:0 1px 2px rgba(0,0,0,.18)!important;z-index:2;display:block!important;line-height:36px}
+#v-planning .pbar:hover{filter:brightness(1.07)}
 </style>
 </head>
 <body>
@@ -1242,7 +1242,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.11.10-07';
+const APP_VERSION = '2026.11.10-09';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}

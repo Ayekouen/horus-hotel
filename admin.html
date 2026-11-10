@@ -79,7 +79,7 @@ const SITE = 'https://nuittea.pages.dev';
 const ROLES = { direction: 'Direction', commercial: 'Commercial', support: 'Support', finance: 'Finance', lecture: 'Lecture' };
 const PERMS = { dashboard: 'Aperçu', crm: 'CRM', clients: 'Clients', support: 'Support', finance: 'Finances', moderation: 'Modération', moderation_delete: 'Retrait de publication', demo: 'Comptes de démonstration', impersonate: 'Vue client', team: 'Équipe', settings: 'Réglages', journal: 'Journal' };
 const BASE = { direction: Object.keys(PERMS), commercial: ['dashboard','crm','clients','demo'], support: ['dashboard','clients','support','moderation','demo'], finance: ['dashboard','clients','finance','journal'], lecture: ['dashboard','clients'] };
-const ACTIONS = { chambre_masquee: 'Chambre masquée', chambre_reaffichee: 'Chambre réaffichée', etablissement_suspendu: 'Établissement suspendu', etablissement_retabli: 'Établissement rétabli', publication_retiree: 'Publication retirée', equipe_modifiee: 'Équipe modifiée', fiche_valide: 'Fiche validée', fiche_refuse: 'Fiche refusée', fiche_a_verifier: 'Fiche remise à vérifier', avis_publie: 'Avis publié', avis_masque: 'Avis masqué', signalement_traite: 'Signalement traité', signalement_rejete: 'Signalement rejeté', ticket_modifie: 'Demande d\'assistance modifiée', annonce_enregistree: 'Annonce enregistrée', commission_encaissee: 'Commission encaissée', vue_client: 'Vue client consultée', reglage_modifie: 'Réglage modifié', demo_reinitialisee: 'Démonstration réinitialisée', demo_connexion: 'Connexion démonstration', formule_modifiee: 'Formule modifiée', abonnement_prolonge: 'Accès prolongé', paiement_enregistre: 'Paiement enregistré', compte_suspendu: 'Compte suspendu', compte_reactive: 'Compte réactivé', abonnement_resilie: 'Abonnement résilié', derogations_modifiees: 'Fonctions ou limites modifiées', commission_modifiee: 'Commission modifiée', employe_reactive: 'Employé réactivé', employe_desactive: 'Employé désactivé', compte_marque_test: 'Marqué compte de test', compte_marque_reel: 'Marqué compte réel' };
+const ACTIONS = { chambre_masquee: 'Chambre masquée', chambre_reaffichee: 'Chambre réaffichée', etablissement_suspendu: 'Établissement suspendu', etablissement_retabli: 'Établissement rétabli', publication_retiree: 'Publication retirée', equipe_modifiee: 'Équipe modifiée', fiche_valide: 'Fiche validée', fiche_refuse: 'Fiche refusée', fiche_a_verifier: 'Fiche remise à vérifier', avis_publie: 'Avis publié', avis_masque: 'Avis masqué', signalement_traite: 'Signalement traité', signalement_rejete: 'Signalement rejeté', ticket_modifie: 'Demande d\'assistance modifiée', annonce_enregistree: 'Annonce enregistrée', commission_encaissee: 'Commission encaissée', vue_client: 'Vue client consultée', reglage_modifie: 'Réglage modifié', demo_reinitialisee: 'Démonstration réinitialisée', demo_connexion: 'Connexion démonstration', reversement_payee: 'Reversement versé', reversement_refusee: 'Reversement refusé', reversement_en_cours: 'Reversement en cours', formule_modifiee: 'Formule modifiée', abonnement_prolonge: 'Accès prolongé', paiement_enregistre: 'Paiement enregistré', compte_suspendu: 'Compte suspendu', compte_reactive: 'Compte réactivé', abonnement_resilie: 'Abonnement résilié', derogations_modifiees: 'Fonctions ou limites modifiées', commission_modifiee: 'Commission modifiée', employe_reactive: 'Employé réactivé', employe_desactive: 'Employé désactivé', compte_marque_test: 'Marqué compte de test', compte_marque_reel: 'Marqué compte réel' };
 const STATUS = { pending: 'En attente', confirmed: 'Confirmée', checked_in: 'En séjour', checked_out: 'Partie', cancelled: 'Annulée', no_show: 'Absente' };
 const SUB = { active: ['Actif', 'g'], trial: ['Essai', 'b'], past_due: ['Impayé', 'r'], suspended: ['Suspendu', 'r'], cancelled: ['Résilié', 'n'], expired: ['Expiré', 'r'] };
 const STAGES = { a_contacter: 'À contacter', contacte: 'Contacté', demo: 'Démo faite', essai: 'En essai', abonne: 'Abonné', perdu: 'Perdu' };
@@ -129,7 +129,7 @@ function alerts(){
 function render(){
   const nb = { publications: D.stats.to_review, signalements: D.stats.reports, support: (D.tickets || []).filter(t => t.status === 'ouvert').length, taches: (D.tasks || []).filter(t => !t.done && t.assignee === D.me.id && t.due && days(t.due) <= 0).length };
   const G = [
-    ['Pilotage', [['apercu', 'Aperçu', 'dashboard'], ['revenus', 'Abonnements', 'clients'], ['clients', 'Clients', 'clients'], ['commissions', 'Commissions', 'finance']]],
+    ['Pilotage', [['apercu', 'Aperçu', 'dashboard'], ['revenus', 'Abonnements', 'clients'], ['clients', 'Clients', 'clients'], ['commissions', 'Commissions', 'finance'], ['reversements', 'Reversements', 'finance']]],
     ['Nuittea.com', [['publications', 'Publications', 'dashboard'], ['avis', 'Avis clients', 'moderation'], ['signalements', 'Signalements', 'moderation']]],
     ['Relation client', [['crm', 'Prospects', 'crm'], ['taches', 'Tâches', 'dashboard'], ['support', 'Assistance', 'support'], ['annonces', 'Annonces', 'support'], ['demo', 'Démonstration', 'demo']]],
     ['Administration', [['equipe', 'Équipe', 'team'], ['journal', 'Journal', 'journal'], ['reglages', 'Réglages', 'dashboard']]]];
@@ -140,7 +140,7 @@ function render(){
   document.querySelectorAll('[data-v]').forEach(b => b.onclick = () => { V = b.dataset.v; Q = ''; render(); window.scrollTo(0, 0); });
   $('out').onclick = async e => { e.preventDefault(); await sb.auth.signOut(); location.reload(); };
   $('rf').onclick = e => { e.preventDefault(); reload(); };
-  ({ apercu: vApercu, revenus: vRevenus, clients: vClients, commissions: vCom, publications: vPub, avis: vAvis, signalements: vRep, crm: vCrm, taches: vTasks, support: vSupport, annonces: vAnn, demo: vDemo, equipe: vTeam, journal: vJournal, reglages: vSettings })[V]();
+  ({ reversements: vPayouts, apercu: vApercu, revenus: vRevenus, clients: vClients, commissions: vCom, publications: vPub, avis: vAvis, signalements: vRep, crm: vCrm, taches: vTasks, support: vSupport, annonces: vAnn, demo: vDemo, equipe: vTeam, journal: vJournal, reglages: vSettings })[V]();
 }
 function bindGo(){ document.querySelectorAll('[data-go]').forEach(b => b.onclick = () => { V = b.dataset.go; render(); }); }
 
@@ -228,7 +228,7 @@ async function orgView(x){
 function payForm(x){
   const c = x.commission || {};
   const m = modal(`<h3>Encaisser une commission · ${esc(x.name)}</h3><p class="muted sm">Solde dû : ${money(c.balance)}</p>
-    <label class="f">Montant</label><input id="pa" inputmode="numeric" value="${Math.round(c.balance || 0) || ''}"><label class="f">Moyen</label><select id="pm"><option value="mobile_money">Mobile Money</option><option value="virement">Virement</option><option value="especes">Espèces</option><option value="geniuspay">Genius Pay</option></select>
+    <label class="f">Montant</label><input id="pa" inputmode="numeric" value="${Math.round(c.balance || 0) || ''}"><label class="f">Moyen</label><select id="pm"><option value="wave">Wave</option><option value="orange_money">Orange Money</option><option value="mtn_money">MTN MoMo</option><option value="moov_money">Moov Money</option><option value="bank_transfer">Virement</option><option value="cash">Espèces</option></select>
     <label class="f">Référence</label><input id="pr"><label class="f">Note</label><input id="pn"><div class="row" style="justify-content:flex-end;margin-top:12px"><button data-x>Annuler</button><button class="p" id="pk">Enregistrer</button></div>`);
   m.querySelector('#pk').onclick = async () => { const a = Number(m.querySelector('#pa').value.replace(/[^0-9]/g, '')); if (await rpc('admin_commission_pay', { p_org: x.id, p_amount: a, p_method: m.querySelector('#pm').value, p_reference: m.querySelector('#pr').value || null, p_note: m.querySelector('#pn').value || null }, 'Encaissement enregistré.')) { m.remove(); reload(); } };
 }
@@ -272,6 +272,26 @@ async function manageOrg(x){
   if (q('#ck')) q('#ck').onclick = () => go('admin_org_commission', { p_org: x.id, p_pct: Number(q('#cp').value), p_reason: null }, 'Commission modifiée.');
   m.querySelectorAll('[data-mem]').forEach(b => b.onclick = () => go('admin_member_set', { p_member: b.dataset.mem, p_active: b.dataset.a === '1' }, b.dataset.a === '1' ? 'Employé réactivé.' : 'Employé désactivé.'));
   if (q('#tt')) q('#tt').onchange = () => go('admin_org_set_test', { p_org: x.id, p_test: q('#tt').checked }, 'Enregistré.');
+}
+
+/* ---------- Reversements aux hôtels ---------- */
+async function vPayouts(){
+  $('main').innerHTML = '<h1>Reversements aux hôtels</h1><p class="muted">Chargement…</p>';
+  const P = await rpc('admin_payouts', {}); if (!P || V !== 'reversements') return;
+  const PST = { demandee: ['Demandée', 'a'], en_cours: ['En cours', 'b'], payee: ['Versée', 'g'], refusee: ['Refusée', 'r'] };
+  const ME = { wave: 'Wave', orange_money: 'Orange Money', mtn_money: 'MTN MoMo', moov_money: 'Moov Money' };
+  const open = P.list.filter(h => ['demandee', 'en_cours'].includes(h.status));
+  $('main').innerHTML = `<h1>Reversements aux hôtels</h1>
+    <div class="kpis"><div class="card kpi"><div class="v">${money(P.held)}</div><div class="l">Fonds détenus pour les hôtels</div></div><div class="card kpi"><div class="v">${open.length}</div><div class="l">Demandes à traiter</div></div><div class="card kpi"><div class="v">${money(open.reduce((a, h) => a + h.net, 0))}</div><div class="l">Net à verser</div></div></div>
+    <div class="card tw"><h3>Demandes</h3><table><tr><th>N°</th><th>Hôtel</th><th>Date</th><th class="num">Montant</th><th class="num">Frais 1 %</th><th class="num">Commission</th><th class="num">Net à verser</th><th>Vers</th><th>État</th><th></th></tr>
+      ${P.list.map(h => `<tr><td>${h.number}</td><td><strong>${esc(h.org)}</strong></td><td>${dtfr(h.created_at)}</td><td class="num">${money(h.gross)}</td><td class="num">${money(h.fee)}</td><td class="num">${money(h.commission)}</td><td class="num"><strong>${money(h.net)}</strong></td><td>${esc(ME[h.method] || h.method)}<div class="sm">${esc(h.account)} · ${esc(h.account_name)}</div></td><td><span class="pill ${PST[h.status][1]}">${PST[h.status][0]}</span>${h.reference ? `<div class="muted sm">Réf. ${esc(h.reference)}</div>` : ''}${h.reason ? `<div class="sm" style="color:var(--red)">${esc(h.reason)}</div>` : ''}</td>
+        <td class="row" style="flex-wrap:nowrap">${['demandee', 'en_cours'].includes(h.status) ? `${h.status === 'demandee' ? `<button class="s" data-ec="${h.id}">En cours</button>` : ''}<button class="s p" data-pay="${h.id}">Marquer versé</button><button class="s d" data-ref="${h.id}">Refuser</button>` : ''}</td></tr>`).join('') || '<tr><td colspan="10" class="muted">Aucune demande.</td></tr>'}</table>
+      <p class="muted sm" style="margin:10px 0 0">Envoyez le montant net depuis votre compte Mobile Money ou Genius Pay, puis cliquez sur « Marquer versé » avec la référence du transfert. La commission déduite est enregistrée automatiquement comme encaissée.</p></div>
+    <div class="card tw"><h3>Soldes par hôtel</h3><table><tr><th>Hôtel</th><th class="num">En attente</th><th class="num">Disponible</th><th class="num">Demande en cours</th><th class="num">Déjà reversé</th></tr>${P.balances.map(b => `<tr><td>${esc(b.org)}</td><td class="num">${money(b.pending)}</td><td class="num">${money(b.available)}</td><td class="num">${money(b.open)}</td><td class="num">${money(b.paid)}</td></tr>`).join('') || '<tr><td colspan="5" class="muted">Aucun paiement en ligne.</td></tr>'}</table></div>`;
+  const upd = async (id, st, ref, reason, ok) => { if (await rpc('admin_payout_update', { p_id: id, p_status: st, p_reference: ref, p_reason: reason }, ok)) vPayouts(); };
+  document.querySelectorAll('[data-ec]').forEach(b => b.onclick = () => upd(b.dataset.ec, 'en_cours', null, null, 'Demande passée en cours.'));
+  document.querySelectorAll('[data-pay]').forEach(b => b.onclick = () => ask('Référence du transfert', 'ex. identifiant de la transaction Wave ou Orange Money', r => upd(b.dataset.pay, 'payee', r, null, 'Reversement marqué versé ; l\'hôtel est notifié.')));
+  document.querySelectorAll('[data-ref]').forEach(b => b.onclick = () => ask('Refuser le reversement', 'Motif communiqué à l\'hôtel', r => upd(b.dataset.ref, 'refusee', null, r, 'Demande refusée ; l\'hôtel est notifié.')));
 }
 /* ---------- Commissions ---------- */
 function vCom(){

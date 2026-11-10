@@ -1325,7 +1325,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.11.10-27';
+const APP_VERSION = '2026.11.10-28';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -3452,7 +3452,7 @@ async function renderNaya(){
     const mLabel = new Date(st.month + 'T00:00:00').toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
     const kpi = (l, v, sub) => `<div class="card" style="padding:14px 16px"><div class="muted" style="font-size:12px;font-weight:600">${l}</div><div style="font-weight:800;font-size:24px;letter-spacing:-.02em">${v}</div><div>${sub || ''}</div></div>`;
     const monthNav = `<div class="row" style="gap:6px;align-items:center"><button class="small ghost" id="nyPrev" aria-label="Mois précédent">←</button><strong style="text-transform:capitalize;min-width:130px;text-align:center">${mLabel}</strong><button class="small ghost" id="nyNext" aria-label="Mois suivant">→</button></div>`;
-    const TABS = [['apercu', 'Vue d’ensemble'], ['resas', `Réservations · ${R.length}`], ['fiche', `Ma fiche · ${score} %`], ['reglages', 'Réglages et commission']];
+    const TABS = [['apercu', 'Vue d’ensemble'], ['resas', `Réservations · ${R.length}`], ['fiche', `Ma fiche · ${score} %`], ...(can(['owner','admin','accountant']) ? [['paiements', 'Paiements en ligne']] : []), ['reglages', 'Réglages et commission']];
     const share = `https://wa.me/?text=${encodeURIComponent(`Réservez directement chez nous sur Nuittea : ${ficheUrl}`)}`;
     let body = '';
     if (st.tab === 'apercu') {
@@ -3485,6 +3485,27 @@ async function renderNaya(){
           <p class="muted" style="font-size:13px;margin:4px 0 10px">Une fiche complète avec de belles photos reçoit nettement plus de réservations.</p>
           ${checks.map(c => `<div class="row" style="padding:7px 0;border-bottom:1px dashed var(--line);flex-wrap:nowrap;gap:10px"><span style="width:22px;height:22px;flex:none;border-radius:50%;display:grid;place-items:center;font-size:13px;font-weight:800;background:${c[1] ? '#DCFCE7' : '#FEF3C7'};color:${c[1] ? '#14532D' : '#92400E'}">${c[1] ? '✓' : '!'}</span><span style="flex:1">${c[0]}</span></div>`).join('')}
           <div class="row" style="gap:6px;margin-top:12px">${allowed('mapage') ? '<button class="primary small" id="nyEdit">Modifier ma fiche</button>' : ''}<button class="small ghost" id="nyRooms">Photos des chambres</button></div></div></div>`;
+    } else if (st.tab === 'paiements') {
+      const { data: PO, error: poe } = await sb.rpc('payout_overview', { p_org: S.org });
+      if (S.view !== 'naya' || st.tab !== 'paiements') return;
+      if (poe) body = `<p class="muted">${esc(errMsg(poe))}</p>`;
+      else {
+        const PST = { demandee: ['Demandée', '#FEF3C7', '#92400E'], en_cours: ['En cours', '#DBEAFE', '#1E40AF'], payee: ['Versée', '#DCFCE7', '#14532D'], refusee: ['Refusée', '#FEE2E2', '#991B1B'] };
+        const RS = { pending: 'Demande en attente', confirmed: 'À venir', checked_in: 'En séjour', checked_out: 'Parti', cancelled: 'Annulée', no_show: 'Absent' };
+        const open = (PO.payouts || []).find(h => ['demandee', 'en_cours'].includes(h.status));
+        const kp = (v, l, c) => `<div class="card" style="padding:12px"><div class="muted" style="font-size:12px">${l}</div><div style="font-weight:800;font-size:20px;${c ? 'color:' + c : ''}">${money(v)}</div></div>`;
+        body = `<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:12px">${kp(PO.available, 'Disponible', 'var(--green)')}${kp(PO.pending, 'En attente (séjour à venir)')}${kp(PO.open, 'Demande en cours')}${kp(PO.paid, 'Déjà reversé')}</div>
+          <div class="card" style="margin-bottom:14px"><h3 style="font-size:17px;margin-bottom:6px">Demander un reversement</h3>
+            <p class="muted" style="font-size:13px;margin:0 0 10px">Les paiements en ligne de vos clients sont encaissés par Nuittea et deviennent disponibles au check-in. Frais de retrait : ${Number(PO.fee_pct)} %. ${PO.commission_due > 0 ? `Votre commission Nuittea due (${money(PO.commission_due)}) est déduite automatiquement.` : ''}</p>
+            ${open ? `<p style="margin:0"><strong>Demande n° ${open.number} en cours</strong> : ${money(open.net)} vers ${esc(open.account)}. Vous serez notifié dès le versement.</p>` : !PO.can_request ? '<p class="muted" style="margin:0">Seuls le propriétaire et l’administrateur peuvent demander un reversement.</p>' : PO.available < 1000 ? '<p class="muted" style="margin:0">Le solde disponible doit atteindre au moins 1 000 F.</p>' : `
+            <form id="poF" class="grid g2" style="gap:10px"><label>Montant<input id="poA" inputmode="numeric" value="${PO.available}" required></label>
+              <label>Moyen<select id="poM"><option value="wave">Wave</option><option value="orange_money">Orange Money</option><option value="mtn_money">MTN MoMo</option><option value="moov_money">Moov Money</option></select></label>
+              <label>Numéro de réception<input id="poN" inputmode="tel" required placeholder="07 00 00 00 00"></label><label>Titulaire du compte<input id="poT" required maxlength="120"></label>
+              <div id="poP" class="muted" style="grid-column:1/-1;font-size:13px"></div><button class="primary" style="grid-column:1/-1">Demander le reversement</button></form>`}</div>
+          <div class="card" style="margin-bottom:14px"><h3 style="font-size:17px;margin-bottom:8px">Mes demandes</h3>${(PO.payouts || []).length ? `<div class="tablewrap"><table class="table"><thead><tr><th>N°</th><th>Date</th><th style="text-align:right">Montant</th><th style="text-align:right">Frais</th><th style="text-align:right">Commission</th><th style="text-align:right">Net versé</th><th>État</th></tr></thead><tbody>${PO.payouts.map(h => { const c = PST[h.status]; return `<tr><td>${h.number}</td><td>${dfr(h.created_at)}</td><td style="text-align:right">${money(h.gross)}</td><td style="text-align:right">${money(h.fee)}</td><td style="text-align:right">${money(h.commission)}</td><td style="text-align:right"><strong>${money(h.net)}</strong></td><td><span style="background:${c[1]};color:${c[2]};padding:2px 8px;border-radius:99px;font-size:12px;font-weight:700">${c[0]}</span>${h.reference ? `<div class="muted" style="font-size:11px">Réf. ${esc(h.reference)}</div>` : ''}${h.reason ? `<div style="font-size:11px;color:var(--red)">${esc(h.reason)}</div>` : ''}</td></tr>`; }).join('')}</tbody></table></div>` : '<p class="muted" style="margin:0">Aucune demande.</p>'}</div>
+          <div class="card"><h3 style="font-size:17px;margin-bottom:8px">Paiements en ligne reçus</h3>${(PO.payments || []).length ? `<div class="tablewrap"><table class="table"><thead><tr><th>Client</th><th>Séjour</th><th>État</th><th style="text-align:right">Montant</th></tr></thead><tbody>${PO.payments.map(x => `<tr><td>${esc(x.guest)}</td><td>${dfr(x.in)} → ${dfr(x.out)}</td><td>${esc(RS[x.rstatus] || x.rstatus)}${['checked_in', 'checked_out'].includes(x.rstatus) ? ' · disponible' : ''}</td><td style="text-align:right">${money(x.amount)}</td></tr>`).join('')}</tbody></table></div>` : '<p class="muted" style="margin:0">Aucun paiement en ligne pour le moment.</p>'}</div>`;
+        st._po = PO;
+      }
     } else {
       body = `<div class="card" style="margin-bottom:14px"><div class="row between" style="gap:10px"><div><strong>${L.listed ? 'Publié sur Nuittea' : 'Non publié'}</strong><div class="muted" style="font-size:13px">${L.listed ? 'Votre établissement est visible et réservable sur Nuittea.com.' : 'Votre établissement n’est pas visible sur Nuittea.com.'}</div></div>${owner ? `<button class="${L.listed ? 'ghost' : 'primary'}" id="nyToggle">${L.listed ? 'Retirer de Nuittea' : 'Publier sur Nuittea'}</button>` : ''}</div>
           ${L.listed ? `<label class="row" style="gap:8px;margin:14px 0 0;font-weight:600;flex-wrap:nowrap;color:var(--ink)"><input type="checkbox" id="nyAuto" ${L.auto_confirm ? 'checked' : ''} ${owner ? '' : 'disabled'} style="width:20px;min-height:20px"> Confirmer automatiquement les réservations Nuittea</label><p class="muted" style="font-size:12px;margin:4px 0 0">Sinon, elles arrivent « à confirmer » dans la vue d’ensemble et dans Réservations → Demandes en ligne.</p>` : (owner ? '<p class="muted" style="font-size:12px;margin:10px 0 0">En publiant, vous acceptez la commission indiquée et les conditions partenaires Nuittea.</p>' : '')}</div>
@@ -3495,6 +3516,12 @@ async function renderNaya(){
     el.innerHTML = head('Nuittea', `<a class="small ghost btn" style="text-decoration:none" href="${NAYA_URL}" target="_blank" rel="noopener">Ouvrir Nuittea.com</a>`) +
       `<div class="row ny-tabs" role="tablist" aria-label="Nuittea">${TABS.map(([k, l]) => `<button type="button" role="tab" aria-selected="${st.tab === k}" class="${st.tab === k ? 'on' : ''}" data-nytab="${k}">${l}</button>`).join('')}</div>` + body;
     el.querySelectorAll('[data-nytab]').forEach(b => b.onclick = () => { st.tab = b.dataset.nytab; draw(); });
+    if ($('poF')) { const PO = st._po, prev = () => { const a = Number(String($('poA').value).replace(/[^0-9]/g, '')) || 0, f = Math.ceil(a * Number(PO.fee_pct) / 100), c = Math.min(PO.commission_due, Math.max(a - f, 0)); $('poP').innerHTML = a ? `Frais ${money(f)}${c ? ' · commission Nuittea ' + money(c) : ''} · <strong>vous recevrez ${money(Math.max(a - f - c, 0))}</strong>` : ''; };
+      $('poA').oninput = prev; prev();
+      $('poF').onsubmit = async e => { e.preventDefault(); const btn = e.submitter; if (btn) btn.disabled = true;
+        const { data, error } = await sb.rpc('payout_request', { p_org: S.org, p_amount: Number(String($('poA').value).replace(/[^0-9]/g, '')), p_method: $('poM').value, p_account: $('poN').value, p_name: $('poT').value });
+        if (btn) btn.disabled = false; if (error) return toast(errMsg(error), true);
+        toast(`Demande n° ${data.number} envoyée : ${money(data.net)} vous seront versés.`); draw(); }; }
     el.querySelectorAll('[data-nyf]').forEach(b => b.onclick = () => { st.f = b.dataset.nyf; draw(); });
     bindResaActions(el, () => draw());
     const a = (id, fn) => { const b = $(id); if (b) b.onclick = fn; };

@@ -875,6 +875,22 @@ section.refreshing{position:relative}section.refreshing::before{content:"";posit
 .adm-back{margin-bottom:14px}
 @media (max-width:600px){#v-admin .ck .ck-v{font-size:20px;white-space:nowrap}}
 @media (max-width:900px){#v-admin .ck .ck-g4{grid-template-columns:repeat(2,minmax(0,1fr))}#v-admin .ck .ck-main,#v-admin .ck .ck-grid{grid-template-columns:minmax(0,1fr)}}
+
+/* Planning lisible : couleurs pleines, grille pleine largeur, jour et week-ends repérés */
+:root{--pl-bg:#FFFFFF;--pl-alt:#F8FAFC;--pl-we:#EEF1F6;--pl-today:#EAF0FF;--pl-line:#DCE2EC;--pl-head:#F4F6FA}
+html[data-theme="nuit"],html[data-theme="sombre"]{--pl-bg:#1B1F27;--pl-alt:#20252E;--pl-we:#262C37;--pl-today:#1E2A4A;--pl-line:#323A47;--pl-head:#222832}
+.pl-legend{display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center;font-size:13px;margin:0 0 10px}.pl-legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.pl-wrap{background:var(--pl-bg);border:1px solid var(--pl-line);border-radius:16px;overflow-x:auto;box-shadow:0 1px 3px rgba(20,24,31,.06)}
+.pl-head{display:grid;position:sticky;top:0;z-index:4;background:var(--pl-head)}
+.pl-h{padding:8px 4px;text-align:center;font-weight:700;font-size:13px;border-left:1px solid var(--pl-line);border-bottom:2px solid var(--pl-line);text-transform:capitalize}.pl-h small{display:block;font-weight:500;font-size:12px;opacity:.75;text-transform:none}
+.pl-h:first-child{border-left:0}.pl-h.pl-we{background:var(--pl-we)}.pl-h.pl-now{background:#1E40AF;color:#fff}.pl-h.pl-now small{opacity:.9}
+.pl-o{padding:4px;text-align:center;font-size:12px;font-weight:700;border-left:1px solid var(--pl-line);border-bottom:1px solid var(--pl-line)}.pl-o:first-of-type{border-left:0}
+.pl-row{display:grid;position:relative;height:52px;border-bottom:1px solid var(--pl-line)}
+.pl-rm{display:flex;align-items:center;gap:8px;padding:0 10px;font-weight:700;position:sticky;left:0;z-index:3;border-right:1px solid var(--pl-line)}.pl-rm small{display:block;font-weight:500;font-size:12px;opacity:.7;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pl-slot{background:var(--sb)!important;min-height:52px!important;height:52px;border:0!important;border-left:1px solid var(--pl-line)!important;border-radius:0!important;padding:0!important;box-shadow:none!important;cursor:pointer}
+.pl-slot:hover{outline:2px solid #93C5FD;outline-offset:-2px}
+.pbar{position:absolute;top:8px;height:36px!important;min-height:36px!important;background:var(--bb)!important;color:var(--bc)!important;border:0!important;border-radius:8px!important;font-size:13px!important;font-weight:700!important;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;text-align:left;box-shadow:0 1px 2px rgba(0,0,0,.18)!important;z-index:2;display:block!important;line-height:36px}
+.pbar:hover{filter:brightness(1.07)}
 </style>
 </head>
 <body>
@@ -1226,7 +1242,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.11.10-06';
+const APP_VERSION = '2026.11.10-07';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -3793,42 +3809,60 @@ async function renderPlanning(){
   const el = $('v-planning'); keepOrSkel(el);
   await loadEst();
   // Vues : jour (3 jours larges), semaine (7 jours), mois (du 1er au dernier jour)
-  const PV = S._pv || 'week', mStart = (d) => d.slice(0, 8) + '01';
-  const start = PV === 'month' ? (S._ps ? mStart(S._ps) : mStart(today())) : (S._ps || (PV === 'day' ? today() : addDays(today(), -1)));
+  const PV = S._pv || 'week', mStart = (d) => d.slice(0, 8) + '01', t = today();
+  const start = PV === 'month' ? (S._ps ? mStart(S._ps) : mStart(t)) : (S._ps || (PV === 'day' ? t : addDays(t, -1)));
   const days = PV === 'day' ? 3 : PV === 'month' ? new Date(+start.slice(0, 4), +start.slice(5, 7), 0).getDate() : 7, end = addDays(start, days);
   const step = PV === 'day' ? 1 : PV === 'month' ? null : 7;
   const fd = (d, y) => new Date(d + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', ...(y ? { year: 'numeric' } : {}) });
   const period = PV === 'month' ? new Date(start + 'T00:00:00').toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }) : `du ${fd(start)} au ${fd(addDays(end, -1), true)}`;
-  const { data } = await sb.from('reservations').select('id,room_id,guest_name,check_in,check_out,status').eq('establishment_id', S.est).not('status', 'in', '(cancelled,no_show)').lt('check_in', end).gt('check_out', start);
+  const [{ data }, { data: gr }] = await Promise.all([
+    sb.from('reservation_balances').select('id,room_id,guest_name,check_in,check_out,status,balance,source').eq('establishment_id', S.est).not('status', 'in', '(cancelled,no_show)').lt('check_in', end).gt('check_out', start),
+    sb.from('reservations').select('id,reservation_groups(name)').eq('establishment_id', S.est).not('group_id', 'is', null).lt('check_in', end).gt('check_out', start)
+  ]);
+  const GRP = Object.fromEntries((gr || []).map(x => [x.id, (x.reservation_groups || {}).name]));
   const dates = [...Array(days)].map((_, i) => addDays(start, i));
-  const col = { pending:['#FEF3C7', '#92400E'], confirmed:['#DBEAFE', '#1E3A8A'], checked_in:['#16A34A', '#FFFFFF'], checked_out:['#E5E7EB', '#4B5563'] };
-  const cell = PV === 'day' ? 150 : PV === 'month' ? 40 : 96, canMove = can(['owner','admin','manager','receptionist']);
+  const col = { pending:['#F59E0B', '#2B1B00'], confirmed:['#2563EB', '#FFFFFF'], checked_in:['#15803D', '#FFFFFF'], checked_out:['#9CA3AF', '#FFFFFF'], late:['#DC2626', '#FFFFFF'] };
+  const isLate = (x) => (['pending', 'confirmed'].includes(x.status) && x.check_in < t) || (x.status === 'checked_in' && (x.check_out < t || (x.check_out === t && Number(x.balance) > 0)));
+  const RC = 150, avail = Math.max(320, (el.clientWidth || (window.innerWidth - 300)) - RC - 2);
+  const cell = Math.max(PV === 'day' ? 150 : PV === 'month' ? 40 : 96, Math.floor(avail / days)), canMove = can(['owner','admin','manager','receptionist']);
   const RES = data || [];
   const LV = await roomLiveToday(S.rooms);
-  el.innerHTML = head('Planning', `<div class="toggle" role="group" aria-label="Vue" style="margin:0">${[['day', 'Jour'], ['week', 'Semaine'], ['month', 'Mois']].map(([k, l]) => `<button type="button" data-pv="${k}" class="${PV === k ? 'on' : ''}">${l}</button>`).join('')}</div><button class="ghost small" id="pPrev" aria-label="Période précédente">←</button><button class="ghost small" id="pToday">Aujourd'hui</button><button class="ghost small" id="pNext" aria-label="Période suivante">→</button><strong style="align-self:center;font-size:15px;text-transform:${PV === 'month' ? 'capitalize' : 'none'}">${period}</strong><button class="primary small" data-newresa>Nouvelle réservation</button>`) + `
-    <div class="card" style="padding:0;overflow-x:auto"><div style="min-width:${110 + days * cell}px">
-      <div style="display:grid;grid-template-columns:110px repeat(${days},${cell}px);position:sticky;top:0;background:#fff;border-bottom:1px solid var(--line)">
-        <div style="padding:10px;font-size:12px;font-weight:700;color:var(--muted)">Chambre</div>
-        ${dates.map(d => `<div style="padding:8px 0;text-align:center;font-size:12px;${d === today() ? 'background:var(--green-l);font-weight:700' : ''}">${new Date(d + 'T00:00:00').toLocaleDateString('fr-FR', { weekday:'short' })}<br><strong>${d.slice(8)}</strong></div>`).join('')}
+  const types = [...new Set(S.rooms.map(r => r.room_type).filter(Boolean))], ft = S._pt || '';
+  const rooms = S.rooms.filter(r => !ft || r.room_type === ft);
+  const nRooms = S.rooms.filter(r => r.is_active !== false).length || 1;
+  const occ = (d) => Math.round(RES.filter(x => x.check_in <= d && x.check_out > d && x.status !== 'checked_out' || (x.status === 'checked_out' && x.check_in <= d && x.check_out > d)).length * 100 / nRooms);
+  const we = (d) => [0, 6].includes(new Date(d + 'T00:00:00').getDay());
+  const cellBg = (d, alt) => d === t ? 'var(--pl-today)' : we(d) ? 'var(--pl-we)' : alt ? 'var(--pl-alt)' : 'var(--pl-bg)';
+  el.innerHTML = head('Planning', `<div class="toggle" role="group" aria-label="Vue" style="margin:0">${[['day', 'Jour'], ['week', 'Semaine'], ['month', 'Mois']].map(([k, l]) => `<button type="button" data-pv="${k}" class="${PV === k ? 'on' : ''}">${l}</button>`).join('')}</div><button class="ghost small" id="pPrev" aria-label="Période précédente">←</button><button class="ghost small" id="pToday">Aujourd'hui</button><button class="ghost small" id="pNext" aria-label="Période suivante">→</button><strong style="align-self:center;font-size:16px;text-transform:${PV === 'month' ? 'capitalize' : 'none'}">${period}</strong>${types.length > 1 ? `<select id="pType" aria-label="Type de chambre" style="width:auto"><option value="">Tous les types</option>${types.map(x => `<option ${x === ft ? 'selected' : ''}>${esc(x)}</option>`).join('')}</select>` : ''}<button class="primary small" data-newresa>+ Nouvelle réservation</button>`) + `
+    <div class="pl-legend">${[['confirmed', 'Confirmée'], ['pending', 'En attente'], ['checked_in', 'En séjour'], ['late', 'Retard / impayé au départ'], ['checked_out', 'Partie']].map(([k, l]) => `<span><i style="background:${col[k][0]}"></i>${l}</span>`).join('')}<span><i style="background:var(--pl-we);border:1px solid var(--pl-line)"></i>Week-end</span><span class="muted">· Pastille : état du jour (${Object.entries(LV_DOT).map(([k, c]) => `<b style="color:${c}">●</b> ${LIVE[k][0]}`).join(', ')})</span></div>
+    <div class="pl-wrap"><div style="min-width:${RC + days * cell}px">
+      <div class="pl-head" style="grid-template-columns:${RC}px repeat(${days},${cell}px)">
+        <div class="pl-h" style="text-align:left;padding-left:12px">Chambre</div>
+        ${dates.map(d => `<div class="pl-h${d === t ? ' pl-now' : we(d) ? ' pl-we' : ''}">${new Date(d + 'T00:00:00').toLocaleDateString('fr-FR', { weekday: PV === 'month' ? 'narrow' : 'short' })}<small>${d.slice(8)}${d === t && PV !== 'month' ? ' · aujourd’hui' : ''}</small></div>`).join('')}
+        <div class="pl-o" style="text-align:left;padding-left:12px">Occupation</div>
+        ${dates.map(d => `<div class="pl-o"${d === t ? ' style="color:#1E40AF"' : ''}>${occ(d)} %</div>`).join('')}
       </div>
-      ${S.rooms.map(rm => { const rs = (data || []).filter(x => x.room_id === rm.id);
-        return `<div data-prow="${rm.id}" style="display:grid;grid-template-columns:110px repeat(${days},${cell}px);position:relative;border-bottom:1px solid var(--line);height:46px">
-          <div style="padding:12px 10px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="Aujourd’hui : ${LIVE[(LV[rm.id] || {}).st || 'free'][0]}"><span class="lv-dot" style="background:${LV_DOT[(LV[rm.id] || {}).st || 'free']}" aria-hidden="true"></span>${esc(rm.number)}<span class="sr-only"> · ${esc(LIVE[(LV[rm.id] || {}).st || 'free'][0])}</span></div>
-          ${dates.map(d => `<button aria-label="Réserver ${esc(rm.number)} le ${d}" data-slot="${rm.id}|${d}" style="min-height:46px;border:none;border-left:1px solid #F4F1EA;border-radius:0;background:transparent;padding:0"></button>`).join('')}
+      ${rooms.map((rm, i) => { const rs = RES.filter(x => x.room_id === rm.id), alt = i % 2 === 1;
+        return `<div data-prow="${rm.id}" class="pl-row" style="grid-template-columns:${RC}px repeat(${days},${cell}px)">
+          <div class="pl-rm" style="background:${alt ? 'var(--pl-alt)' : 'var(--pl-bg)'}" title="Aujourd’hui : ${LIVE[(LV[rm.id] || {}).st || 'free'][0]}"><span class="lv-dot" style="background:${LV_DOT[(LV[rm.id] || {}).st || 'free']}" aria-hidden="true"></span><span style="min-width:0"><span style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(rm.number)}</span><small>${esc(rm.room_type || '')}</small></span><span class="sr-only"> · ${esc(LIVE[(LV[rm.id] || {}).st || 'free'][0])}</span></div>
+          ${dates.map(d => `<button aria-label="Réserver ${esc(rm.number)} le ${d}" data-slot="${rm.id}|${d}" class="pl-slot" style="--sb:${cellBg(d, alt)}"></button>`).join('')}
           ${rs.map(x => { const a = Math.max(0, (new Date(x.check_in) - new Date(start)) / 864e5), b = Math.min(days, (new Date(x.check_out) - new Date(start)) / 864e5);
-            const movable = x.status !== 'checked_out' && canMove;
-            return `<button data-open="${x.id}" data-bar="${x.id}" title="${esc(x.guest_name)} · ${dfr(x.check_in)} → ${dfr(x.check_out)}${movable ? ' · glissez pour déplacer' : ''}" class="pbar${movable ? ' pmove' : ''}" style="position:absolute;top:6px;height:34px;min-height:34px;left:${110 + a * cell + cell / 2}px;width:${Math.max(cell / 2, (b - a) * cell - 4)}px;background:${col[x.status][0]};color:${col[x.status][1]};border:none;border-radius:8px;font-size:12px;font-weight:700;padding:0 ${movable ? 14 : 8}px 0 ${movable ? 14 : 8}px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;text-align:left">${movable && x.status !== 'checked_in' ? '<span class="pgrip pgl" data-grip="left" aria-hidden="true"></span>' : ''}${esc(x.guest_name)}${movable ? '<span class="pgrip" data-grip="right" aria-hidden="true"></span>' : ''}</button>`; }).join('')}
+            const movable = x.status !== 'checked_out' && canMove, c = isLate(x) ? col.late : col[x.status];
+            const extra = [GRP[x.id] ? 'groupe ' + GRP[x.id] : '', x.status === 'pending' && x.source === 'en_ligne' ? 'demande en ligne' : '', ['pending', 'confirmed'].includes(x.status) && x.check_in < t ? 'arrivée dépassée' : '', x.status === 'checked_in' && Number(x.balance) > 0 ? 'reste ' + money(x.balance) : ''].filter(Boolean).join(' · ');
+            return `<button data-open="${x.id}" data-bar="${x.id}" title="${esc(x.guest_name)} · ${dfr(x.check_in)} → ${dfr(x.check_out)}${extra ? ' · ' + esc(extra) : ''}${movable ? ' · glissez pour déplacer' : ''}" class="pbar${movable ? ' pmove' : ''}" style="--bb:${c[0]};--bc:${c[1]};left:${RC + a * cell + cell / 2}px;width:${Math.max(cell / 2, (b - a) * cell - 4)}px;padding:0 ${movable ? 14 : 10}px">${movable && x.status !== 'checked_in' ? '<span class="pgrip pgl" data-grip="left" aria-hidden="true"></span>' : ''}${esc(x.guest_name)}${extra && PV !== 'month' ? `<span style="font-weight:500;opacity:.9"> · ${esc(extra)}</span>` : ''}${movable ? '<span class="pgrip" data-grip="right" aria-hidden="true"></span>' : ''}</button>`; }).join('')}
         </div>`; }).join('') || '<p class="muted" style="padding:16px">Aucune chambre.</p>'}
     </div></div>
-    <div class="row" style="margin-top:10px;font-size:12px">${Object.entries(col).map(([k, c]) => `<span><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:${c[0]};vertical-align:middle"></span> ${RSTATUS[k]}</span>`).join('')}<span class="muted" style="margin-left:8px">Aujourd’hui :</span>${Object.entries(LV_DOT).map(([k, c]) => `<span><span class="lv-dot" style="background:${c}"></span>${LIVE[k][0]}</span>`).join('')}<span class="muted">· Cliquez sur une case vide pour réserver. Glissez une réservation pour changer de chambre ou de dates, tirez son bord droit pour changer le départ.</span></div>`;
+    <p class="muted" style="margin-top:10px;font-size:13px">Cliquez sur une case vide pour réserver. Glissez une réservation pour changer de chambre ou de dates ; tirez son bord gauche ou droit pour changer l’arrivée ou le départ.</p>`;
   const shiftM = (k) => { const d = new Date(+start.slice(0, 4), +start.slice(5, 7) - 1 + k, 1); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-01'; };
   $('pPrev').onclick = () => { S._ps = step ? addDays(start, -step) : shiftM(-1); renderPlanning(); };
   $('pNext').onclick = () => { S._ps = step ? addDays(start, step) : shiftM(1); renderPlanning(); };
   el.querySelectorAll('[data-pv]').forEach(b => b.onclick = () => { S._pv = b.dataset.pv; S._ps = null; renderPlanning(); });
   $('pToday').onclick = () => { S._ps = null; renderPlanning(); };
-  el.querySelectorAll('[data-slot]').forEach(b => b.onclick = () => { const [room, d] = b.dataset.slot.split('|'); const rm = S.rooms.find(x => x.id === room); openResaForm({ room_id: room, check_in: d, check_out: addDays(d, 1), nightly_rate: rm ? rm.base_rate : '' }, renderPlanning); });
+  { const pt = $('pType'); if (pt) pt.onchange = () => { S._pt = pt.value; renderPlanning(); }; }
+  el.querySelectorAll('[data-slot]').forEach(b => b.onclick = () => { const [room, d] = b.dataset.slot.split('|'); openQuickResa({ room_id: room, check_in: d }, renderPlanning); });
   bindResaActions(el, renderPlanning);
-  if (canMove) planningDrag(el, RES, start, cell);
+  if (canMove) planningDrag(el, RES, start, cell, RC);
+  if (!S._plRz) { S._plRz = true; let tm; window.addEventListener('resize', () => { clearTimeout(tm); tm = setTimeout(() => { if (S.view === 'planning') renderPlanning(); }, 300); }); }
 }
 /* Glisser-déposer dans le planning : déplacer (chambre et dates) ou tirer le bord droit (date de départ). Souris et écran tactile. */
 function planningDrag(el, RES, start, cell){

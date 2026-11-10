@@ -949,6 +949,9 @@ html[data-theme="foret"] :is(input,select,textarea):focus{outline:2px solid rgba
 html[data-theme="nuit"]{--green:#63B3E8;--green-d:#8CC8F0;--green-l:#14324A;--blue:#63B3E8;--gold:#F2A93B;--display:"Inter",system-ui,sans-serif;--body:"Inter",system-ui,sans-serif}
 html[data-theme="nuit"] body{font-family:"Inter",system-ui,sans-serif}
 html[data-theme="nuit"] nav.side button.active{box-shadow:inset 3px 0 0 #3F9ED8!important}
+html[data-theme="foret"] :is(section[id^="v-"],#modal,.dtop,#onboard,#auth) :is(button,.btn).primary:not(#_a):not(#_b):not(#_c){background:#1F7AB8!important;border-color:#1F7AB8!important;color:#fff!important}
+html[data-theme="foret"] :is(section[id^="v-"],#modal,.dtop,#onboard,#auth) :is(button,.btn).primary:not(#_a):not(#_b):not(#_c):hover{background:#17629A!important;border-color:#17629A!important}
+html[data-theme="foret"] #v-caisse .k-a2.k-p:not(#_a):not(#_b):not(#_c){background:#0F2A3D!important;border-color:#0F2A3D!important}
 </style>
 </head>
 <body>
@@ -1300,7 +1303,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.11.10-16';
+const APP_VERSION = '2026.11.10-17';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -2895,7 +2898,7 @@ async function drawCA(k){
     <div style="font-family:var(--display);font-weight:800;font-size:34px;letter-spacing:-.02em" id="caVal">…</div><div style="font-size:13px;opacity:.75" id="caSub">&nbsp;</div><div id="caDays"></div>`;
   $('caSel').onchange = (e) => drawCA(e.target.value);
   if (k === 'today' && can(['owner','admin','manager','receptionist','accountant'])) sb.from('cash_sessions').select('id').eq('establishment_id', S.est).eq('status', 'open').limit(1).maybeSingle().then(({ data: cs, error: ce }) => {
-    if (ce || cs || S._caP !== 'today' || !$('caSub')) return;
+    if (ce || cs || S._caP !== 'today' || !$('caSub') || $('caSub').parentElement.querySelector('.ca-open')) return;
     const w = document.createElement('div'); w.className = 'ca-open';
     w.innerHTML = `<span>La caisse est fermée.</span><button type="button" class="small" data-go="caisse">Ouvrir la caisse</button>`;
     $('caSub').after(w);

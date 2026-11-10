@@ -1328,7 +1328,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.11.10-31';
+const APP_VERSION = '2026.11.10-32';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -3650,53 +3650,88 @@ async function renderSalles(){
   [['vNew', () => openVenueForm({})], ['vNew2', () => openVenueForm({})], ['svNew', () => openServiceForm({})], ['evNew', () => openEventForm({})]].forEach(([id, fn]) => { const b = $(id); if (b) b.onclick = fn; });
 }
 
+const VTPL = {
+  reunion: { label: 'Salle de réunion (10 à 20 personnes)', kind: 'reunion', capacity: { classe: 12, u: 14, theatre: 20 }, area_m2: 40, setup_minutes: 30, amenities: ['ecran', 'wifi', 'clim', 'paperboard', 'tables'] },
+  conference: { label: 'Salle de conférence / séminaire (50 à 150 personnes)', kind: 'conference', capacity: { theatre: 150, classe: 80, u: 40, banquet: 100 }, area_m2: 150, setup_minutes: 60, amenities: ['projecteur', 'ecran', 'sono', 'micro', 'wifi', 'clim', 'tables', 'paperboard'] },
+  fete: { label: 'Salle de fête / réception (100 à 300 personnes)', kind: 'fete', capacity: { banquet: 200, cocktail: 300, theatre: 250 }, area_m2: 300, setup_minutes: 90, amenities: ['sono', 'scene', 'groupe', 'clim', 'tables'] },
+  jardin: { label: 'Jardin / terrasse', kind: 'jardin', capacity: { cocktail: 200, banquet: 120 }, area_m2: 400, setup_minutes: 60, amenities: ['sono', 'parking', 'tables'] },
+  vide: { label: 'Vide (je remplis moi-même)' } };
+const NUM_OPTS = { cap: [10, 20, 30, 50, 80, 100, 150, 200, 300, 500], area: [20, 40, 60, 100, 150, 200, 300, 500, 1000], rate: [10000, 25000, 50000, 75000, 100000, 150000, 200000, 300000, 500000], setup: [[0, 'Aucune'], [30, '30 min'], [60, '1 h'], [90, '1 h 30'], [120, '2 h'], [180, '3 h']], we: [0, 10, 20, 30, 50] };
+// Liste déroulante avec « Autre… » qui révèle un champ libre
+function dropNum(id, opts, val, fmt, emptyLabel){
+  const has = val == null || val === '' || opts.map(o => Array.isArray(o) ? o[0] : o).includes(Number(val));
+  return `<span class="dn"><select data-dn="${id}">${emptyLabel ? `<option value="">${emptyLabel}</option>` : ''}${opts.map(o => { const [v, l] = Array.isArray(o) ? o : [o, fmt(o)]; return `<option value="${v}" ${val != null && val !== '' && Number(val) === v ? 'selected' : ''}>${l}</option>`; }).join('')}<option value="autre" ${!has ? 'selected' : ''}>Autre…</option></select><input id="${id}" inputmode="numeric" value="${val ?? ''}" style="margin-top:6px;${has ? 'display:none' : ''}" placeholder="Saisir"></span>`;
+}
+function bindDropNum(root){ root.querySelectorAll('[data-dn]').forEach(sel => { const inp = root.querySelector('#' + sel.dataset.dn); sel.onchange = () => { if (sel.value === 'autre') { inp.style.display = ''; inp.value = ''; inp.focus(); } else { inp.style.display = 'none'; inp.value = sel.value; } }; }); }
+
 function openVenueForm(v){
-  const cap = v.capacity || {};
-  modal(`<h2 style="font-size:22px;margin-bottom:10px">${v.id ? 'Modifier la salle' : 'Nouvelle salle'}</h2>
-    <form id="vF" class="grid g2" style="gap:10px">
-      <label>Nom<input id="vN" required maxlength="80" value="${esc(v.name || '')}" placeholder="ex. Salle Ivoire"></label>
-      <label>Type<select id="vK">${Object.entries(VKIND).map(([k, l]) => `<option value="${k}" ${v.kind === k ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
-      <fieldset style="grid-column:1/-1;border:1px solid var(--line);border-radius:12px;padding:10px"><legend style="font-weight:700;padding:0 6px">Capacité selon la disposition (personnes)</legend>
-        <div class="grid" style="grid-template-columns:repeat(5,minmax(0,1fr));gap:8px">${Object.entries(LAYOUTS).map(([k, l]) => `<label style="font-size:13px">${l}<input type="number" min="0" data-cap="${k}" value="${cap[k] || ''}"></label>`).join('')}</div></fieldset>
-      <label>Surface (m²)<input id="vA" type="number" min="5" value="${v.area_m2 || ''}"></label>
-      <label>Mise en place et rangement (minutes avant/après)<input id="vSu" type="number" min="0" max="720" value="${v.setup_minutes ?? 60}"></label>
-      <label>Tarif à l’heure<input id="vR1" inputmode="numeric" value="${v.rate_hour ?? ''}"></label>
-      <label>Tarif demi-journée<input id="vR2" inputmode="numeric" value="${v.rate_half ?? ''}"></label>
-      <label>Tarif journée<input id="vR3" inputmode="numeric" value="${v.rate_day ?? ''}"></label>
-      <label>Tarif soirée / événement<input id="vR4" inputmode="numeric" value="${v.rate_evening ?? ''}"></label>
-      <label>Majoration week-end (%)<input id="vW" type="number" min="0" max="200" value="${v.weekend_pct || 0}"></label>
-      <div></div>
-      <fieldset style="grid-column:1/-1;border:1px solid var(--line);border-radius:12px;padding:10px"><legend style="font-weight:700;padding:0 6px">Équipements</legend>
-        <div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:6px">${Object.entries(VAMEN).map(([k, l]) => `<label class="row" style="gap:6px;flex-wrap:nowrap;font-weight:500"><input type="checkbox" data-am="${k}" ${(v.amenities || []).includes(k) ? 'checked' : ''} style="width:18px;min-height:18px"> ${l}</label>`).join('')}</div></fieldset>
-      <label style="grid-column:1/-1">Description<textarea id="vD" rows="3" maxlength="1500">${esc(v.description || '')}</textarea></label>
-      <div style="grid-column:1/-1"><div style="font-weight:700;margin-bottom:6px">Photos (10 maximum)</div><div id="vPh" class="row" style="gap:8px;flex-wrap:wrap"></div><input type="file" id="vPf" accept="image/jpeg,image/png,image/webp" multiple style="margin-top:8px"></div>
-      <label class="row" style="grid-column:1/-1;gap:8px;flex-wrap:nowrap;font-weight:600"><input type="checkbox" id="vPub" ${v.public_listed ? 'checked' : ''} style="width:20px;min-height:20px"> Proposer cette salle sur Nuittea.com (demandes de devis en ligne)</label>
-      <label class="row" style="grid-column:1/-1;gap:8px;flex-wrap:nowrap;font-weight:600"><input type="checkbox" id="vAct" ${v.is_active !== false ? 'checked' : ''} style="width:20px;min-height:20px"> Salle active</label>
-      <div class="row" style="grid-column:1/-1;justify-content:flex-end;gap:8px"><button type="button" class="ghost" data-close>Annuler</button><button class="primary">Enregistrer</button></div>
-    </form>`);
-  $('modalBody').style.maxWidth = '720px';
-  let photos = [...(v.photos || [])];
-  const drawPh = () => { $('vPh').innerHTML = photos.map((u, i) => `<div style="position:relative"><img src="${esc(u)}" alt="" style="width:96px;height:72px;object-fit:cover;border-radius:8px"><button type="button" data-rmph="${i}" aria-label="Retirer la photo" style="position:absolute;top:2px;right:2px;min-height:24px;padding:0 6px" class="small">✕</button></div>`).join('') || '<span class="muted" style="font-size:13px">Aucune photo.</span>'; $('vPh').querySelectorAll('[data-rmph]').forEach(b => b.onclick = () => { photos.splice(+b.dataset.rmph, 1); drawPh(); }); };
-  drawPh();
-  $('vPf').onchange = async () => { for (const f of [...$('vPf').files].slice(0, 10 - photos.length)) { try { photos.push(await uploadRoomPhoto(f, 'salle-' + (v.id || 'new'))); drawPh(); } catch (e) { toast(e.message || errMsg(e), true); } } $('vPf').value = ''; };
-  const num = (id) => { const x = String($(id).value).replace(/[^0-9]/g, ''); return x === '' ? null : Number(x); };
-  $('vF').onsubmit = async (e) => { e.preventDefault();
-    const capacity = {}; document.querySelectorAll('[data-cap]').forEach(i => { if (+i.value > 0) capacity[i.dataset.cap] = +i.value; });
-    const row = { establishment_id: S.est, name: $('vN').value.trim(), kind: $('vK').value, capacity, area_m2: num('vA'), setup_minutes: num('vSu') ?? 60,
-      rate_hour: num('vR1'), rate_half: num('vR2'), rate_day: num('vR3'), rate_evening: num('vR4'), weekend_pct: num('vW') || 0,
-      amenities: [...document.querySelectorAll('[data-am]:checked')].map(i => i.dataset.am), description: $('vD').value.trim() || null, photos, public_listed: $('vPub').checked, is_active: $('vAct').checked };
-    const { error } = v.id ? await sb.from('venues').update(row).eq('id', v.id) : await sb.from('venues').insert(row);
-    if (error) return toast(errMsg(error), true); closeModal(); toast('Salle enregistrée.'); renderSalles(); };
+  const isNew = !v.id; let st = { step: isNew ? 0 : 1, d: { kind: 'conference', capacity: {}, amenities: [], setup_minutes: 60, weekend_pct: 0, is_active: true, public_listed: false, photos: [], ...v } };
+  const hotel = ((S.ests || []).find(x => x.id === S.est) || {}).name || '';
+  const NAMES = [`Salle de conférence ${hotel}`, `Salle de réunion ${hotel}`, `Salle de fête ${hotel}`, `Grande salle de réception ${hotel}`, `Jardin ${hotel}`, `Terrasse ${hotel}`, 'Salle Ivoire', 'Salle Lagune', 'Salle Baobab', 'Salle Émeraude'].map(x => x.trim());
+  const collect = () => { const D = st.d, q = (id) => $(id), num = (id) => { const e = q(id); if (!e) return undefined; const x = String(e.value).replace(/[^0-9]/g, ''); return x === '' ? null : Number(x); };
+    if (q('vN')) D.name = q('vN').value.trim(); if (q('vK')) D.kind = q('vK').value;
+    if (q('vA')) D.area_m2 = num('vA'); if (q('vSu')) D.setup_minutes = num('vSu') ?? 0;
+    if (document.querySelector('[data-cap-in]')) { D.capacity = {}; document.querySelectorAll('[data-cap-in]').forEach(i => { const x = Number(String(i.value).replace(/[^0-9]/g, '')); if (x > 0) D.capacity[i.dataset.capIn] = x; }); }
+    [['vR1', 'rate_hour'], ['vR2', 'rate_half'], ['vR3', 'rate_day'], ['vR4', 'rate_evening']].forEach(([id, k]) => { const x = num(id); if (x !== undefined) D[k] = x; });
+    if (q('vW')) D.weekend_pct = num('vW') || 0;
+    if (document.querySelector('[data-am]')) D.amenities = [...document.querySelectorAll('[data-am]:checked')].map(i => i.dataset.am);
+    if (q('vD')) D.description = q('vD').value.trim() || null; if (q('vPub')) D.public_listed = q('vPub').checked; if (q('vAct')) D.is_active = q('vAct').checked; };
+  const STEPS = ['Modèle', 'Type et capacité', 'Tarifs', 'Équipements et photos'];
+  const draw = () => { const D = st.d;
+    let body = '';
+    if (st.step === 0) body = `<p class="muted" style="margin:0 0 10px">Choisissez un modèle : le formulaire est prérempli, vous ajustez ensuite.</p><div style="display:grid;gap:8px">${Object.entries(VTPL).map(([k, t]) => `<button type="button" class="ghost" data-tpl="${k}" style="text-align:left;min-height:52px">${t.label}${t.capacity ? `<br><small class="muted">${Object.entries(t.capacity).map(([l, n]) => LAYOUTS[l] + ' ' + n).join(' · ')}</small>` : ''}</button>`).join('')}</div>`;
+    if (st.step === 1) body = `<div class="grid g2" style="gap:10px">
+      <label style="grid-column:1/-1">Nom<input id="vN" list="vNl" required maxlength="80" value="${esc(D.name || '')}" placeholder="Choisissez ou saisissez"><datalist id="vNl">${NAMES.map(n => `<option value="${esc(n)}">`).join('')}</datalist></label>
+      <label>Type<select id="vK">${Object.entries(VKIND).map(([k, l]) => `<option value="${k}" ${D.kind === k ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
+      <label>Surface${dropNum('vA', NUM_OPTS.area, D.area_m2, n => n + ' m²', 'Non précisée')}</label>
+      <fieldset style="grid-column:1/-1;border:1px solid var(--line);border-radius:12px;padding:10px"><legend style="font-weight:700;padding:0 6px">Capacité selon la disposition</legend>
+        <div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px">${Object.entries(LAYOUTS).map(([k, l]) => `<label style="font-size:13px">${l}${dropNum('cap_' + k, NUM_OPTS.cap, D.capacity[k], n => n + ' pers.', 'Non adaptée').replace('id="cap_' + k + '"', 'id="cap_' + k + '" data-cap-in="' + k + '"')}</label>`).join('')}</div></fieldset>
+      <label style="grid-column:1/-1">Mise en place et rangement (avant et après chaque événement)<select id="vSu">${NUM_OPTS.setup.map(([n, l]) => `<option value="${n}" ${Number(D.setup_minutes) === n ? 'selected' : ''}>${l}</option>`).join('')}</select></label></div>`;
+    if (st.step === 2) body = `<p class="muted" style="margin:0 0 10px">Ne remplissez que les tarifs que vous pratiquez.</p><div class="grid g2" style="gap:10px">
+      ${[['vR1', 'rate_hour', 'À l’heure'], ['vR2', 'rate_half', 'Demi-journée'], ['vR3', 'rate_day', 'Journée'], ['vR4', 'rate_evening', 'Soirée / événement']].map(([id, k, l]) => `<label>${l}${dropNum(id, NUM_OPTS.rate, D[k], n => money(n), 'Non proposé')}</label>`).join('')}
+      <label>Majoration le week-end<select id="vW">${NUM_OPTS.we.map(n => `<option value="${n}" ${Number(D.weekend_pct) === n ? 'selected' : ''}>${n ? '+ ' + n + ' %' : 'Aucune'}</option>`).join('')}</select></label></div>`;
+    if (st.step === 3) body = `<fieldset style="border:1px solid var(--line);border-radius:12px;padding:10px"><legend style="font-weight:700;padding:0 6px">Équipements</legend>
+        <div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:6px">${Object.entries(VAMEN).map(([k, l]) => `<label class="row" style="gap:6px;flex-wrap:nowrap;font-weight:500"><input type="checkbox" data-am="${k}" ${(D.amenities || []).includes(k) ? 'checked' : ''} style="width:18px;min-height:18px"> ${l}</label>`).join('')}</div></fieldset>
+      <label style="display:block;margin-top:10px">Description<textarea id="vD" rows="3" maxlength="1500" placeholder="ex. Salle climatisée idéale pour séminaires, avec pause-café et déjeuner sur demande.">${esc(D.description || '')}</textarea></label>
+      <div style="margin-top:10px"><div style="font-weight:700;margin-bottom:6px">Photos (10 maximum)</div><div id="vPh" class="row" style="gap:8px;flex-wrap:wrap"></div><input type="file" id="vPf" accept="image/jpeg,image/png,image/webp" multiple style="margin-top:8px"></div>
+      <label class="row" style="gap:8px;flex-wrap:nowrap;font-weight:600;margin-top:10px"><input type="checkbox" id="vPub" ${D.public_listed ? 'checked' : ''} style="width:20px;min-height:20px"> Proposer cette salle sur Nuittea.com (demandes de devis en ligne)</label>
+      <label class="row" style="gap:8px;flex-wrap:nowrap;font-weight:600"><input type="checkbox" id="vAct" ${D.is_active !== false ? 'checked' : ''} style="width:20px;min-height:20px"> Salle active</label>
+      <div class="card" style="margin-top:10px;padding:10px;font-size:13px"><strong>Récapitulatif :</strong> ${esc(D.name || 'Sans nom')} · ${esc(VKIND[D.kind] || '')}${Object.keys(D.capacity || {}).length ? ' · ' + Object.entries(D.capacity).map(([l, n]) => LAYOUTS[l] + ' ' + n).join(', ') : ''}${[['rate_hour', '/h'], ['rate_half', '/demi-j.'], ['rate_day', '/jour'], ['rate_evening', '/soirée']].filter(([k]) => D[k]).map(([k, u]) => ' · ' + money(D[k]) + u).join('')}</div>`;
+    modal(`<h2 style="font-size:22px;margin-bottom:6px">${isNew ? 'Nouvelle salle' : 'Modifier la salle'}</h2>
+      <div class="row" style="gap:6px;margin-bottom:12px;flex-wrap:wrap">${STEPS.map((l, i) => (i === 0 && !isNew) ? '' : `<span class="pill" style="background:${i === st.step ? 'var(--ink)' : 'var(--line)'};color:${i === st.step ? 'var(--card)' : 'var(--ink)'}">${isNew ? i + 1 : i}. ${l}</span>`).join('')}</div>
+      <form id="vF">${body}<div class="row" style="justify-content:space-between;gap:8px;margin-top:14px"><button type="button" class="ghost" id="vPrev">${st.step > (isNew ? 0 : 1) ? '← Précédent' : 'Annuler'}</button>${st.step > 0 ? `<button class="primary">${st.step === 3 ? 'Enregistrer' : 'Suivant →'}</button>` : ''}</div></form>`);
+    $('modalBody').style.maxWidth = '720px';
+    bindDropNum($('vF'));
+    document.querySelectorAll('[data-tpl]').forEach(b => b.onclick = () => { const t = VTPL[b.dataset.tpl]; if (t.kind) Object.assign(st.d, { kind: t.kind, capacity: { ...t.capacity }, area_m2: t.area_m2, setup_minutes: t.setup_minutes, amenities: [...t.amenities] }); if (!st.d.name && t.kind) st.d.name = (t.kind === 'fete' ? 'Salle de fête ' : t.kind === 'jardin' ? 'Jardin ' : t.kind === 'reunion' ? 'Salle de réunion ' : 'Salle de conférence ') + hotel; st.step = 1; draw(); });
+    $('vPrev').onclick = () => { if (st.step > (isNew ? 0 : 1)) { collect(); st.step--; draw(); } else closeModal(); };
+    if ($('vPh')) { const drawPh = () => { $('vPh').innerHTML = (st.d.photos || []).map((u, i) => `<div style="position:relative"><img src="${esc(u)}" alt="" style="width:96px;height:72px;object-fit:cover;border-radius:8px"><button type="button" data-rmph="${i}" aria-label="Retirer la photo" style="position:absolute;top:2px;right:2px;min-height:24px;padding:0 6px" class="small">✕</button></div>`).join('') || '<span class="muted" style="font-size:13px">Aucune photo.</span>'; $('vPh').querySelectorAll('[data-rmph]').forEach(b => b.onclick = () => { st.d.photos.splice(+b.dataset.rmph, 1); drawPh(); }); };
+      drawPh(); $('vPf').onchange = async () => { st.d.photos = st.d.photos || []; for (const f of [...$('vPf').files].slice(0, 10 - st.d.photos.length)) { try { st.d.photos.push(await uploadRoomPhoto(f, 'salle-' + (v.id || 'new'))); drawPh(); } catch (e) { toast(e.message || errMsg(e), true); } } $('vPf').value = ''; }; }
+    $('vF').onsubmit = async (e) => { e.preventDefault(); collect();
+      if (st.step === 1 && (!st.d.name || st.d.name.length < 2)) return toast('Indiquez le nom de la salle.', true);
+      if (st.step < 3) { st.step++; return draw(); }
+      const D = st.d, row = { establishment_id: S.est, name: D.name, kind: D.kind, capacity: D.capacity || {}, area_m2: D.area_m2 ?? null, setup_minutes: D.setup_minutes ?? 60,
+        rate_hour: D.rate_hour ?? null, rate_half: D.rate_half ?? null, rate_day: D.rate_day ?? null, rate_evening: D.rate_evening ?? null, weekend_pct: D.weekend_pct || 0,
+        amenities: D.amenities || [], description: D.description || null, photos: D.photos || [], public_listed: !!D.public_listed, is_active: D.is_active !== false };
+      const { error } = v.id ? await sb.from('venues').update(row).eq('id', v.id) : await sb.from('venues').insert(row);
+      if (error) return toast(errMsg(error), true); closeModal(); toast('Salle enregistrée.'); renderSalles(); };
+  };
+  draw();
 }
 
+const SV_PRESETS = [['Pause-café', 'personne', 2500], ['Déjeuner', 'personne', 7500], ['Buffet', 'personne', 10000], ['Cocktail', 'personne', 6000], ['Dîner', 'personne', 10000], ['Boissons (forfait)', 'personne', 2000], ['Eau minérale', 'unite', 500], ['Sonorisation', 'forfait', 50000], ['DJ', 'forfait', 75000], ['Décoration', 'forfait', 100000], ['Sécurité', 'forfait', 30000], ['Nettoyage', 'forfait', 20000], ['Vidéoprojecteur', 'forfait', 15000], ['Groupe électrogène', 'heure', 10000]];
 function openServiceForm(x){
   modal(`<h2 style="font-size:22px;margin-bottom:10px">${x.id ? 'Modifier la prestation' : 'Nouvelle prestation'}</h2>
-    <form id="svF" class="grid g2" style="gap:10px"><label style="grid-column:1/-1">Nom<input id="svN" required maxlength="80" value="${esc(x.name || '')}" placeholder="ex. Pause-café"></label>
+    <form id="svF" class="grid g2" style="gap:10px">
+      ${x.id ? '' : `<label style="grid-column:1/-1">Prestation courante<select id="svT"><option value="">Choisir dans la liste…</option>${SV_PRESETS.map(([n, u, p], i) => `<option value="${i}">${n} · ${money(p)} ${SUNIT[u]}</option>`).join('')}<option value="libre">Autre (je saisis)</option></select></label>`}
+      <label style="grid-column:1/-1">Nom<input id="svN" required maxlength="80" value="${esc(x.name || '')}" placeholder="ex. Pause-café"></label>
       <label>Unité<select id="svU">${Object.entries(SUNIT).map(([k, l]) => `<option value="${k}" ${x.unit === k ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
-      <label>Prix<input id="svP" inputmode="numeric" required value="${x.price ?? ''}"></label>
+      <label>Prix${dropNum('svP', [500, 1000, 2000, 2500, 5000, 7500, 10000, 15000, 20000, 30000, 50000, 75000, 100000], x.price, n => money(n), '')}</label>
       <label class="row" style="grid-column:1/-1;gap:8px;flex-wrap:nowrap;font-weight:600"><input type="checkbox" id="svA" ${x.is_active !== false ? 'checked' : ''} style="width:20px;min-height:20px"> Prestation active</label>
       <div class="row" style="grid-column:1/-1;justify-content:flex-end;gap:8px"><button type="button" class="ghost" data-close>Annuler</button><button class="primary">Enregistrer</button></div></form>`);
-  $('svF').onsubmit = async (e) => { e.preventDefault(); const row = { establishment_id: S.est, name: $('svN').value.trim(), unit: $('svU').value, price: Number(String($('svP').value).replace(/[^0-9]/g, '')) || 0, is_active: $('svA').checked };
+  bindDropNum($('svF'));
+  if ($('svT')) $('svT').onchange = () => { const i = $('svT').value; if (i === '' || i === 'libre') { if (i === 'libre') $('svN').focus(); return; } const [n, u, p] = SV_PRESETS[+i]; $('svN').value = n; $('svU').value = u; const sel = document.querySelector('[data-dn="svP"]'); sel.value = String(p); $('svP').value = p; $('svP').style.display = 'none'; };
+  $('svF').onsubmit = async (e) => { e.preventDefault(); const price = Number(String($('svP').value).replace(/[^0-9]/g, '')); if (!price && price !== 0) return toast('Indiquez le prix.', true);
+    const row = { establishment_id: S.est, name: $('svN').value.trim(), unit: $('svU').value, price: price || 0, is_active: $('svA').checked };
     const { error } = x.id ? await sb.from('venue_services').update(row).eq('id', x.id) : await sb.from('venue_services').insert(row);
     if (error) return toast(errMsg(error), true); closeModal(); toast('Prestation enregistrée.'); renderSalles(); };
 }

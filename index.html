@@ -1328,7 +1328,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.11.10-30';
+const APP_VERSION = '2026.11.10-31';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -1820,7 +1820,6 @@ async function boot(){
     await sb.auth.signOut();
     return toast('Ce compte personnel est suspendu. Contactez votre responsable.', true);
   }
-  if (!S.member && S.isStaff) { location.replace('admin.html'); return; }
   if (!S.member) {
     $('onboardAdmin').classList.toggle('hidden', !S.isAdmin);
     // Administrateur plateforme sans hôtel : accès direct au tableau de bord, menus d'hôtel masqués.
@@ -1836,7 +1835,7 @@ async function boot(){
   await loadCommon();
   go(S.offlineBoot && !navigator.onLine && allowed('resto') ? 'resto' : S.view);
   platformExtras();
-  spaceChooser();
+  try { localStorage.removeItem('hh_space'); } catch (_) {}
   setTimeout(() => preloadViews(), 6000);
   if (S.member.must_change_password) forcePinChange();
 }

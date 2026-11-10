@@ -544,7 +544,6 @@ async function vSettings(){
   $('main').innerHTML = `<h1>Réglages et sécurité</h1>
     <div class="card"><h3>Ma validation en deux étapes</h3><p class="muted">Protège votre compte : en plus du mot de passe, un code à 6 chiffres de votre application d'authentification (Google Authenticator, Microsoft Authenticator…).</p>
       ${tot.length ? `<p><span class="pill g">Activée</span> ${D.me.aal === 'aal2' ? '' : '<span class="pill a">Session actuelle sans code</span>'}</p><button class="d" id="mfx">Désactiver sur mon compte</button>` : '<button class="p" id="mfe">Activer la validation en deux étapes</button>'}<div id="mfz"></div></div>
-    <div class="card"><h3>À la connexion</h3><label class="row" style="flex-wrap:nowrap;align-items:flex-start"><input type="checkbox" class="chk" id="spc" ${(() => { try { return localStorage.getItem('hh_space') === 'console'; } catch (_) { return false; } })() ? 'checked' : ''} style="margin-top:3px"><span><strong>Ouvrir directement la console sur cet appareil</strong><br><span class="muted sm">Sinon, Nuittea Manager vous demande à chaque connexion quel espace ouvrir (console ou votre hôtel).</span></span></label></div>
     ${st ? `<div class="card"><h3>Règles de la plateforme</h3>
       <label class="row" style="flex-wrap:nowrap;align-items:flex-start;margin-bottom:12px"><input type="checkbox" class="chk" id="rr" ${D.settings.review_required ? 'checked' : ''} style="margin-top:3px"><span><strong>Validation obligatoire des nouvelles fiches</strong><br><span class="muted sm">Une fiche publiée par un hôtel n'apparaît sur Nuittea.com qu'après validation par l'équipe. Les fiches déjà validées restent en ligne.</span></span></label>
       <label class="row" style="flex-wrap:nowrap;align-items:flex-start"><input type="checkbox" class="chk" id="mr" ${D.settings.mfa_required ? 'checked' : ''} style="margin-top:3px"><span><strong>Validation en deux étapes obligatoire pour l'équipe</strong><br><span class="muted sm">Sans code, un membre de l'équipe n'accède plus à la console. Activez-la d'abord sur votre compte et vérifiez que chaque membre l'a activée.</span></span></label></div>` : ''}
@@ -560,7 +559,6 @@ async function vSettings(){
       toast('Validation en deux étapes activée.'); await sb.auth.refreshSession(); reload(); };
   };
   if ($('mfx')) $('mfx').onclick = async () => { if (D.settings.mfa_required) return toast('Désactivez d\'abord l\'obligation pour l\'équipe.', true); for (const x of tot) await sb.auth.mfa.unenroll({ factorId: x.id }); toast('Validation en deux étapes désactivée.'); reload(); };
-  $('spc').onchange = () => { try { if ($('spc').checked) localStorage.setItem('hh_space', 'console'); else localStorage.removeItem('hh_space'); } catch (_) {} toast('Préférence enregistrée.'); };
   const savePrefs = async () => { if (await rpc('my_alert_prefs', { p_instant: $('ai').checked, p_weekly: $('aw').checked }, 'Préférences enregistrées.')) {} };
   $('ai').onchange = savePrefs; $('aw').onchange = savePrefs;
   $('atest').onclick = async () => { $('atest').disabled = true; const { data: { session } } = await sb.auth.getSession();

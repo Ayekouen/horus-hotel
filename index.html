@@ -1343,7 +1343,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.11.11-42';
+const APP_VERSION = '2026.11.11-43';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -2350,12 +2350,20 @@ function openThemes(){
     <div class="row" style="margin-top:14px"><button class="ghost" data-close>Fermer</button></div>`);
   document.querySelectorAll('[data-th]').forEach(b => b.onclick = () => { setTheme(b.dataset.th); openThemes(); });
 }
+/* Vocabulaire selon le type de l'établissement affiché (une organisation peut regrouper des types différents) */
+function applyUnitWord(){
+  const cur = (S.ests || []).find(x => x.id === S.est);
+  if (cur) S.ptype = cur.property_type;
+  S.unitWord = ['residence', 'appartement', 'particulier'].includes(S.ptype) ? 'Logements' : 'Chambres';
+  document.querySelectorAll('nav [data-view="chambres"], #mbar [data-view="chambres"]').forEach(b => { if (b.childElementCount === 0) b.textContent = S.unitWord; });
+}
+const ptLabel = (k) => { const t = (typeof PROP_TYPES !== 'undefined' ? PROP_TYPES : []).find(x => x[0] === k); return t ? t[1] : ''; };
 function renderEstSwitch(){
   const s = $('estSwitch'); if (!s) return;
   const list = S.ests || [];
   s.classList.toggle('hidden', list.length < 2);
   s.innerHTML = list.map(x => `<option value="${x.id}" ${x.id === S.est ? 'selected' : ''}>${esc(x.name)}${x.city ? ' · ' + esc(x.city) : ''}</option>`).join('');
-  s.onchange = () => { S.est = s.value; S.cart = []; try { localStorage.setItem('hh_est_' + S.org, S.est); } catch (_) {} TEAM = null; toast('Établissement : ' + (list.find(x => x.id === S.est) || {}).name); go(S.view); };
+  s.onchange = () => { S.est = s.value; S.cart = []; try { localStorage.setItem('hh_est_' + S.org, S.est); } catch (_) {} TEAM = null; applyUnitWord(); toast('Établissement : ' + (list.find(x => x.id === S.est) || {}).name); go(S.view); };
 }
 async function openEstablishments(){
   const nb = $('navMore'); if (nb) nb.open = false;
@@ -2363,17 +2371,17 @@ async function openEstablishments(){
   const u = (S.overview && S.overview.usage) || {}, max = u.max_properties;
   const canAdd = can(['owner','admin']) && (max == null || S.ests.length < max);
   modal(`<h2 style="font-size:24px;margin-bottom:4px">Mes établissements</h2><p class="muted" style="margin:0 0 14px">${plur(S.ests.length, 'établissement', 'établissements')}${max ? ' sur ' + max + ' inclus dans votre formule' : ' · illimité'}.</p>
-    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px">${S.ests.map(x => `<div class="row between" style="padding:10px 12px;border:1px solid var(--line);border-radius:12px;flex-wrap:nowrap"><span><strong>${esc(x.name)}</strong>${x.city ? ' <span class="muted">· ' + esc(x.city) + '</span>' : ''}</span>${x.id === S.est ? '<span class="pill st-active">Affiché</span>' : `<button class="small ghost" data-useest="${x.id}">Afficher</button>`}</div>`).join('')}</div>
-    ${canAdd ? `<form id="neF" style="border-top:1px solid var(--line);padding-top:12px"><div style="font-weight:700;margin-bottom:8px">Ajouter un établissement</div><div class="row"><div class="field" style="flex:2 1 200px"><label for="neN">Nom</label><input id="neN" required maxlength="120"></div><div class="field" style="flex:1 1 140px"><label for="neC">Ville</label><input id="neC" maxlength="80"></div></div><button class="primary">Ajouter</button></form>`
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px">${S.ests.map(x => `<div class="row between" style="padding:10px 12px;border:1px solid var(--line);border-radius:12px;flex-wrap:nowrap"><span><strong>${esc(x.name)}</strong>${x.city ? ' <span class="muted">· ' + esc(x.city) + '</span>' : ''}${ptLabel(x.property_type) ? '<br><span class="muted" style="font-size:13px">' + ptLabel(x.property_type) + '</span>' : ''}</span>${x.id === S.est ? '<span class="pill st-active">Affiché</span>' : `<button class="small ghost" data-useest="${x.id}">Afficher</button>`}</div>`).join('')}</div>
+    ${canAdd ? `<form id="neF" style="border-top:1px solid var(--line);padding-top:12px"><div style="font-weight:700;margin-bottom:8px">Ajouter un établissement</div><div class="row"><div class="field" style="flex:2 1 200px"><label for="neN">Nom</label><input id="neN" required maxlength="120"></div><div class="field" style="flex:1 1 140px"><label for="neC">Ville</label><input id="neC" maxlength="80"></div></div><div class="field"><label for="neT">Type d’établissement</label><select id="neT" required><option value="">— Choisir —</option>${PROP_TYPES.map(([k, l]) => `<option value="${k}">${l}</option>`).join('')}</select></div><button class="primary">Ajouter</button></form>`
       : can(['owner','admin']) ? `<div style="background:var(--green-l);border-radius:12px;padding:12px 14px;font-size:14px">Pour gérer plusieurs établissements, passez à la formule <strong>Pro</strong> (jusqu’à 10) ou <strong>Business</strong> (illimité). <a href="#" data-go="tarifs" id="neUp">Voir les formules</a></div>` : ''}
     <div class="row" style="margin-top:12px"><button class="ghost" data-close>Fermer</button></div>`);
-  document.querySelectorAll('[data-useest]').forEach(b => b.onclick = () => { S.est = b.dataset.useest; try { localStorage.setItem('hh_est_' + S.org, S.est); } catch (_) {} closeModal(); renderEstSwitch(); go(S.view); });
+  document.querySelectorAll('[data-useest]').forEach(b => b.onclick = () => { S.est = b.dataset.useest; try { localStorage.setItem('hh_est_' + S.org, S.est); } catch (_) {} closeModal(); renderEstSwitch(); applyUnitWord(); go(S.view); });
   const up = $('neUp'); if (up) up.addEventListener('click', () => closeModal());
   const f = $('neF'); if (f) f.onsubmit = async (e) => { e.preventDefault(); e.submitter.disabled = true;
-    const { data, error } = await sb.from('establishments').insert({ organization_id: S.org, name: $('neN').value.trim(), city: $('neC').value.trim() || null }).select('id').single();
+    const { data, error } = await sb.from('establishments').insert({ organization_id: S.org, name: $('neN').value.trim(), city: $('neC').value.trim() || null, property_type: $('neT').value }).select('id').single();
     if (error) { e.submitter.disabled = false; return toast(errMsg(error), true); }
     S.est = data.id; try { localStorage.setItem('hh_est_' + S.org, S.est); } catch (_) {}
-    closeModal(); await loadEst(); toast('Établissement ajouté. Ajoutez maintenant ses chambres.'); go('chambres'); };
+    closeModal(); await loadEst(); toast('Établissement ajouté. Ajoutez maintenant ses ' + S.unitWord.toLowerCase() + '.'); go('chambres'); };
 }
 function go(view){
   if (view === 'admin' && (S.isAdmin || S.isStaff)) { location.href = 'admin.html'; return; }
@@ -3141,12 +3149,12 @@ const can = (roles) => S.member && roles.includes(S.member.role);
 
 async function loadEst(){
   const [e, r] = await Promise.all([
-    sb.from('establishments').select('id,name,city,address,phone,slug,public_enabled,public_logo_url,public_phone,receipt_settings,locality_id,latitude').eq('organization_id', S.org).eq('is_active', true).order('created_at'),
+    sb.from('establishments').select('id,name,city,property_type,address,phone,slug,public_enabled,public_logo_url,public_phone,receipt_settings,locality_id,latitude').eq('organization_id', S.org).eq('is_active', true).order('created_at'),
     sb.from('rooms').select('id,number,room_type,base_rate,capacity,photos,housekeeping_status,is_active,establishment_id').eq('organization_id', S.org).eq('is_active', true).order('number')
   ]);
   if (e.error && isNetErr(e.error)) { const c = cacheGet('ests_' + S.org); if (c) { e.data = c.ests; r.data = c.rooms; } } else cacheSet('ests_' + S.org, { ests: e.data || [], rooms: r.data || [] });
   S.ests = e.data || []; if (!S.est) { try { S.est = localStorage.getItem('hh_est_' + S.org); } catch (_) {} } if (!S.est || !S.ests.find(x => x.id === S.est)) S.est = S.ests[0] && S.ests[0].id;
-  renderEstSwitch();
+  renderEstSwitch(); applyUnitWord();
   S.rooms = (r.data || []).filter(x => x.establishment_id === S.est).sort((a, b) => String(a.number).localeCompare(String(b.number), 'fr', { numeric: true }));
 }
 const head = (title, right='') => `<div class="row between" style="margin-bottom:20px"><h1 style="font-size:32px">${title}</h1><div class="row">${right}</div></div>`;
@@ -6498,8 +6506,7 @@ async function loadOrgPrefs(){
   S.currency = (data && data.display_currency) || 'XOF'; S.modules = data && data.enabled_modules ? data.enabled_modules : null;
   /* Vocabulaire selon le type d'établissement, et coordonnées manquantes des comptes existants */
   const { data: et } = await sb.from('establishments').select('id,property_type,public_phone,public_whatsapp').eq('organization_id', S.org).order('created_at').limit(1).maybeSingle();
-  S.ptype = et && et.property_type; S.unitWord = ['residence', 'appartement', 'particulier'].includes(S.ptype) ? 'Logements' : 'Chambres';
-  document.querySelectorAll('nav [data-view="chambres"], #mbar [data-view="chambres"]').forEach(b => { if (b.childElementCount === 0) b.textContent = S.unitWord; });
+  if (!S.ptype) S.ptype = et && et.property_type; applyUnitWord();
   if (et && (!et.public_phone || !et.public_whatsapp) && can(['owner', 'admin'])) { let seen = false; try { seen = sessionStorage.getItem('hh_contacts') === S.org; sessionStorage.setItem('hh_contacts', S.org); } catch (_) {} if (!seen) setTimeout(() => askContacts(et), 1500); }
 }
 function askContacts(et){

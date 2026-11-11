@@ -1,5 +1,5 @@
 // Horus Hotel : installation et ouverture hors connexion de l'interface (les données restent en ligne)
-const C = 'horus-v137';
+const C = 'horus-v138';
 const CDN = /^https:\/\/(cdn\.jsdelivr\.net|unpkg\.com|fonts\.(googleapis|gstatic)\.com)\//;
 self.addEventListener('install', e => { self.skipWaiting(); e.waitUntil(caches.open(C).then(c => c.addAll(['./', './manifest.webmanifest', './icon.svg']))); });
 self.addEventListener('activate', e => e.waitUntil(self.registration.getNotifications().then(l => l.forEach(n => { if (!(n.tag || '').match(/^(booking|payment|control|stock|cancel|daily|test)/)) n.close(); })).catch(() => {}).then(() => caches.keys()).then(k => Promise.all(k.filter(x => x !== C).map(x => caches.delete(x)))).then(() => self.clients.claim())));

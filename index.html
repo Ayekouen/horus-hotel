@@ -738,7 +738,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 
 /* ---- Direction B « Net et professionnel » (boutons, onglets, retours) ---- */
 :root{--b-r:10px;--b-ink:#111827;--b-line:#D0D5DD}
-:is(section[id^="v-"],#modal,.dtop,#onboard,#auth) :is(button,.btn):not(.gstep):not(.loc-sug button):not([role=tab]):not(.toggle button):not(.ghead):not(.leaflet-control *):not(.ck *):not(.lv-chip):not(.lv-tile):not(.xitem):not(.pcard):not(.ccard):not([data-part]):not([data-mode]):not(.pbar):not(.pl-slot){
+:is(section[id^="v-"],#modal,.dtop,#onboard,#auth) :is(button,.btn):not(.gstep):not(.loc-sug button):not([role=tab]):not(.toggle button):not(.ghead):not(.leaflet-control *):not(.ck *):not(.lv-chip):not(.lv-tile):not(.xitem):not(.pcard):not(.ccard):not([data-part]):not([data-mode]):not(.pbar):not(.pl-slot):not(.mtile){
   border-radius:var(--b-r)!important;font-weight:600!important;letter-spacing:0!important;transition:background-color .12s,border-color .12s,box-shadow .12s,transform .06s!important;
   background:#fff!important;color:var(--b-ink)!important;border:1px solid var(--b-line)!important;box-shadow:0 1px 2px rgba(16,24,40,.05)!important}
 :is(section[id^="v-"],#modal,.dtop,#onboard,#auth) :is(button,.btn):not(.gstep):not([role=tab]):not(.toggle button):hover{background:#F9FAFB!important;border-color:#98A2B3!important}
@@ -972,6 +972,12 @@ html[data-theme="foret"] body.navmini nav.side #navCollapse:not(#_a){width:40px!
 #dRefresh svg,#mRefresh svg{transition:transform .6s}#dRefresh.rf-spin svg,#mRefresh.rf-spin svg{animation:rfspin .8s linear infinite}@keyframes rfspin{to{transform:rotate(360deg)}}
 @media (max-width:1280px){#dRefresh .rf-l{display:none}}
 nav.side [data-view="salles"]{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='4' width='18' height='12' rx='2'/%3E%3Cpath d='M7 20h10M12 16v4'/%3E%3C/svg%3E")}
+.mtile-h{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:16px 0 8px}
+.mtile-g{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.mtile{aspect-ratio:1/1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:8px 6px;border-radius:16px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-size:12.5px;font-weight:600;line-height:1.2;text-align:center;cursor:pointer;min-height:0}
+.mtile:active{transform:scale(.97)}
+.mtile .mtile-i{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;background:var(--green-l,#e8f1f8);color:var(--green)}
+.mtile .mtile-l{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 </style>
 </head>
 <body>
@@ -1323,7 +1329,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.11.10-34';
+const APP_VERSION = '2026.11.11-35';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -2098,6 +2104,33 @@ function openTab(t){
   go(list.includes(last) ? last : list[0]);
 }
 function openMore(){
+  if (!S.org) return openMoreList();
+  /* Toutes les rubriques en carrés, regroupées comme le menu de l'ordinateur (seules celles autorisées apparaissent) */
+  const ICO = { assistant: "M12 3l1.8 4.6L18 9l-4.2 1.4L12 15l-1.8-4.6L6 9l4.2-1.4zM19 15l.9 2.1L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.9z", clock: "M12 7v5l3 2M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z", team: "M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21c0-4 3-6 7-6s7 2 7 6M17 3.5a4 4 0 0 1 0 7.5M22 21c0-3-1.5-5-4-5.7", card: "M2 6h20v12H2zM2 10h20", gear: "M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z", help: "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3M12 17h.01", dot: "M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z" };
+  const svg = (d) => `<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${d}"/></svg>`;
+  const ICS = []; const icoOf = (b) => { const v = getComputedStyle(b).getPropertyValue('--ic').trim(); if (!v || v === 'none') return svg(ICO.dot); ICS.push(v); return `<span aria-hidden="true" data-ic="${ICS.length - 1}" style="width:26px;height:26px;background:currentColor"></span>`; };
+  const acts = []; const tile = (label, ico, fn) => { acts.push(fn); return `<button type="button" class="mtile" data-mt="${acts.length - 1}"><span class="mtile-i">${ico}</span><span class="mtile-l">${esc(label)}</span></button>`; };
+  const label = (b) => b.textContent.replace(/\d+\s*$/, '').trim();
+  let html = '';
+  document.querySelectorAll('nav.side .ngroup').forEach(g => {
+    const items = [...g.querySelectorAll('button:not(.ghead)')].filter(b => !b.classList.contains('hidden') && !b.closest('.hidden'));
+    if (!items.length) return;
+    html += `<h3 class="mtile-h">${esc(g.querySelector('.ghead').textContent.trim())}</h3><div class="mtile-g">${items.map(b => tile(label(b), icoOf(b), () => b.click())).join('')}</div>`;
+  });
+  const extra = [tile('Assistant', svg(ICO.assistant), () => openAssistant())];
+  if (moduleOn('pointage')) extra.push(tile(CLOCK.state === 'in' ? 'Pointer mon départ' : 'Pointer mon arrivée', svg(ICO.clock), () => toggleClock()));
+  if (allowed('equipe') && can(['owner','admin','manager'])) extra.push(tile('Équipe', svg(ICO.team), () => go('equipe')));
+  if (can(['owner','admin'])) extra.push(tile('Mon abonnement', svg(ICO.card), () => go('abonnement')));
+  extra.push(tile('Réglages', svg(ICO.gear), () => openSettings()));
+  if ($('navHelp')) extra.push(tile('Assistance', svg(ICO.help), () => $('navHelp').click()));
+  html += `<h3 class="mtile-h">Raccourcis</h3><div class="mtile-g">${extra.join('')}</div>`;
+  modal(`<h2 style="font-size:22px;margin-bottom:2px">Toutes les rubriques</h2>${html}
+    <button type="button" class="ghost" id="moreAcc" style="width:100%;margin-top:16px;justify-content:flex-start;gap:10px">${accAvatar(30)}<span style="text-align:left"><strong style="display:block">${esc(accName())}</strong><span class="muted" style="font-size:12px">Mon compte · mot de passe, langue, thème, déconnexion</span></span></button>`);
+  document.querySelectorAll('#modal [data-ic]').forEach(e => { const v = ICS[+e.dataset.ic]; e.style.setProperty('-webkit-mask', v + ' center/contain no-repeat'); e.style.setProperty('mask', v + ' center/contain no-repeat'); });
+  $('moreAcc').onclick = () => { closeModal(); openAccount(); };
+  document.querySelectorAll('[data-mt]').forEach(x => x.onclick = () => { closeModal(); acts[+x.dataset.mt](); });
+}
+function openMoreList(){
   const pilot = S.org ? groupViews('pilot').map(v => [VIEW_LABEL[v], () => go(v)]) : [];
   if (!S.org && S.isAdmin) [['formules', 'Formules'], ['naya', 'Nuittea.com'], ['lieux', 'Lieux']].forEach(([k, l]) => pilot.push([l, () => { S._admTab = k; go('admin'); }]));
   if (S.org) pilot.unshift(['Assistant', () => openAssistant()]);

@@ -1343,7 +1343,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.11.11-39';
+const APP_VERSION = '2026.11.11-40';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -5816,12 +5816,22 @@ async function printZ(s){
   const d = await closureData(s); const est = S.ests.find(x => x.id === s.establishment_id) || {};
   const gap = Number(s.counted_balance || 0) - d.expected;
   const html = () => { const w = openDocWin(); if (!w) return toast("Autorisez l'ouverture de fenêtres pour imprimer.", true);
-    w.document.write(`<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Ticket Z</title><style>body{font:13px/1.45 ui-monospace,Menlo,monospace;max-width:300px;margin:12px auto;padding:0 8px}h1{text-align:center;font-size:18px;margin:0}table{width:100%;border-collapse:collapse}td{padding:2px 0}.r{text-align:right}.t td{border-top:1px dashed #000;font-weight:700}${printCss('ticket')}</style></head><body>
-      <h1>${esc(est.name || '')}</h1><p style="text-align:center">TICKET Z · CLÔTURE<br>${new Date(s.closed_at || Date.now()).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })}<br>par ${esc(who(s.closed_by))}</p>
-      <table><tr><td colspan="2"><b>Encaissements</b></td></tr>${d.byM.map(([k, v]) => `<tr><td>${PMETHOD[k]}</td><td class="r">${money(v)}</td></tr>`).join('')}<tr class="t"><td>Total</td><td class="r">${money(d.totalIn)}</td></tr></table>
-      <table><tr><td colspan="2"><b>Espèces</b></td></tr><tr><td>Fond de caisse</td><td class="r">${money(s.opening_balance)}</td></tr><tr><td>Dépenses</td><td class="r">−${money(d.sum(d.cash, ['expense']))}</td></tr><tr><td>Remboursements</td><td class="r">−${money(d.sum(d.cash, ['refund']))}</td></tr><tr><td>Versements</td><td class="r">−${money(d.sum(d.cash, ['deposit']))}</td></tr>
-      <tr class="t"><td>Attendu</td><td class="r">${money(d.expected)}</td></tr><tr><td>Compté</td><td class="r">${money(s.counted_balance)}</td></tr><tr><td><b>Écart</b></td><td class="r"><b>${gap === 0 ? '0' : (gap < 0 ? '−' : '+') + money(Math.abs(gap))}</b></td></tr></table>
-      ${s.gap_reason ? `<p>Motif : ${esc(s.gap_reason)}</p>` : ''}<p>${plur(d.rows.length, 'opération', 'opérations')}</p><p style="margin-top:30px">Signature : ______________</p><script>window.onload=()=>window.print()<\/script></body></html>`); w.document.close(); };
+    const row = (k, v, b) => `<div class="tk-row"><span>${k}</span>${b ? `<b>${v}</b>` : `<span class="v">${v}</span>`}</div>`;
+    const cd = new Date(s.closed_at || Date.now()), od = new Date(s.opened_at);
+    w.document.write(`<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Ticket Z</title><style>body{font:13px/1.45 "Inter",system-ui,sans-serif;color:#000;max-width:300px;margin:12px auto;padding:0 8px}h1{text-align:center;font-size:17px;margin:0}.m{color:#444;font-size:11px}${printCss('ticket')}</style></head><body>
+      ${rcptHead(est)}
+      <div class="tk-band">Ticket Z · Clôture de caisse</div>
+      <div class="tk-meta"><div><span>Ouverture</span><b>${od.toLocaleDateString('fr-FR')} ${od.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</b></div><div><span>Clôture</span><b>${cd.toLocaleDateString('fr-FR')} ${cd.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</b></div><div><span>Ouverte par</span><b>${esc(who(s.opened_by))}</b></div><div><span>Clôturée par</span><b>${esc(who(s.closed_by))}</b></div></div>
+      <div class="tk-sec">Encaissements par moyen</div>
+      ${d.byM.map(([k, v]) => row(PMETHOD[k], money(v))).join('') || row('Aucun encaissement', '—')}
+      <div class="tk-total"><span>Total encaissé</span><b>${money(d.totalIn)}</b></div>
+      <div class="tk-sec">Espèces en caisse</div>
+      ${row('Fond de caisse', money(s.opening_balance))}${row('+ Entrées en espèces', money(d.sum(d.cash, ['payment', 'income'])))}${row('− Dépenses', money(d.sum(d.cash, ['expense'])))}${row('− Remboursements', money(d.sum(d.cash, ['refund'])))}${row('− Versements', money(d.sum(d.cash, ['deposit'])))}${d.sum(d.cash, ['transfer_out']) ? row('− Transferts vers une autre caisse', money(d.sum(d.cash, ['transfer_out']))) : ''}
+      ${row('Attendu', money(d.expected), true)}${row('Compté', money(s.counted_balance), true)}
+      <div class="tk-gap"><span>Écart</span><span>${gap === 0 ? '0 · juste' : (gap < 0 ? '−' : '+') + money(Math.abs(gap))}</span></div>
+      ${s.gap_reason ? `<p class="m">Motif de l’écart : ${esc(s.gap_reason)}</p>` : ''}
+      <p class="m" style="text-align:center;margin-top:8px">${plur(d.rows.length, 'opération', 'opérations')} · Édité le ${new Date().toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })}</p>
+      <div class="tk-sign"><div>Caissier</div><div>Responsable</div></div><script>window.onload=()=>window.print()<\/script></body></html>`); w.document.close(); };
   printDocument('caisse', (width) => { const e = new Esc(width).align('center').bold(true).size(1, 2).line(est.name || 'Nuittea Manager').size(1, 1).line('TICKET Z - CLOTURE').bold(false)
       .line(new Date(s.closed_at || Date.now()).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })).line('par ' + who(s.closed_by)).align('left').rule().bold(true).line('ENCAISSEMENTS').bold(false);
     d.byM.forEach(([k, v]) => e.pair(PMETHOD[k], moneyTxt(v))); e.rule().bold(true).pair('TOTAL', moneyTxt(d.totalIn)).bold(false).rule().bold(true).line('ESPECES').bold(false)
@@ -5841,17 +5851,18 @@ async function printClosure(s){
   const est = S.ests.find(x => x.id === s.establishment_id) || {};
   const det = s.counted_detail || {};
   const byM = Object.keys(PMETHOD).map(k => [k, sum(rows.filter(m => m.method === k), ['payment','income'])]).filter(x => x[1] > 0);
-  w.document.write(`<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Clôture de caisse</title><style>body{font:13px/1.5 system-ui,sans-serif;color:#1C2B26;max-width:760px;margin:30px auto;padding:0 20px}h1{color:#1F7AB8;font-size:22px;margin:0}h2{font-size:15px;margin:20px 0 6px}table{width:100%;border-collapse:collapse}td,th{padding:6px 8px;border-bottom:1px solid #ddd;text-align:left}.r{text-align:right}.sig{display:flex;gap:40px;margin-top:40px}.sig div{flex:1;border-top:1px solid #1C2B26;padding-top:6px}${printCss('ticket')}</style></head><body>
+  w.document.write(`<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Clôture de caisse</title><style>body{max-width:780px;margin:30px auto;padding:0 20px}${['80', '58'].includes(getFmt('ticket')) ? printCss('ticket') : printCss('doc')}</style></head><body>
     ${['80', '58'].includes(getFmt('ticket')) ? `<h1>Clôture de caisse — ${esc(est.name || '')}</h1>` : docHead(est, 'Clôture de caisse', '', s.closed_at ? new Date(s.closed_at).toLocaleDateString('fr-FR', { dateStyle: 'long' }) : '')}
     <p>Ouverte le ${new Date(s.opened_at).toLocaleString('fr-FR')} par ${esc(who(s.opened_by))}<br>Clôturée le ${s.closed_at ? new Date(s.closed_at).toLocaleString('fr-FR') : '—'} par ${esc(who(s.closed_by))}</p>
     <h2>Espèces</h2><table><tr><td>Fond de caisse</td><td class="r">${money(s.opening_balance)}</td></tr><tr><td>Entrées en espèces</td><td class="r">${money(sum(cash, ['payment','income']))}</td></tr>
     <tr><td>Dépenses en espèces</td><td class="r">−${money(sum(cash, ['expense']))}</td></tr><tr><td>Remboursements</td><td class="r">−${money(sum(cash, ['refund']))}</td></tr><tr><td>Versements banque</td><td class="r">−${money(sum(cash, ['deposit']))}</td></tr>
     <tr class="tot"><td>Attendu</td><td class="r">${money(expected)}</td></tr><tr><td><strong>Compté</strong></td><td class="r"><strong>${money(s.counted_balance)}</strong></td></tr>
-    <tr><td><strong>Écart</strong></td><td class="r"><strong>${money(Number(s.counted_balance || 0) - expected)}</strong></td></tr>${s.gap_reason ? `<tr><td colspan="2">Motif : ${esc(s.gap_reason)}</td></tr>` : ''}</table>
+    </table>${(() => { const g = Number(s.counted_balance || 0) - expected; return `<div class="gap ${g === 0 ? 'ok' : 'ko'}"><span>Écart de caisse</span><span>${g === 0 ? 'Aucun · caisse juste' : (g < 0 ? '−' : '+') + money(Math.abs(g))}</span></div>`; })()}${s.gap_reason ? `<p class="m">Motif de l’écart : ${esc(s.gap_reason)}</p>` : ''}
     ${s.counted_detail && s.counted_detail.mode === 'billets' && (s.counted_detail.detail || []).length ? `<h2>Comptage par billets et pièces</h2><table>${s.counted_detail.detail.map(d => `<tr><td>${d.t === 'p' ? 'Pièce' : 'Billet'} ${money(d.v)} × ${d.n}</td><td class="r">${money(d.v * d.n)}</td></tr>`).join('')}</table>` : Object.keys(det).filter(k => DENOMS.includes(+k) || k === 'pieces').length ? `<h2>Comptage</h2><table>${DENOMS.map(d => `<tr><td>${money(d)} × ${det[d] || 0}</td><td class="r">${money(d * (det[d] || 0))}</td></tr>`).join('')}<tr><td>Pièces</td><td class="r">${money(det.pieces || 0)}</td></tr></table>` : ''}
     <h2>Encaissements par moyen</h2><table>${byM.map(([k, v]) => `<tr><td>${PMETHOD[k]}</td><td class="r">${money(v)}</td></tr>`).join('') || '<tr><td>Aucun</td><td></td></tr>'}</table>
     <h2>Détail des opérations</h2><table><tr><th>Heure</th><th>Opération</th><th>Moyen</th><th>Par</th><th class="r">Montant</th></tr>${rows.map(m => `<tr><td>${hm(m.created_at)}</td><td>${KIND[m.kind]} · ${esc(m.label)}</td><td>${PMETHOD[m.method]}</td><td>${esc(who(m.created_by))}</td><td class="r">${OUT_KINDS.includes(m.kind) ? '−' : ''}${money(m.amount)}</td></tr>`).join('')}</table>
     <div class="sig"><div>Caissier</div><div>Propriétaire / gérant</div></div>
+    ${docFoot('Document interne — clôture de caisse')}
     <script>window.onload=()=>window.print()<\/script></body></html>`);
   w.document.close();
 }
@@ -6214,8 +6225,8 @@ function printReport(r){
     ${docHead(est, 'Rapport d’activité', '', 'Du ' + fr(r.from) + '<br>au ' + fr(r.to))}
     <div class="kpis">${kpi('Chiffre d’affaires', money(r.room_revenue))}${kpi('Occupation', String(r.occupancy_pct).replace('.', ',') + ' %')}${kpi('Prix moyen / nuit', money(r.adr))}${kpi('Encaissé', money(r.cash_in))}</div>
     <h2>Indicateurs détaillés</h2><table>${row('Nuits vendues / disponibles', r.sold_nights + ' / ' + r.available_nights)}${row('Revenu par chambre disponible (RevPAR)', money(r.revpar))}${row('Dépenses', money(r.expenses))}${row('Remboursements', money(r.refunds))}${row('Impayés', money(r.unpaid_total))}</table>
-    <h2>Encaissements par moyen de paiement</h2><table>${Object.entries(r.by_method).map(([m, v]) => row(PMETHOD[m] || esc(m), money(v))).join('') || row('Aucun encaissement', '')}</table>
-    <h2>Par chambre</h2><table><thead><tr><th>Chambre</th><th class="r">Nuits</th><th class="r">Chiffre d’affaires</th></tr></thead><tbody>${r.by_room.map(x => `<tr><td>${esc(x.room)}</td><td class="r">${x.nights}</td><td class="r">${money(x.revenue)}</td></tr>`).join('')}</tbody></table>
+    <h2>Encaissements par moyen de paiement</h2><table><thead><tr><th>Moyen</th><th>Part</th><th class="r">Montant</th></tr></thead><tbody>${(() => { const e = Object.entries(r.by_method), t = e.reduce((a, [, v]) => a + Number(v), 0) || 1; return e.sort((x, y) => y[1] - x[1]).map(([m, v]) => `<tr><td>${PMETHOD[m] || esc(m)}</td><td style="width:40%"><div class="bar"><i style="width:${Math.round(v * 100 / t)}%"></i></div></td><td class="r">${money(v)} <span class="m">(${Math.round(v * 100 / t)} %)</span></td></tr>`).join('') || '<tr><td colspan="3" class="m">Aucun encaissement</td></tr>'; })()}</tbody></table>
+    <h2>Par chambre</h2><table><thead><tr><th>Chambre</th><th class="r">Nuits</th><th>Part du chiffre</th><th class="r">Chiffre d’affaires</th></tr></thead><tbody>${(() => { const mx = Math.max(1, ...r.by_room.map(x => Number(x.revenue))); return r.by_room.map(x => `<tr><td>${esc(x.room)}</td><td class="r">${x.nights}</td><td style="width:30%"><div class="bar"><i style="width:${Math.round(x.revenue * 100 / mx)}%"></i></div></td><td class="r">${money(x.revenue)}</td></tr>`).join(''); })()}</tbody></table>
     <h2>Impayés</h2><table><thead><tr><th>Client</th><th>Séjour</th><th class="r">Reste</th></tr></thead><tbody>${r.unpaid.map(u => `<tr><td>${esc(u.guest_name)}</td><td>Ch. ${esc(u.room_number)} · ${dfr(u.check_in)} → ${dfr(u.check_out)}</td><td class="r">${money(u.balance)}</td></tr>`).join('') || '<tr><td colspan="3" class="m">Aucun impayé sur la période.</td></tr>'}</tbody></table>
     ${docFoot('Document interne — confidentiel')}<script>window.onload=()=>window.print()<\/script></body></html>`);
   w.document.close();
@@ -6638,29 +6649,41 @@ function printCss(kind){
 }
 /* Charte des documents imprimés : sobre, lisible, aux couleurs Forêt (vert sapin + cuivre). */
 const DOC_SHEET = `*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-body{font:13px/1.55 "Inter","Segoe UI",system-ui,-apple-system,sans-serif!important;color:#1C2B26!important;font-variant-numeric:tabular-nums}
-h1{font-size:22px!important;line-height:1.2;color:#1F7AB8!important;margin:0!important;letter-spacing:-.01em}
-h2{font-size:11px!important;text-transform:uppercase;letter-spacing:.08em;color:#1F7AB8!important;margin:22px 0 8px!important;padding-bottom:5px;border-bottom:1px solid #D5E0DB}
-p{margin:6px 0}.m,.muted{color:#5E6E68!important;font-size:11.5px}
-table{width:100%;border-collapse:collapse;margin:6px 0 4px!important}
-th{background:#EEF4F1;color:#2E4A40;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:7px 9px!important;border-bottom:1px solid #C9D8D1!important;text-align:left}
-td{padding:7px 9px!important;border-bottom:1px solid #E6ECE9!important;vertical-align:top}
-tbody tr:nth-child(even) td,table tr:nth-child(even) td{background:#FAFCFB}
+body{font:12.5px/1.55 "Inter","Segoe UI",system-ui,-apple-system,sans-serif!important;color:#13212C!important;font-variant-numeric:tabular-nums}
+h1{font-size:21px!important;line-height:1.2;color:#0B1F33!important;margin:0!important;letter-spacing:-.01em;font-weight:800}
+h2{display:flex;align-items:center;gap:8px;font-size:10.5px!important;text-transform:uppercase;letter-spacing:.14em;color:#0B1F33!important;margin:24px 0 8px!important;font-weight:800}
+h2::before{content:"";width:4px;height:14px;border-radius:2px;background:#1F7AB8}
+p{margin:6px 0}.m,.muted{color:#5C6A7A!important;font-size:11px}
+table{width:100%;border-collapse:collapse;margin:4px 0!important;border:1px solid #E1E6EC;border-radius:8px;overflow:hidden}
+th{background:#0B1F33;color:#fff;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;padding:8px 10px!important;text-align:left;border:0!important}
+td{padding:7px 10px!important;border-bottom:1px solid #EEF1F4!important;vertical-align:top}
+tbody tr:nth-child(even) td,table tr:nth-child(even) td{background:#F7F9FB}
 .r{text-align:right!important;white-space:nowrap}
-tr.tot td,tr.tot th{border-top:2px solid #1F7AB8!important;border-bottom:none!important;background:#fff!important;font-weight:800;font-size:14px;color:#1F7AB8}
-tr.sub td,tr.sub th{background:#fff!important;border-bottom:none!important;color:#3B4D46}
-.dh{display:flex;justify-content:space-between;align-items:flex-start;gap:24px;padding-bottom:14px;margin-bottom:18px;border-bottom:3px solid #1F7AB8}
-.dh .brand{display:flex;gap:12px;align-items:center}.dh img{max-height:54px;max-width:120px;object-fit:contain}
-.dh .meta{text-align:right}.dh .kind{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.12em;color:#3F9ED8;text-transform:uppercase}
-.dh .num{font-size:18px;font-weight:800;color:#1C2B26;margin:2px 0}
-.cols{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:4px 0 8px}
-.box{border:1px solid #DCE5E1;border-radius:8px;padding:10px 12px}.box .lbl{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:#5E6E68;margin-bottom:3px}
-.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:8px 0}
-.kpi{border:1px solid #DCE5E1;border-radius:8px;padding:9px 11px}.kpi b{display:block;font-size:16px;color:#1C2B26;margin-top:2px}.kpi span{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#5E6E68}
-.pill{display:inline-block;padding:2px 9px;border-radius:99px;font-size:10.5px;font-weight:700}.pill.ok{background:#E3F1EA;color:#1F7AB8}.pill.due{background:#FBEDE3;color:#9A4E1C}
-.sig{display:flex;gap:40px;margin-top:44px}.sig div{flex:1;border-top:1px solid #1C2B26;padding-top:6px;font-size:11px;color:#5E6E68}
-.df{margin-top:28px;padding-top:10px;border-top:1px solid #DCE5E1;font-size:10.5px;color:#7A8A84;display:flex;justify-content:space-between;gap:12px}`;
+tr.tot td,tr.tot th{border-top:2px solid #0B1F33!important;border-bottom:none!important;background:#EEF4FA!important;font-weight:800;font-size:13.5px;color:#0B1F33}
+tr.sub td,tr.sub th{background:#fff!important;border-bottom:none!important;color:#3B4D5C}
+.dh{display:flex;justify-content:space-between;align-items:stretch;gap:24px;margin:0 0 20px;border-radius:10px;overflow:hidden;border:1px solid #E1E6EC}
+.dh .brand{display:flex;gap:12px;align-items:center;padding:14px 16px}.dh img{max-height:50px;max-width:110px;object-fit:contain}
+.dh .meta{text-align:right;background:#0B1F33;color:#fff;padding:14px 18px;min-width:210px;display:flex;flex-direction:column;justify-content:center}
+.dh .kind{display:inline-block;font-size:9.5px;font-weight:800;letter-spacing:.16em;color:#8EC5EA;text-transform:uppercase}
+.dh .num{font-size:17px;font-weight:800;color:#fff;margin:3px 0}.dh .meta .m{color:#C9D6E2!important}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:4px 0 8px}
+.box{border:1px solid #E1E6EC;border-radius:8px;padding:10px 12px}.box .lbl{font-size:9.5px;text-transform:uppercase;letter-spacing:.1em;color:#5C6A7A;margin-bottom:3px;font-weight:700}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:6px 0 4px}
+.kpi{border:1px solid #E1E6EC;border-top:3px solid #1F7AB8;border-radius:8px;padding:10px 12px}.kpi b{display:block;font-size:17px;color:#0B1F33;margin-top:3px;letter-spacing:-.01em}.kpi span{font-size:9.5px;text-transform:uppercase;letter-spacing:.08em;color:#5C6A7A;font-weight:700}
+.bar{height:7px;border-radius:4px;background:#E6EEF6;overflow:hidden;min-width:80px}.bar i{display:block;height:100%;background:#1F7AB8;border-radius:4px}
+.pill{display:inline-block;padding:2px 9px;border-radius:99px;font-size:10px;font-weight:700}.pill.ok{background:#E3F1EA;color:#1A7F4B}.pill.due{background:#FBEDE3;color:#9A4E1C}
+.gap{display:flex;justify-content:space-between;align-items:center;margin:10px 0;padding:10px 14px;border-radius:8px;font-weight:800;font-size:14px}.gap.ok{background:#E8F6EE;color:#1A7F4B}.gap.ko{background:#FDECEC;color:#B42318}
+.sig{display:flex;gap:40px;margin-top:40px}.sig div{flex:1;border-top:1px solid #13212C;padding-top:6px;font-size:10.5px;color:#5C6A7A}
+.df{margin-top:26px;padding-top:10px;border-top:1px solid #E1E6EC;font-size:10px;color:#7A8896;display:flex;justify-content:space-between;gap:12px}`;
 const DOC_TICKET = `body{font-family:"Inter","Segoe UI",system-ui,sans-serif;font-variant-numeric:tabular-nums}
+.tk-band{margin:8px 0;padding:5px 0;border-top:2px solid #000;border-bottom:2px solid #000;text-align:center;font-weight:800;letter-spacing:.16em;text-transform:uppercase;font-size:.98em}
+.tk-meta{display:grid;grid-template-columns:1fr 1fr;gap:2px 10px;margin:0 0 8px;font-size:.88em}.tk-meta span{color:#444}.tk-meta b{display:block;color:#000}
+.tk-sec{margin:10px 0 3px;font-size:.78em;font-weight:800;text-transform:uppercase;letter-spacing:.12em}
+.tk-row{display:flex;justify-content:space-between;gap:8px;padding:3px 0;border-bottom:1px dotted #000}.tk-row b,.tk-row .v{white-space:nowrap;font-weight:600}
+.tk-item{padding:4px 0;border-bottom:1px dotted #000}.tk-item .l{display:flex;justify-content:space-between;gap:8px}.tk-item .q{color:#444;font-size:.85em}
+.tk-total{display:flex;justify-content:space-between;align-items:baseline;margin:8px 0 6px;padding:7px 9px;border:2px solid #000;border-radius:6px;font-weight:800}.tk-total span{text-transform:uppercase;letter-spacing:.08em;font-size:.88em}.tk-total b{font-size:1.3em}
+.tk-gap{margin:6px 0;padding:6px 9px;border:1.5px dashed #000;border-radius:6px;display:flex;justify-content:space-between;font-weight:800}
+.tk-sign{margin-top:22px;display:grid;grid-template-columns:1fr 1fr;gap:14px;font-size:.8em;color:#444}.tk-sign div{border-top:1px solid #000;padding-top:4px;text-align:center}
 h1{letter-spacing:-.01em;margin:0}.m{font-size:.85em}
 table td{border-bottom:1px dashed #000!important}
 tr.tot td{border-top:1.5px solid #000!important;border-bottom:none!important;font-weight:800;font-size:1.2em;padding-top:5px!important}
@@ -7418,11 +7441,17 @@ const PAY_NAME = { cash: 'Espèces', orange_money: 'Orange Money', mtn_money: 'M
 function printPosTicket(s, items){
   const w = openDocWin(); if (!w) return toast("Autorisez l'ouverture de fenêtres pour imprimer.", true);
   const est = (S.ests || []).find(x => x.id === S.est) || {};
-  w.document.write(`<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Ticket ${s.number}</title><style>body{font:13px/1.45 ui-monospace,Menlo,monospace;color:#111;max-width:300px;margin:16px auto;padding:0 10px}h1{font-size:16px;margin:0;text-align:center}.c{text-align:center}table{width:100%;border-collapse:collapse;margin:10px 0}td{padding:3px 0;vertical-align:top}.r{text-align:right}.t td{border-top:1px dashed #000;font-weight:700;font-size:15px;padding-top:6px}.m{color:#555;font-size:11px}${printCss('ticket')}</style></head><body>
+  const when = new Date(s.created_at), qty = items.reduce((a, i) => a + Number(i.qty), 0);
+  w.document.write(`<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Ticket ${s.number}</title><style>body{font:13px/1.45 "Inter",system-ui,sans-serif;color:#000;max-width:300px;margin:16px auto;padding:0 10px}h1{font-size:16px;margin:0;text-align:center}.m{color:#444;font-size:11px}${printCss('ticket')}</style></head><body>
     ${rcptHead(est)}
-    <p class="c">${esc(OUTLETS[s.outlet] ? OUTLETS[s.outlet][0] : '')} · Ticket n° ${s.number}<br>${new Date(s.created_at).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })}${s.table ? '<br>' + esc(s.table) : ''}</p>
-    <table>${items.map(i => `<tr><td>${+i.qty} × ${esc(i.name)}</td><td class="r">${money(i.qty * i.unit_price)}</td></tr>`).join('')}<tr class="t"><td>TOTAL</td><td class="r">${money(s.total)}</td></tr></table>
-    ${s.method ? `<p class="m">Payé par ${esc(PAY_NAME[s.method] || s.method)}${rcpt(est).show_server !== false && s.server ? ' · Servi par ' + esc(s.server) : ''}</p>` : (s.server ? `<p class="m">Serveur : ${esc(s.server)}</p>` : '')}${rcptFoot(est, 'Merci de votre visite !')}${S.overview && S.overview.plan && S.overview.plan.slug === 'decouverte' ? '<p class="c m">Propulsé par Nuittea Manager</p>' : ''}
+    <div class="tk-band">Ticket de caisse</div>
+    <div class="tk-meta"><div><span>N°</span><b>${s.number}</b></div><div><span>${esc(OUTLETS[s.outlet] ? OUTLETS[s.outlet][0] : 'Point de vente')}</span><b>${s.table ? esc(s.table) : '—'}</b></div><div><span>Date</span><b>${when.toLocaleDateString('fr-FR')}</b></div><div><span>Heure</span><b>${when.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</b></div></div>
+    ${items.map(i => `<div class="tk-item"><div class="l"><span>${esc(i.name)}</span><b>${money(i.qty * i.unit_price)}</b></div><div class="q">${+i.qty} × ${money(i.unit_price)}</div></div>`).join('')}
+    <div class="tk-row" style="border:0;margin-top:4px"><span>${plur(qty, 'article', 'articles')}</span><span></span></div>
+    <div class="tk-total"><span>Total</span><b>${money(s.total)}</b></div>
+    ${s.method ? `<div class="tk-row"><span>Payé par</span><b>${esc(PAY_NAME[s.method] || s.method)}</b></div>` : '<div class="tk-row"><span>Statut</span><b>À régler</b></div>'}
+    ${rcpt(est).show_server !== false && s.server ? `<div class="tk-row"><span>Servi par</span><b>${esc(s.server)}</b></div>` : ''}
+    <div style="margin-top:10px;padding-top:6px;border-top:1px dashed #000">${rcptFoot(est, 'Merci de votre visite !')}</div>${S.overview && S.overview.plan && S.overview.plan.slug === 'decouverte' ? '<p class="m" style="text-align:center">Propulsé par Nuittea Manager</p>' : ''}
     <script>window.onload=()=>{window.print();}<\/script></body></html>`);
   w.document.close();
 }

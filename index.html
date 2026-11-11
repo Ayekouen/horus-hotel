@@ -1344,7 +1344,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.11.11-44';
+const APP_VERSION = '2026.11.11-45';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -2311,11 +2311,11 @@ const ROLE_VIEWS = {
   manager: ['dashboard','reservations','planning','naya','salles','passes','clients','chambres','produits','inventaire','pointage','caisse','resto','depenses','factures','rapports','mapage'],
   receptionist: ['dashboard','reservations','planning','naya','salles','passes','clients','chambres','inventaire','caisse','resto','factures'],
   accountant: ['dashboard','reservations','salles','produits','pointage','caisse','resto','depenses','factures','rapports'],
-  housekeeping: ['chambres','inventaire'],
+  housekeeping: ['chambres','inventaire','reservations','planning'],
   staff: ['resto','dashboard','planning']
 };
 const RECEP = () => can(['owner','admin','manager','receptionist']);
-const ROLE_LABEL = { owner:'Propriétaire', admin:'Administrateur', manager:'Gérant', receptionist:'Réceptionniste', housekeeping:'Ménage', accountant:'Comptable', staff:'Serveur / Barman' };
+let ROLE_LABEL = { owner:'Propriétaire', admin:'Administrateur', manager:'Gérant', receptionist:'Réceptionniste', housekeeping:'Ménage', accountant:'Comptable', staff:'Serveur / Barman' };
 const memberViews = (m) => { const base = ROLE_VIEWS[m.role]; if (!base) return null; const o = (m.access_overrides && m.access_overrides.pages) || {}; return base.filter(v => !(o.remove || []).includes(v)).concat((o.add || []).filter(v => !base.includes(v))); };
 const memberCan = (a) => { const m = S.member; if (!m) return false; if (['owner','admin'].includes(m.role)) return true; const o = m.access_overrides && m.access_overrides.actions; if (o && a in o) return !!o[a]; return a === 'discount' ? ['manager','receptionist'].includes(m.role) : a === 'cancel_payment' ? m.role === 'manager' : false; };
 const allowed = (v) => v === 'admin' ? S.isAdmin : (moduleOn(v) && (!S.member || !memberViews(S.member) || memberViews(S.member).includes(v)));
@@ -2355,14 +2355,51 @@ function openThemes(){
     <div class="row" style="margin-top:14px"><button class="ghost" data-close>Fermer</button></div>`);
   document.querySelectorAll('[data-th]').forEach(b => b.onclick = () => { setTheme(b.dataset.th); openThemes(); });
 }
+/* Profils par type d'établissement : vocabulaire, fonctions masquées par défaut et fonctions propres */
+const TYPE_PROFILES = {
+  hotel:        { log: false, hide: [], stay: false, keys: false, simple: false, guard: false },
+  maison_hotes: { log: false, hide: ['passes', 'pointage', 'salles'], stay: false, keys: true, simple: false, guard: false },
+  residence:    { log: true, hide: ['passes', 'resto', 'salles'], stay: true, keys: true, simple: false, guard: false },
+  appartement:  { log: true, hide: ['passes', 'resto', 'salles', 'pointage', 'inventaire'], stay: true, keys: true, simple: true, guard: false },
+  particulier:  { log: true, hide: ['passes', 'resto', 'salles', 'pointage', 'inventaire', 'controle'], stay: true, keys: true, simple: true, guard: true }
+};
+const TP = () => TYPE_PROFILES[S.ptype] || TYPE_PROFILES.hotel;
+/* Vocabulaire « logement » appliqué à l'affichage pour les résidences, appartements et particuliers */
+const VOC_RX = [[/\bChambres\b/g, 'Logements'], [/\bchambres\b/g, 'logements'], [/\bChambre\b/g, 'Logement'], [/\bchambre\b/g, 'logement'], [/\bune logement\b/g, 'un logement'], [/\bUne logement\b/g, 'Un logement'], [/\bcette logement\b/g, 'ce logement'], [/\bla logement\b/g, 'le logement'], [/\bLa logement\b/g, 'Le logement']];
+function vocText(t){ let o = t; for (const [re, to] of VOC_RX) o = o.replace(re, to); return o; }
+function vocNode(root){
+  if (!TP().log || !root || LANG === 'en') return;
+  if (root.nodeType === 3) { const v = vocText(root.nodeValue); if (v !== root.nodeValue) root.nodeValue = v; return; }
+  const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: (n) => n.parentElement && (/^(SCRIPT|STYLE|TEXTAREA)$/.test(n.parentElement.tagName) || n.parentElement.isContentEditable) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT });
+  const L = []; while (w.nextNode()) L.push(w.currentNode);
+  L.forEach(n => { const v = vocText(n.nodeValue); if (v !== n.nodeValue) n.nodeValue = v; });
+  (root.querySelectorAll ? root.querySelectorAll('[placeholder],[aria-label]') : []).forEach(el => ['placeholder', 'aria-label'].forEach(a => { const v = el.getAttribute(a); if (v) { const x = vocText(v); if (x !== v) el.setAttribute(a, x); } }));
+}
+let VOC_OBS = null;
+function applyVocab(){
+  if (!TP().log) return;
+  vocNode(document.body);
+  if (!VOC_OBS) { VOC_OBS = new MutationObserver(ms => { if (!TP().log) return; ms.forEach(m => m.addedNodes.forEach(n => { if (n.nodeType === 1 || n.nodeType === 3) vocNode(n); })); }); VOC_OBS.observe(document.body, { childList: true, subtree: true }); }
+}
 /* Vocabulaire selon le type de l'établissement affiché (une organisation peut regrouper des types différents) */
 function applyUnitWord(){
   const cur = (S.ests || []).find(x => x.id === S.est);
   if (cur) S.ptype = cur.property_type;
-  S.unitWord = ['residence', 'appartement', 'particulier'].includes(S.ptype) ? 'Logements' : 'Chambres';
+  const wasLog = S._wasLog; S.unitWord = TP().log ? 'Logements' : 'Chambres';
   document.querySelectorAll('nav [data-view="chambres"], #mbar [data-view="chambres"]').forEach(b => { if (b.childElementCount === 0) b.textContent = S.unitWord; });
+  S._wasLog = TP().log; applyVocab();
+  ROLE_LABEL.housekeeping = TP().guard ? 'Gardien' : 'Ménage';
+  if (wasLog && !TP().log && S.view) setTimeout(() => location.reload(), 50); /* retour au vocabulaire « chambre » */
+  if (typeof applyRoleNav === 'function' && S.member) applyRoleNav();
 }
 const ptLabel = (k) => { const t = (typeof PROP_TYPES !== 'undefined' ? PROP_TYPES : []).find(x => x[0] === k); return t ? t[1] : ''; };
+/* Prix par nuit selon la durée : au mois dès 28 nuits, à la semaine dès 7 nuits */
+function longStayRate(rm, n){
+  if (!rm) return { rate: 0, note: null };
+  if (n >= 28 && Number(rm.monthly_rate) > 0) return { rate: Math.round(Number(rm.monthly_rate) / 30), note: 'Tarif au mois appliqué (' + money(rm.monthly_rate) + ' / mois)' };
+  if (n >= 7 && Number(rm.weekly_rate) > 0) return { rate: Math.round(Number(rm.weekly_rate) / 7), note: 'Tarif à la semaine appliqué (' + money(rm.weekly_rate) + ' / semaine)' };
+  return { rate: rm.base_rate || 0, note: null };
+}
 function renderEstSwitch(){
   const s = $('estSwitch'); if (!s) return;
   const list = S.ests || [];
@@ -2745,6 +2782,7 @@ async function openRoomForm(room, refresh, types, copy){
         <p class="muted" id="rPrev" style="font-size:13px;margin:-6px 0 12px"></p></div>
       <div class="row"><div class="field" style="flex:2 1 180px"><label for="rType">Type de chambre</label><input id="rType" list="rTypes" autocomplete="off" value="${esc(r.room_type || '')}" placeholder="Choisir ou saisir un type"><datalist id="rTypes">${types.map(t => `<option value="${esc(t)}"></option>`).join('')}</datalist></div>
         <div class="field" style="flex:1 1 130px"><label for="rRate">Prix par nuit (F)</label><input id="rRate" type="number" min="0" required value="${r.base_rate ?? ''}"></div></div>
+        ${TP().stay ? `<div class="row"><div class="field" style="flex:1 1 130px"><label for="rWeek">Prix à la semaine (F)</label><input id="rWeek" type="number" min="0" value="${r.weekly_rate ?? ''}" placeholder="facultatif"></div><div class="field" style="flex:1 1 130px"><label for="rMonth">Prix au mois (F)</label><input id="rMonth" type="number" min="0" value="${r.monthly_rate ?? ''}" placeholder="facultatif"></div></div><p class="muted" style="font-size:12.5px;margin:-6px 0 10px">Appliqués automatiquement dès 7 nuits (semaine) et dès 28 nuits (mois).</p>` : ''}
       <div class="row"><div class="field" style="flex:1 1 100px"><label for="rCap">Personnes max</label><input id="rCap" type="number" min="1" max="20" value="${r.capacity ?? 2}"></div>
         <div class="field" style="flex:1 1 150px"><label for="rBed">Literie</label><select id="rBed" data-value="${esc(r.bed_type || '')}"><option value="">—</option>${opt(BEDS, r.bed_type)}</select></div>
         <div class="field" style="flex:1 1 90px"><label for="rSize">Surface (m²)</label><input id="rSize" type="number" min="1" max="1000" value="${r.size_m2 ?? ''}"></div></div>
@@ -2786,6 +2824,7 @@ async function openRoomForm(room, refresh, types, copy){
     const base = { establishment_id: S.est, room_type: $('rType').value.trim() || null, base_rate: $('rRate').value === '' ? null : +$('rRate').value,
       capacity: +$('rCap').value || null, bed_type: $('rBed').value || null, size_m2: $('rSize').value ? +$('rSize').value : null,
       amenities: [...document.querySelectorAll('#rmF .amen:checked')].map(c => c.value), description: $('rDesc').value.trim() || null, photos };
+    if ($('rWeek')) { base.weekly_rate = $('rWeek').value === '' ? null : +$('rWeek').value; base.monthly_rate = $('rMonth').value === '' ? null : +$('rMonth').value; }
     let rows;
     if (room) rows = null;
     else if (mode === 'many') {
@@ -3155,7 +3194,7 @@ const can = (roles) => S.member && roles.includes(S.member.role);
 async function loadEst(){
   const [e, r] = await Promise.all([
     sb.from('establishments').select('id,name,city,property_type,address,phone,slug,public_enabled,public_logo_url,public_phone,receipt_settings,locality_id,latitude').eq('organization_id', S.org).eq('is_active', true).order('created_at'),
-    sb.from('rooms').select('id,number,room_type,base_rate,capacity,photos,housekeeping_status,is_active,establishment_id').eq('organization_id', S.org).eq('is_active', true).order('number')
+    sb.from('rooms').select('id,number,room_type,base_rate,weekly_rate,monthly_rate,capacity,photos,housekeeping_status,is_active,establishment_id').eq('organization_id', S.org).eq('is_active', true).order('number')
   ]);
   if (e.error && isNetErr(e.error)) { const c = cacheGet('ests_' + S.org); if (c) { e.data = c.ests; r.data = c.rooms; } } else cacheSet('ests_' + S.org, { ests: e.data || [], rooms: r.data || [] });
   S.ests = e.data || []; if (!S.est) { try { S.est = localStorage.getItem('hh_est_' + S.org); } catch (_) {} } if (!S.est || !S.ests.find(x => x.id === S.est)) S.est = S.ests[0] && S.ests[0].id;
@@ -4207,7 +4246,7 @@ async function openResaForm(pre, refresh){
   const X = Object.fromEntries((extra || []).map(x => [x.id, x]));
   const G = guests || [];
   const st = { step: pre.id ? 2 : 1, ci: pre.check_in || today(), co: pre.check_out || addDays(pre.check_in || today(), 1), adults: pre.adults || (pre.id ? 1 : 2), room: pre.room_id || null, type: 'all', busy: new Set(),
-    gid: pre.guest_id || '', name: pre.guest_name || '', phone: pre.guest_phone || '', rate: pre.nightly_rate ?? null, disc: pre.discount || 0, src: pre.walkin ? 'walk_in' : (pre.source || 'direct'), notes: pre.notes || '', dep: 0, depM: 'cash', depR: '' };
+    gid: pre.guest_id || '', name: pre.guest_name || '', phone: pre.guest_phone || '', rate: pre.nightly_rate ?? null, cau: pre.security_deposit ?? null, disc: pre.discount || 0, src: pre.walkin ? 'walk_in' : (pre.source || 'direct'), notes: pre.notes || '', dep: 0, depM: 'cash', depR: '' };
   if (pre.walkin) st.ci = today();
   const nights = () => Math.max(0, Math.round((new Date(st.co) - new Date(st.ci)) / 864e5));
   const roomOf = (id) => S.rooms.find(r => r.id === id);
@@ -4248,6 +4287,7 @@ async function openResaForm(pre, refresh){
           <div class="field" style="flex:1 1 130px"><label for="wSr">Origine</label><select id="wSr">${srcOpts(st.src)}</select></div></div>
         <div id="wDW" class="hidden" style="margin:-6px 0 12px;font-size:13px;color:#6B4A00;background:#FFF4E5;border-radius:10px;padding:8px 10px">Remise supérieure à ${discPct} % : le propriétaire sera prévenu.</div>
         <div class="field"><label for="wNo">Notes</label><input id="wNo" value="${esc(st.notes)}" placeholder="Heure d’arrivée, demande particulière…"></div>
+        ${TP().stay ? `<div class="field"><label for="wCau">Caution demandée (F)</label><input id="wCau" type="number" min="0" value="${st.cau || ''}" placeholder="0 : pas de caution"><p class="muted" style="font-size:12.5px;margin:4px 0 0">Rendue au départ après l’état des lieux ; elle ne compte pas dans le chiffre d’affaires.</p></div>` : ''}
         ${pre.id ? '' : `<div style="border-top:1px solid var(--line);padding-top:12px"><div style="font-weight:700;margin-bottom:8px">Acompte reçu maintenant (facultatif)</div>
         <div class="row"><div class="field" style="flex:1 1 110px"><label for="wDp">Montant (F)</label><input id="wDp" type="number" min="0" value="${st.dep || ''}" placeholder="0"></div><div class="field" style="flex:1 1 130px"><label for="wDm">Moyen</label><select id="wDm">${opt(PMETHOD, st.depM)}</select></div></div></div>`}`; }
     $('wz').innerHTML = `<div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,300px)" class="wzgrid">
@@ -4299,7 +4339,7 @@ async function openResaForm(pre, refresh){
     }
   };
   const save = () => { if (st.step !== 3) return; const v = (id) => $(id) ? $(id).value : undefined;
-    st.phone = v('wPh') ?? st.phone; if ($('wNm')) st.name = v('wNm'); st.rate = +v('wRt') || 0; st.disc = +v('wDs') || 0; st.src = v('wSr'); st.notes = v('wNo');
+    st.phone = v('wPh') ?? st.phone; if ($('wNm')) st.name = v('wNm'); if ($('wCau')) st.cau = +v('wCau') || 0; st.rate = +v('wRt') || 0; st.disc = +v('wDs') || 0; st.src = v('wSr'); st.notes = v('wNo');
     if ($('wDp')) { st.dep = +v('wDp') || 0; st.depM = v('wDm'); } };
   const next = async () => {
     if (st.step === 1) { if (nights() < 1) return toast('La date de départ doit suivre la date d’arrivée.', true); await loadBusy(); if (st.room && st.busy.has(st.room)) st.room = null; st.step = 2; return draw(); }
@@ -4310,8 +4350,8 @@ async function openResaForm(pre, refresh){
           if (data && data.adjusted) { st.rate = Number(data.rate); st.disc = Number(data.rounding) || 0;
             const used = {}; (data.detail || []).forEach(x => { const k = x.rule || 'Tarif normal'; used[k] = (used[k] || 0) + 1; });
             st.rateNote = 'Tarif automatique appliqué : ' + Object.entries(used).map(([k, n]) => `${k} (${n} nuit${n > 1 ? 's' : ''})`).join(', ') + ' · total ' + money(data.total); }
-          else st.rate = roomOf(st.room).base_rate || 0;
-        } catch (_) { if (st.rate == null) st.rate = roomOf(st.room).base_rate || 0; } }
+          else { const L = longStayRate(roomOf(st.room), nights()); st.rate = L.rate; if (L.note) st.rateNote = L.note; }
+        } catch (_) { if (st.rate == null) st.rate = longStayRate(roomOf(st.room), nights()).rate; } }
       if (st.rate == null) st.rate = roomOf(st.room).base_rate || 0; st.step = 3; return draw(); }
     save();
     const btn = $('wNext'); btn.disabled = true;
@@ -4321,6 +4361,7 @@ async function openResaForm(pre, refresh){
         const g = await sb.from('guests').insert({ organization_id: S.org, full_name: nm, phone: (st.phone || '').trim() || null }).select('id').single(); if (g.error) throw g.error; gid = g.data.id; }
       if (st.dep > total()) throw new Error('L’acompte dépasse le total du séjour.');
       const row = { establishment_id: S.est, room_id: st.room, guest_id: gid, guest_name: '-', check_in: st.ci, check_out: st.co, nightly_rate: +st.rate || 0, discount: +st.disc || 0, adults: +st.adults || 1, source: st.src, notes: (st.notes || '').trim() || null };
+      if (st.cau != null && TP().stay) row.security_deposit = +st.cau || 0;
       const res = pre.id ? await sb.from('reservations').update(row).eq('id', pre.id).select('id').single() : await sb.from('reservations').insert({ ...row, status: 'confirmed', created_by: S.session.user.id }).select('id').single();
       if (res.error) throw (res.error.message || '').includes('no_double_booking') ? new Error('Cette chambre vient d’être réservée sur ces dates : choisissez-en une autre.') : res.error;
       const id = res.data.id; let depErr = null;
@@ -4447,7 +4488,68 @@ async function openGroup(gid, refresh){
     } catch (e) { if (w) w.close(); toast(errMsg(e), true); } };
 }
 
-async function openResa(id, refresh, focusCheckout){
+async function openResa(id, refresh, focusCheckout){ await openResaCore(id, refresh, focusCheckout); if (TP().stay || TP().keys) resaExtras(id, refresh); }
+const CAU_ST = { none: 'Aucune', held: 'Encaissée', returned: 'Rendue', partial: 'Rendue en partie', kept: 'Retenue' };
+async function resaExtras(id, refresh){
+  const body = $('modalBody'); if (!body) return;
+  const [{ data: r }, { data: e }, mr] = await Promise.all([
+    sb.from('reservations').select('id,room_id,guest_name,guest_phone,guest_id,check_in,check_out,status,security_deposit,security_deposit_status,security_deposit_returned,security_deposit_note,guests(full_name,phone)').eq('id', id).maybeSingle(),
+    sb.from('establishments').select('name,public_address,address,landmark,checkin_time,checkout_time,checkin_instructions,public_whatsapp,public_phone').eq('id', S.est).maybeSingle(),
+    TP().stay ? sb.from('meter_readings').select('id,kind,moment,value,unit_price,created_at').eq('reservation_id', id).order('created_at') : Promise.resolve({ data: [] })]);
+  if (!r || !$('modalBody') || $('rxBox')) return;
+  const mgr = can(['owner','admin','manager','receptionist']), M = mr.data || [];
+  const box = document.createElement('div'); box.id = 'rxBox'; box.style.cssText = 'border-top:1px solid var(--line);margin-top:14px;padding-top:12px;display:grid;gap:12px';
+  let h = '';
+  if (TP().stay) {
+    const dep = Number(r.security_deposit) || 0, st = r.security_deposit_status || 'none';
+    h += `<div><div class="row between" style="flex-wrap:nowrap"><strong>Caution</strong><span class="pill">${dep ? money(dep) + ' · ' + CAU_ST[st] : 'Aucune'}</span></div>
+      ${st === 'partial' || st === 'kept' ? `<div class="muted" style="font-size:13px;margin-top:4px">Rendu : ${money(r.security_deposit_returned)}${r.security_deposit_note ? ' · ' + esc(r.security_deposit_note) : ''}</div>` : ''}
+      ${mgr ? `<div class="row" style="margin-top:8px;gap:8px">${st === 'none' ? `<button type="button" class="small" id="cauHold">${dep ? 'Caution encaissée' : 'Demander une caution'}</button>` : ''}${st === 'held' ? `<button type="button" class="small" id="cauBack">Rendre la caution</button>` : ''}</div>` : ''}</div>`;
+    const pair = (k) => { const a = M.filter(x => x.kind === k), i = a.find(x => x.moment === 'checkin'), o = [...a].reverse().find(x => x.moment === 'checkout'); return { i, o, use: i && o ? Math.max(0, o.value - i.value) : null, pu: (o && o.unit_price) || (i && i.unit_price) || null }; };
+    const W = pair('water'), E2 = pair('electricity');
+    const line = (lab, u, P) => `<div class="row between" style="font-size:14px;border-bottom:1px solid var(--line);padding:6px 0;flex-wrap:nowrap"><span>${lab}</span><span>${P.i ? P.i.value : '—'} → ${P.o ? P.o.value : '—'}${P.use != null ? ` · <strong>${P.use} ${u}</strong>${P.pu ? ' = ' + money(P.use * P.pu) : ''}` : ''}</span></div>`;
+    h += `<div><strong>Relevés des compteurs</strong><div style="margin-top:6px">${line('Eau', 'm³', W)}${line('Électricité', 'kWh', E2)}</div>
+      <div class="row" style="margin-top:8px;gap:8px"><button type="button" class="small ghost" data-mr="checkin">Relevé d’arrivée</button><button type="button" class="small ghost" data-mr="checkout">Relevé de départ</button></div></div>`;
+  }
+  if (TP().keys && ['pending', 'confirmed', 'checked_in'].includes(r.status)) h += `<div><button type="button" class="ghost" id="keyWa" style="width:100%;gap:8px"><svg width="18" height="18" viewBox="0 0 24 24" fill="#25D366" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2z"/></svg>Infos d’arrivée par WhatsApp</button></div>`;
+  if (!h) return;
+  box.innerHTML = h;
+  const last = body.querySelector(':scope > .row:last-of-type'); if (last) body.insertBefore(box, last); else body.appendChild(box);
+  const reopen = () => { closeModal(); openResa(id, refresh); };
+  const ch = $('cauHold'); if (ch) ch.onclick = async () => {
+    const a = Number(prompt('Montant de la caution encaissée (F)', r.security_deposit || '') || 0); if (!(a > 0)) return;
+    const { error } = await sb.from('reservations').update({ security_deposit: a, security_deposit_status: 'held' }).eq('id', id);
+    if (error) return toast(errMsg(error), true); toast('Caution de ' + money(a) + ' enregistrée.'); reopen(); };
+  const cb = $('cauBack'); if (cb) cb.onclick = () => {
+    const dep = Number(r.security_deposit) || 0;
+    modal(`<h2 style="font-size:22px;margin-bottom:6px">Rendre la caution</h2><p class="muted" style="margin:0 0 12px">Caution encaissée : ${money(dep)}</p>
+      <div class="field"><label for="cbA">Montant rendu (F)</label><input id="cbA" type="number" min="0" max="${dep}" value="${dep}"></div>
+      <div class="field"><label for="cbN">Motif d’une retenue (facultatif)</label><input id="cbN" maxlength="300" placeholder="Casse, ménage, consommation d’eau ou d’électricité…"></div>
+      <div class="row between"><button type="button" data-close>Annuler</button><button type="button" class="primary" id="cbOk">Valider</button></div>`);
+    $('cbOk').onclick = async () => { const a = Math.min(dep, Math.max(0, +$('cbA').value || 0)), n = $('cbN').value.trim();
+      if (a < dep && !n) return toast('Indiquez le motif de la retenue.', true);
+      const { error } = await sb.from('reservations').update({ security_deposit_returned: a, security_deposit_status: a >= dep ? 'returned' : a > 0 ? 'partial' : 'kept', security_deposit_note: n || null }).eq('id', id);
+      if (error) return toast(errMsg(error), true); toast(a >= dep ? 'Caution rendue.' : 'Retenue enregistrée.'); reopen(); }; };
+  document.querySelectorAll('#rxBox [data-mr]').forEach(b => b.onclick = () => {
+    const mo = b.dataset.mr;
+    modal(`<h2 style="font-size:22px;margin-bottom:10px">Relevé ${mo === 'checkin' ? 'd’arrivée' : 'de départ'}</h2>
+      <div class="row"><div class="field" style="flex:1 1 130px"><label for="mrW">Eau (m³)</label><input id="mrW" type="number" min="0" step="0.01" inputmode="decimal"></div><div class="field" style="flex:1 1 130px"><label for="mrWp">Prix du m³ (F)</label><input id="mrWp" type="number" min="0" placeholder="facultatif"></div></div>
+      <div class="row"><div class="field" style="flex:1 1 130px"><label for="mrE">Électricité (kWh)</label><input id="mrE" type="number" min="0" step="0.01" inputmode="decimal"></div><div class="field" style="flex:1 1 130px"><label for="mrEp">Prix du kWh (F)</label><input id="mrEp" type="number" min="0" placeholder="facultatif"></div></div>
+      <div class="row between"><button type="button" data-close>Annuler</button><button type="button" class="primary" id="mrOk">Enregistrer</button></div>`);
+    $('mrOk').onclick = async () => {
+      const rows = [['water', 'mrW', 'mrWp'], ['electricity', 'mrE', 'mrEp']].filter(([, a]) => $(a).value !== '').map(([k, a, p]) => ({ organization_id: S.org, establishment_id: S.est, room_id: r.room_id, reservation_id: id, kind: k, moment: mo, value: +$(a).value, unit_price: $(p).value === '' ? null : +$(p).value }));
+      if (!rows.length) return toast('Saisissez au moins un compteur.', true);
+      const { error } = await sb.from('meter_readings').insert(rows); if (error) return toast(errMsg(error), true);
+      toast('Relevé enregistré.'); reopen(); }; });
+  const kw = $('keyWa'); if (kw) kw.onclick = () => {
+    const g = r.guests || {}, ph = String(g.phone || r.guest_phone || '').replace(/\D/g, '');
+    const adr = (e && (e.public_address || e.address)) || '', lm = e && e.landmark;
+    const msg = [`Bonjour ${g.full_name || ''},`.trim(), '', `Votre séjour à ${e ? e.name : ''} du ${dfr(r.check_in)} au ${dfr(r.check_out)} est confirmé.`,
+      adr ? `Adresse : ${adr}` : '', lm ? `Repère : ${lm}` : '', e && e.checkin_time ? `Arrivée à partir de ${String(e.checkin_time).slice(0, 5)}, départ avant ${String(e.checkout_time || '12:00').slice(0, 5)}.` : '',
+      e && e.checkin_instructions ? '\n' + e.checkin_instructions : '', '', 'À bientôt.'].join('\n').replace(/\n{3,}/g, '\n\n');
+    window.open('https://wa.me/' + ph + '?text=' + encodeURIComponent(msg), '_blank', 'noopener'); };
+}
+async function openResaCore(id, refresh, focusCheckout){
   const [{ data: r }, { data: pays }] = await Promise.all([
     sb.from('reservation_balances').select('*').eq('id', id).single(),
     can(['owner','admin','manager','receptionist','accountant']) ? sb.from('cash_movements').select('created_at,kind,method,amount,label,reference').eq('reservation_id', id).order('created_at') : { data: [] }
@@ -4591,7 +4693,7 @@ async function renderPlanning(){
   const el = $('v-planning'); keepOrSkel(el);
   await loadEst();
   // Vues : jour (3 jours larges), semaine (7 jours), mois (du 1er au dernier jour)
-  const PV = S._pv || 'week', mStart = (d) => d.slice(0, 8) + '01', t = today();
+  const PV = S._pv || (TP().stay ? 'month' : 'week'), mStart = (d) => d.slice(0, 8) + '01', t = today();
   const start = PV === 'month' ? (S._ps ? mStart(S._ps) : mStart(t)) : (S._ps || (PV === 'day' ? t : addDays(t, -1)));
   const days = PV === 'day' ? 3 : PV === 'month' ? new Date(+start.slice(0, 4), +start.slice(5, 7), 0).getDate() : 7, end = addDays(start, days);
   const step = PV === 'day' ? 1 : PV === 'month' ? null : 7;
@@ -6505,7 +6607,7 @@ const MODULE_GROUPS = [['Hébergement', ['planning','clients','inventaire','mena
 const MODULE_HELP = { planning: 'Vue calendrier des chambres', clients: 'Fichier clients et historique', resto: 'Caisse restaurant/bar, produits et stock', depenses: 'Charges fixes, opérationnelles, budget', factures: 'Factures numérotées', rapports: 'Rapports financiers et exports', mapage: 'Page publique et réservation en ligne', controle: 'Alertes et journal des actions', inventaire: 'Draps, serviettes, savons, entretien, minibar', pointage: 'Arrivées et départs du personnel, heures du mois', menage: 'Statuts « à nettoyer » et rappels de ménage', notifs: 'La cloche et les alertes en direct', multi: 'Sélecteur d’établissement (si vous en avez plusieurs)', equipe: 'Comptes du personnel et invitations' };
 /* Mode « réservations » : par défaut, seul le cœur de la gestion des réservations est affiché. Le propriétaire peut réactiver les autres volets dans Réglages → Fonctionnalités. */
 const CORE_MODULES = ['planning', 'clients', 'menage', 'factures', 'notifs', 'multi', 'equipe'];
-const moduleOn = (v) => (v === 'resto' && !RESTO_ACTIF) ? false : !MODULES[v] || (S.modules ? S.modules.includes(v) : CORE_MODULES.includes(v));
+const moduleOn = (v) => (v === 'resto' && !RESTO_ACTIF) ? false : (S.modules ? (!MODULES[v] || S.modules.includes(v)) : (!TP().hide.includes(v) && (!MODULES[v] || CORE_MODULES.includes(v))));
 async function loadOrgPrefs(){
   const { data } = await sb.from('organizations').select('display_currency,enabled_modules').eq('id', S.org).maybeSingle();
   S.currency = (data && data.display_currency) || 'XOF'; S.modules = data && data.enabled_modules ? data.enabled_modules : null;
@@ -8148,12 +8250,13 @@ function amWidget(box, e, canEdit){
   box.innerHTML = `<div class="field"><label for="amType">Type d’établissement</label><select id="amType" ${canEdit ? '' : 'disabled'}><option value="">— Choisir —</option>${PROP_TYPES.map(([k, l]) => `<option value="${k}" ${e.property_type === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
     <div style="font-weight:600;font-size:14px;margin:4px 0 8px">Équipements</div>
     <div class="am-grid">${EST_AMENITIES.map(([k, l]) => `<label class="am-it"><input type="checkbox" value="${k}" ${cur.has(k) ? 'checked' : ''} ${canEdit ? '' : 'disabled'}><span>${l}</span></label>`).join('')}</div>
+    <div class="field" style="margin-top:12px"><label for="amKeys">Informations d’arrivée envoyées au client (WhatsApp)</label><textarea id="amKeys" rows="4" maxlength="2000" ${canEdit ? '' : 'disabled'} placeholder="Ex. : le gardien vous accueille au portail bleu ; code de la boîte à clés 1234 ; pas de fête après 22 h ; Wi-Fi : Maison / motdepasse">${esc(e.checkin_instructions || '')}</textarea></div>
     ${canEdit ? '<div class="row" style="margin-top:12px"><button type="button" class="primary" id="amSave">Enregistrer le type et les équipements</button></div>' : ''}`;
   const sv = $('amSave'); if (!sv) return;
   sv.onclick = async () => {
     const am = [...box.querySelectorAll('.am-it input:checked')].map(x => x.value), pt = $('amType').value || null;
-    const { error } = await sb.from('establishments').update({ amenities: am, property_type: pt }).eq('id', e.id);
-    if (error) return toast(errMsg(error), true); e.amenities = am; e.property_type = pt; toast('Type et équipements enregistrés.'); };
+    const { error } = await sb.from('establishments').update({ amenities: am, property_type: pt, checkin_instructions: ($('amKeys').value || '').trim() || null }).eq('id', e.id);
+    if (error) return toast(errMsg(error), true); e.amenities = am; e.property_type = pt; e.checkin_instructions = ($('amKeys').value || '').trim() || null; const x = (S.ests || []).find(y => y.id === e.id); if (x) x.property_type = pt; applyUnitWord(); toast('Type et équipements enregistrés.'); };
 }
 
 async function renderMaPage(){

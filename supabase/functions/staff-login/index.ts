@@ -18,7 +18,7 @@ async function staffPassword(code: string, user: string, pin: string) {
   const sig = new Uint8Array(await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(`${code}|${user}|${pin}`)));
   return "hk1:" + btoa(String.fromCharCode(...sig)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
-// Code saisi -> code interne (staff_code). Nouveau format NT-XXXX d'abord, puis ancien code.
+// Code saisi -> code interne (staff_code). Nouveau format NTXXXX d'abord, puis ancien code.
 async function internalCode(raw: string): Promise<string | null> {
   const t = String(raw || "").trim().replace(/\s+/g, "");
   const m = t.toUpperCase().match(/^NT-?([A-Z0-9]{4})$/);

@@ -1616,9 +1616,9 @@ function setAuthMode(m){
 document.querySelectorAll('[data-amode]').forEach(b => b.addEventListener('click', () => setAuthMode(b.dataset.amode)));
 document.querySelectorAll('[data-amode-link]').forEach(a => a.addEventListener('click', (e) => { e.preventDefault(); setAuthMode(a.dataset.amodeLink); }));
 $('sPin').addEventListener('input', () => { $('sPin').value = $('sPin').value.replace(/\D/g, '').slice(0, 4); });
-/* Code d'établissement : nouveau format NT-XXXX, ancien code (lettres minuscules) toujours accepté */
+/* Code d'établissement : nouveau format NTXXXX, ancien code (lettres minuscules) toujours accepté */
 function normCode(v){ const t = String(v || '').trim().replace(/\s+/g, ''); const m = t.toUpperCase().match(/^NT-?([A-Z0-9]{4})$/); return m ? 'NT' + m[1] : t.toLowerCase(); }
-/* Lien ou QR code d'invitation : ?code=NT-XXXX préremplit l'onglet Personnel */
+/* Lien ou QR code d'invitation : ?code=NTXXXX préremplit l'onglet Personnel */
 (function(){ try { const c = new URLSearchParams(location.search).get('code'); if (c) { const v = normCode(c); localStorage.setItem('hh_staff_code', v); localStorage.setItem('hh_auth_mode', 'staff'); history.replaceState(null, '', location.pathname); } } catch (_) {} })();
 $('staffForm').addEventListener('submit', async e => {
   e.preventDefault();

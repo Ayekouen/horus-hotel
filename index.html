@@ -1343,7 +1343,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.11.11-37';
+const APP_VERSION = '2026.11.11-38';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -3952,7 +3952,7 @@ async function openEventForm(e){
       <label>Téléphone<input id="eP" inputmode="tel" value="${esc(e.client_phone || '')}"></label>
       <label>E-mail<input id="eE" type="email" value="${esc(e.client_email || '')}"></label>
       <label>Participants<input id="eN" type="number" min="1" value="${e.attendees || ''}"></label>
-      <label>Date<input id="eD" type="date" required value="${ymd(d0)}"></label>
+      <div class="grid" style="grid-template-columns:1fr 1fr;gap:8px"><label>Du<input id="eD" type="date" required value="${ymd(d0)}"></label><label>Au<input id="eD2" type="date" value="${d1 && ymd(d1) !== ymd(d0) && (d1 - d0) > 864e5 ? ymd(d1) : ''}" title="Facultatif : pour un événement sur plusieurs jours"></label></div>
       <div class="grid" style="grid-template-columns:1fr 1fr;gap:8px"><label>Début<input id="eS" type="time" required value="${tm(d0, '08:00')}"></label><label>Fin<input id="eU" type="time" required value="${tm(d1, '17:00')}"></label></div>
       <label>Disposition<select id="eL"><option value="">—</option>${Object.entries(LAYOUTS).map(([k, l]) => `<option value="${k}" ${e.layout === k ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
       <label>État<select id="eSt">${['option', 'confirmed'].concat(e.id ? ['request', 'in_progress', 'done', 'cancelled'] : []).map(k => `<option value="${k}" ${(e.status || 'option') === k ? 'selected' : ''}>${ESTAT[k][0]}</option>`).join('')}</select></label>
@@ -3966,9 +3966,9 @@ async function openEventForm(e){
       <div class="row" style="grid-column:1/-1;justify-content:flex-end;gap:8px"><button type="button" class="ghost" data-close>Annuler</button><button class="primary">Enregistrer</button></div>
     </form>`);
   $('modalBody').style.maxWidth = '720px';
-  const bounds = () => { const d = $('eD').value, s = new Date(`${d}T${$('eS').value}`), u = new Date(`${d}T${$('eU').value}`); if (u <= s) u.setDate(u.getDate() + 1); return [s, u]; };
+  const bounds = () => { const d = $('eD').value, d2 = $('eD2').value > d ? $('eD2').value : d, s = new Date(`${d}T${$('eS').value}`), u = new Date(`${d2}T${$('eU').value}`); if (u <= s) u.setDate(u.getDate() + 1); return [s, u]; };
   const reprice = () => { const v = VS.find(x => x.id === $('eV').value), [s, u] = bounds(); if ($('eM').value !== 'custom') $('eA').value = venuePrice(v, $('eM').value, s, u) || ''; const cap = Math.max(0, ...Object.values((v || {}).capacity || {}).map(Number).filter(Boolean)); $('eW').textContent = cap && +$('eN').value > cap ? `Attention : ${$('eN').value} participants pour une capacité maximale de ${cap}.` : ''; };
-  ['eV', 'eM', 'eD', 'eS', 'eU', 'eN'].forEach(id => $(id).addEventListener('change', reprice));
+  ['eV', 'eM', 'eD', 'eD2', 'eS', 'eU', 'eN'].forEach(id => $(id).addEventListener('change', reprice));
   if (!e.id) reprice();
   $('eF').onsubmit = async (ev) => { ev.preventDefault();
     const [s, u] = bounds(), v = VS.find(x => x.id === $('eV').value);

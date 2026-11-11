@@ -1,5 +1,5 @@
 // Horus Hotel — fonction serveur « staff-login » : connexion du personnel (code de l'établissement + identifiant + code).
-// • Code de l'établissement : nouveau format NT-XXXX (organizations.login_code), ou ancien code (organizations.staff_code), toujours accepté.
+// • Code de l'établissement : nouveau format NTXXXX (organizations.login_code), ou ancien code (organizations.staff_code), toujours accepté.
 //   Le code interne staff_code reste la base de l'adresse et du mot de passe des comptes : les comptes existants ne changent pas.
 // • Le mot de passe réel est dérivé avec une clé secrète serveur : impossible de tester les codes directement auprès de l'authentification.
 // • Verrouillage : 5 échecs sur un compte => 15 min (1 h en cas de récidive dans les 24 h, et alerte au propriétaire) ; 30 échecs depuis une même adresse => 1 h.
@@ -23,7 +23,7 @@ async function internalCode(raw: string): Promise<string | null> {
   const t = String(raw || "").trim().replace(/\s+/g, "");
   const m = t.toUpperCase().match(/^NT-?([A-Z0-9]{4})$/);
   if (m) {
-    const { data } = await admin.from("organizations").select("staff_code").eq("login_code", "NT-" + m[1]).maybeSingle();
+    const { data } = await admin.from("organizations").select("staff_code").eq("login_code", "NT" + m[1]).maybeSingle();
     if (data && data.staff_code) return data.staff_code;
   }
   const legacy = t.toLowerCase().replace(/-/g, "");

@@ -1008,7 +1008,7 @@ nav.side [data-view="salles"]{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://
       <button type="button" role="tab" data-amode="staff" class="small ghost" style="flex:1;border:0">Personnel</button>
     </div>
     <form id="staffForm" class="hidden" method="post" action="#" name="stafflogin">
-      <div class="field"><label for="sCode">Code de l’établissement</label><input id="sCode" required autocomplete="organization" autocapitalize="characters" spellcheck="false" placeholder="ex. NT-4K7P" pattern="[a-zA-Z0-9 \-]{3,22}"></div>
+      <div class="field"><label for="sCode">Code de l’établissement</label><input id="sCode" required autocomplete="organization" autocapitalize="characters" spellcheck="false" placeholder="ex. NT4K7P" pattern="[a-zA-Z0-9 \-]{3,22}"></div>
       <div class="field"><label for="sUser">Identifiant</label><input id="sUser" name="username" required autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="ex. awa" pattern="[a-zA-Z0-9]{2,20}"></div>
       <div class="field"><label for="sPin">Code (4 chiffres)</label><input id="sPin" name="password" type="password" required inputmode="numeric" pattern="\d{4}" maxlength="4" autocomplete="current-password" style="letter-spacing:10px;font-size:22px;text-align:center"></div>
       <label class="row hidden" style="gap:8px;margin:-4px 0 14px;font-weight:600;color:var(--ink);flex-wrap:nowrap"><input type="checkbox" id="sRemember" checked style="width:20px;min-height:20px"> Rester connecté sur cet appareil</label>
@@ -1617,13 +1617,13 @@ document.querySelectorAll('[data-amode]').forEach(b => b.addEventListener('click
 document.querySelectorAll('[data-amode-link]').forEach(a => a.addEventListener('click', (e) => { e.preventDefault(); setAuthMode(a.dataset.amodeLink); }));
 $('sPin').addEventListener('input', () => { $('sPin').value = $('sPin').value.replace(/\D/g, '').slice(0, 4); });
 /* Code d'établissement : nouveau format NT-XXXX, ancien code (lettres minuscules) toujours accepté */
-function normCode(v){ const t = String(v || '').trim().replace(/\s+/g, ''); const m = t.toUpperCase().match(/^NT-?([A-Z0-9]{4})$/); return m ? 'NT-' + m[1] : t.toLowerCase(); }
+function normCode(v){ const t = String(v || '').trim().replace(/\s+/g, ''); const m = t.toUpperCase().match(/^NT-?([A-Z0-9]{4})$/); return m ? 'NT' + m[1] : t.toLowerCase(); }
 /* Lien ou QR code d'invitation : ?code=NT-XXXX préremplit l'onglet Personnel */
 (function(){ try { const c = new URLSearchParams(location.search).get('code'); if (c) { const v = normCode(c); localStorage.setItem('hh_staff_code', v); localStorage.setItem('hh_auth_mode', 'staff'); history.replaceState(null, '', location.pathname); } } catch (_) {} })();
 $('staffForm').addEventListener('submit', async e => {
   e.preventDefault();
   const code = normCode($('sCode').value), user = $('sUser').value.trim().toLowerCase(), pin = $('sPin').value;
-  if (!/^(NT-[A-Z2-9]{4}|[a-z0-9]{3,20})$/.test(code)) return toast('Code de l’établissement invalide.', true);
+  if (!/^(NT[A-Z0-9]{4}|[a-z0-9]{3,20})$/.test(code)) return toast('Code de l’établissement invalide.', true);
   if (!/^[a-z0-9]{2,20}$/.test(user)) return toast('Identifiant invalide.', true);
   if (!/^\d{4}$/.test(pin)) return toast('Le code doit contenir 4 chiffres.', true);
   const btn = $('staffBtn'); btn.disabled = true;

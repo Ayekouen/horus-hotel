@@ -1343,7 +1343,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.11.11-38';
+const APP_VERSION = '2026.11.11-39';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -1387,14 +1387,30 @@ setTimeout(checkUpdate, 4000); setInterval(checkUpdate, 5 * 60 * 1000);
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') checkUpdate(); });
 const isStandalone = () => window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
 window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); INSTALL_EVT = e; const b = $('navInstall'); if (b) b.classList.remove('hidden'); });
-window.addEventListener('appinstalled', () => { INSTALL_EVT = null; const b = $('navInstall'); if (b) b.classList.add('hidden'); toast('Nuittea Manager est installé : retrouvez-le sur votre écran d’accueil.'); });
+window.addEventListener('appinstalled', () => { INSTALL_EVT = null; const ib = $('instBar'); if (ib) ib.remove(); const b = $('navInstall'); if (b) b.classList.add('hidden'); toast('Nuittea Manager est installé : retrouvez-le sur votre écran d’accueil.'); });
 async function installApp(){
   if (INSTALL_EVT) { INSTALL_EVT.prompt(); const r = await INSTALL_EVT.userChoice; INSTALL_EVT = null; if (r.outcome !== 'accepted') toast('Installation annulée.'); return; }
   const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
   modal(`<h2 style="font-size:24px;margin-bottom:8px">Installer Nuittea Manager</h2>
-    ${ios ? `<p>Sur iPhone ou iPad (Safari) :</p><ol style="line-height:1.8"><li>Touchez le bouton <strong>Partager</strong> (carré avec une flèche).</li><li>Choisissez <strong>« Sur l’écran d’accueil »</strong>.</li><li>Touchez <strong>Ajouter</strong>.</li></ol>`
+    ${ios ? `${/crios|fxios|edgios/i.test(navigator.userAgent) ? '<p style="background:#FFF4E5;padding:8px 10px;border-radius:10px">Ouvrez d’abord cette page dans <strong>Safari</strong> : l’installation n’est possible que depuis Safari sur iPhone.</p>' : ''}<ol style="line-height:2.1;padding-left:20px"><li>Touchez le bouton <strong>Partager</strong> <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#1F7AB8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-4px"><path d="M12 3v12M8 7l4-4 4 4"/><path d="M5 11v9h14v-9"/></svg> en bas de l’écran.</li><li>Faites défiler, puis touchez <strong>« Sur l’écran d’accueil »</strong> <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#1F7AB8" stroke-width="2" stroke-linecap="round" style="vertical-align:-4px"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M12 8v8M8 12h8"/></svg>.</li><li>Touchez <strong>Ajouter</strong> en haut à droite.</li></ol>`
       : `<p>Sur Android (Chrome) : menu <strong>⋮</strong> puis <strong>« Installer l’application »</strong> ou « Ajouter à l’écran d’accueil ».</p><p>Sur ordinateur (Chrome ou Edge) : cliquez sur l’icône d’installation <strong>⊕</strong> à droite de la barre d’adresse.</p>`}
     <p class="muted" style="font-size:13px">L’application s’ouvre ensuite en plein écran avec son icône, comme une vraie application.</p><div class="row"><button class="primary" data-close>Compris</button></div>`);
+}
+
+/* Bandeau d'installation sur téléphone (une fois connecté, si l'application n'est pas installée) */
+function installBanner(){
+  const phone = matchMedia('(max-width: 900px)').matches || /android|iphone|ipad|ipod/i.test(navigator.userAgent);
+  if (!phone || isStandalone() || $('instBar')) return;
+  try { const t = +localStorage.getItem('hh_inst_later') || 0; if (Date.now() - t < 7 * 864e5) return; } catch (_) {}
+  const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  if (!ios && !INSTALL_EVT && !/android/i.test(navigator.userAgent)) return;
+  const b = document.createElement('div'); b.id = 'instBar'; b.setAttribute('role', 'dialog'); b.setAttribute('aria-label', 'Installer l’application');
+  b.innerHTML = `<img src="icon-192.png" alt="" width="40" height="40" style="border-radius:10px;flex:none" onerror="this.remove()"><div style="flex:1;min-width:0"><b style="display:block;font-size:14px">Installez Nuittea Manager</b><span style="font-size:12.5px;opacity:.8">Sur votre écran d’accueil, en plein écran, comme une application.</span></div><button type="button" class="primary" id="instGo" style="min-height:38px;padding:0 14px;flex:none">Installer</button><button type="button" id="instNo" aria-label="Plus tard" style="border:0;background:none;color:inherit;font-size:20px;line-height:1;padding:6px;min-height:0;flex:none;opacity:.7">×</button>`;
+  b.style.cssText = 'position:fixed;left:10px;right:10px;bottom:calc(78px + env(safe-area-inset-bottom));z-index:900;display:flex;align-items:center;gap:10px;padding:12px;border-radius:16px;background:var(--card,#fff);color:var(--ink,#13212C);box-shadow:0 12px 40px -10px rgba(0,0,0,.35);border:1px solid var(--line,#E3E8EC)';
+  document.body.appendChild(b);
+  const close = (later) => { if (later) try { localStorage.setItem('hh_inst_later', String(Date.now())); } catch (_) {} b.remove(); };
+  $('instNo').onclick = () => close(true);
+  $('instGo').onclick = () => { close(false); installApp(); };
 }
 
 /* ---------- Notifications ---------- */
@@ -2002,6 +2018,7 @@ async function boot(){
   try { localStorage.removeItem('hh_space'); } catch (_) {}
   setTimeout(() => preloadViews(), 6000);
   if (S.member.must_change_password) forcePinChange();
+  else setTimeout(installBanner, 2500);
 }
 function enterAdminOnly(){
   document.body.classList.add('adminonly');
@@ -2168,6 +2185,7 @@ function openMore(){
   if (can(['owner','admin'])) extra.push(tile('Mon abonnement', svg(ICO.card), () => go('abonnement')));
   extra.push(tile('Réglages', svg(ICO.gear), () => openSettings()));
   if ($('navHelp')) extra.push(tile('Assistance', svg(ICO.help), () => $('navHelp').click()));
+  if (!isStandalone()) extra.push(tile('Installer l’application', svg('M12 3v12M7 10l5 5 5-5M5 21h14'), () => installApp()));
   html += `<h3 class="mtile-h">Raccourcis</h3><div class="mtile-g">${extra.join('')}</div>`;
   modal(`<h2 style="font-size:22px;margin-bottom:2px">Toutes les rubriques</h2>${html}
     <button type="button" class="ghost" id="moreAcc" style="width:100%;margin-top:16px;justify-content:flex-start;gap:10px">${accAvatar(30)}<span style="text-align:left"><strong style="display:block">${esc(accName())}</strong><span class="muted" style="font-size:12px">Mon compte · mot de passe, langue, thème, déconnexion</span></span></button>`);

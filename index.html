@@ -738,7 +738,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 
 /* ---- Direction B « Net et professionnel » (boutons, onglets, retours) ---- */
 :root{--b-r:10px;--b-ink:#111827;--b-line:#D0D5DD}
-:is(section[id^="v-"],#modal,.dtop,#onboard,#auth) :is(button,.btn):not(.gstep):not(.loc-sug button):not([role=tab]):not(.toggle button):not(.ghead):not(.leaflet-control *):not(.ck *):not(.lv-chip):not(.lv-tile):not(.xitem):not(.pcard):not(.ccard):not([data-part]):not([data-mode]):not(.pbar):not(.pl-slot):not(.mtile){
+:is(section[id^="v-"],#modal,.dtop,#onboard,#auth) :is(button,.btn):not(.gstep):not(.loc-sug button):not([role=tab]):not(.toggle button):not(.ghead):not(.leaflet-control *):not(.ck *):not(.lv-chip):not(.lv-tile):not(.xitem):not(.pcard):not(.ccard):not([data-part]):not([data-mode]):not(.pbar):not(.pl-slot):not(.mtile):not(.obt){
   border-radius:var(--b-r)!important;font-weight:600!important;letter-spacing:0!important;transition:background-color .12s,border-color .12s,box-shadow .12s,transform .06s!important;
   background:#fff!important;color:var(--b-ink)!important;border:1px solid var(--b-line)!important;box-shadow:0 1px 2px rgba(16,24,40,.05)!important}
 :is(section[id^="v-"],#modal,.dtop,#onboard,#auth) :is(button,.btn):not(.gstep):not([role=tab]):not(.toggle button):hover{background:#F9FAFB!important;border-color:#98A2B3!important}
@@ -978,6 +978,20 @@ nav.side [data-view="salles"]{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://
 .mtile:active{transform:scale(.97)}
 .mtile .mtile-i{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;background:var(--green-l,#e8f1f8);color:var(--green)}
 .mtile .mtile-l{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.obg{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.obg.one{grid-template-columns:1fr}
+.obt{position:relative;display:flex;align-items:center;gap:10px;width:100%;min-height:60px;padding:10px 26px 10px 10px;border-radius:14px;border:1.5px solid var(--line,#d9dee3);background:var(--card,#fff);color:var(--ink);font:inherit;text-align:left;cursor:pointer;transition:border-color .15s,background .15s}
+.obt:hover{border-color:var(--green)}
+.obt.on{border-color:var(--green);background:var(--green-l,#eef6fb);box-shadow:0 0 0 1px var(--green) inset}
+.obt-i{flex:0 0 auto;width:38px;height:38px;border-radius:12px;display:grid;place-items:center;background:var(--green-l,#eef6fb);color:var(--green)}
+.obt.on .obt-i{background:var(--card,#fff)}
+.obt-t{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.obt-t b{font-size:14px;line-height:1.25}
+.obt-t small{font-size:12px;color:var(--muted);line-height:1.3}
+.obt-c{position:absolute;top:7px;right:7px;width:18px;height:18px;border-radius:50%;border:1.5px solid var(--line,#d9dee3);display:grid;place-items:center}
+.obt-t b{font-size:13.5px;overflow-wrap:normal;word-break:normal;hyphens:none}
+@media (max-width:480px){#onboard{padding-left:10px;padding-right:10px}#onboard .card{padding:22px 16px}.obg{gap:8px}.obt{gap:8px;padding-left:8px}.obt-i{width:34px;height:34px}}
+.obt.on .obt-c{background:var(--green);border-color:var(--green)}
 </style>
 </head>
 <body>
@@ -1329,7 +1343,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.11.11-35';
+const APP_VERSION = '2026.11.11-36';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -1789,6 +1803,37 @@ const OB_ACC = [['cash','Espèces'],['wave','Wave'],['orange_money','Orange Mone
 const OB_SRC = [['bouche_a_oreille','Bouche-à-oreille'],['facebook','Facebook'],['whatsapp','WhatsApp'],['commercial','Un commercial Nuittea'],['salon','Salon ou événement'],['google','Recherche Google'],['autre','Autre']];
 const OB = { step: 0, d: { country: 'CI', same_wa: true, accepted: ['cash'], checkin: '14:00', checkout: '12:00', contact_role: 'proprietaire' } };
 const OB_STEPS = ['Nom','Type','Pays','Ville','Carte','Contacts','Taille','Paiements','Validation'];
+/* Icônes de l'inscription : types, drapeaux, moyens de paiement, tailles */
+function obFlag(c){
+  const v = (a, b, x) => `<rect width="10" height="20" fill="${a}"/><rect x="10" width="10" height="20" fill="${b}"/><rect x="20" width="10" height="20" fill="${x}"/>`;
+  const h = (a, b, x) => `<rect width="30" height="7" fill="${a}"/><rect y="6.67" width="30" height="7" fill="${b}"/><rect y="13.33" width="30" height="6.67" fill="${x}"/>`;
+  const star = (x, y, r, f) => { let p = ''; for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, q = i % 2 ? r * .4 : r; p += (x + q * Math.cos(a)).toFixed(2) + ',' + (y + q * Math.sin(a)).toFixed(2) + ' '; } return `<polygon points="${p}" fill="${f}"/>`; };
+  const F = {
+    CI: v('#F77F00', '#fff', '#009E60'),
+    SN: v('#00853F', '#FDEF42', '#E31B23') + star(15, 10, 3.6, '#00853F'),
+    ML: v('#14B53A', '#FCD116', '#CE1126'),
+    GN: v('#CE1126', '#FCD116', '#009460'),
+    CM: v('#007A5E', '#CE1126', '#FCD116') + star(15, 10, 3.4, '#FCD116'),
+    BF: `<rect width="30" height="10" fill="#EF2B2D"/><rect y="10" width="30" height="10" fill="#009E49"/>` + star(15, 10, 3.6, '#FCD116'),
+    GH: h('#CE1126', '#FCD116', '#006B3F') + star(15, 10, 3, '#000'),
+    NE: h('#E05206', '#fff', '#0DB02B') + '<circle cx="15" cy="10" r="2.3" fill="#E05206"/>',
+    BJ: `<rect width="12" height="20" fill="#008751"/><rect x="12" width="18" height="10" fill="#FCD116"/><rect x="12" y="10" width="18" height="10" fill="#E8112D"/>`,
+    TG: [0, 1, 2, 3, 4].map(i => `<rect y="${i * 4}" width="30" height="4" fill="${i % 2 ? '#FFCE00' : '#006A4E'}"/>`).join('') + `<rect width="12" height="12" fill="#D21034"/>` + star(6, 6, 3.4, '#fff')
+  };
+  if (!F[c]) return `<svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>`;
+  return `<svg viewBox="0 0 30 20" width="36" height="24" aria-hidden="true" style="border-radius:4px;box-shadow:0 0 0 1px rgba(0,0,0,.12)">${F[c]}</svg>`;
+}
+function obIcon(key, k){
+  if (key === 'country') return obFlag(k);
+  const st = (d) => `<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${d}"/></svg>`;
+  const badge = (bg, fg, t) => `<span aria-hidden="true" style="width:34px;height:34px;border-radius:10px;background:${bg};color:${fg};display:grid;place-items:center;font-weight:800;font-size:${t.length > 2 ? 10 : 13}px;letter-spacing:-.02em">${t}</span>`;
+  const T = { hotel: 'M4 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16M16 9h2a2 2 0 0 1 2 2v10M2 21h20M8 7h1M11 7h1M8 11h1M11 11h1M8 15h1M11 15h1', residence: 'M3 21V8l9-5 9 5v13M3 21h18M9 21v-6h6v6M8 11h2M14 11h2', appartement: 'M5 21V3h14v18M3 21h18M9 7h2M13 7h2M9 11h2M13 11h2M9 15h2M13 15h2', maison_hotes: 'M3 11l9-7 9 7M5 9.5V21h14V9.5M10 21v-5h4v5M16 3v3', particulier: 'M15 7a4 4 0 1 1-3.5 6L4 20.5 3 19.5l1.5-1.5L3 16.5 4 15.5 5.5 17 7.5 15l-1-1 1-1 1 1 3-3A4 4 0 0 1 15 7zM16 8.5h.01', autre: 'M12 5v14M5 12h14' };
+  if (key === 'ptype') return st(T[k] || T.autre);
+  if (key === 'size') return badge('var(--green-l,#e8f1f8)', 'var(--green)', ({ '1': '1', '2-5': '2-5', '6-15': '6-15', '16-30': '16-30', '30+': '30+' })[k] || k);
+  const P = { cash: badge('#E7F6EC', '#1E8E3E', 'F'), wave: badge('#1DC8F2', '#fff', 'W'), orange_money: badge('#FF7900', '#fff', 'OM'), mtn_money: badge('#FFCB05', '#1d1d1b', 'MTN'), moov_money: badge('#0066B3', '#fff', 'M'), card: st('M2 6h20v12H2zM2 10h20M6 15h4'), bank_transfer: st('M3 10l9-6 9 6M5 10v8M9 10v8M15 10v8M19 10v8M3 21h18') };
+  if (k === '') return st('M12 7v5l3 2M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z');
+  return P[k] || '';
+}
 const obCountry = () => OB_COUNTRIES.find(c => c[0] === OB.d.country) || OB_COUNTRIES[0];
 const obTel = (s) => (s || '').replace(/[^0-9+]/g, '');
 async function obLocs(kind, parent){
@@ -1800,10 +1845,10 @@ function obField(id, label, html){ return `<div class="field"><label for="${id}"
 async function obRender(){
   const box = $('obw'); if (!box) return; const d = OB.d, st = OB.step;
   if (!d.email) { try { const { data } = await sb.auth.getUser(); d.email = data && data.user ? data.user.email : ''; } catch (_) {} }
-  const tiles = (arr, key, multi) => `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px">${arr.map(([k, l, h]) => { const on = multi ? (d[key] || []).includes(k) : d[key] === k; return `<button type="button" class="obt" data-k="${key}" data-v="${k}" data-m="${multi ? 1 : ''}" aria-pressed="${on}" style="text-align:left;padding:12px;border-radius:12px;border:2px solid ${on ? 'var(--green)' : 'var(--line,#d9dee3)'};background:${on ? 'var(--green-l,#eef6f1)' : 'transparent'};color:inherit;cursor:pointer;min-height:64px"><b style="display:block;font-size:14px">${esc(l)}</b>${h ? `<span class="muted" style="font-size:12px">${esc(h)}</span>` : ''}</button>`; }).join('')}</div>`;
+  const tiles = (arr, key, multi, cols) => `<div class="obg${cols === 1 ? ' one' : ''}">${arr.map(([k, l, h]) => { const on = multi ? (d[key] || []).includes(k) : d[key] === k; return `<button type="button" class="obt${on ? ' on' : ''}" data-k="${key}" data-v="${k}" data-m="${multi ? 1 : ''}" aria-pressed="${on}"><span class="obt-i">${obIcon(key, k)}</span><span class="obt-t"><b>${esc(l)}</b>${h ? `<small>${esc(h)}</small>` : ''}</span><span class="obt-c" aria-hidden="true">${on ? '<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg>' : ''}</span></button>`; }).join('')}</div>`;
   let body = '';
   if (st === 0) body = obField('obEst', 'Nom de l’établissement', `<input id="obEst" value="${esc(d.est_name || '')}" minlength="2" autocomplete="organization" placeholder="Ex. Résidence Les Palmiers">`) + `<details style="margin-top:6px"><summary class="muted" style="cursor:pointer;font-size:13px">Options avancées : groupe de plusieurs établissements</summary>${obField('obOrg', 'Nom du groupe ou de la société (facultatif)', `<input id="obOrg" value="${esc(d.org_name || '')}">`)}</details>`;
-  if (st === 1) body = `<p class="muted" style="margin:0 0 10px">Quel type d’hébergement proposez-vous ?</p>` + tiles(OB_TYPES, 'ptype');
+  if (st === 1) body = `<p class="muted" style="margin:0 0 10px">Quel type d’hébergement proposez-vous ?</p>` + tiles(OB_TYPES, 'ptype', false, 1);
   if (st === 2) body = `<p class="muted" style="margin:0 0 10px">Dans quel pays se trouve l’établissement ?</p>` + tiles(OB_COUNTRIES.map(c => [c[0], c[1], c[2] !== '+' ? c[2] : '']), 'country');
   if (st === 3) {
     const villes = await obLocs('ville'); const communes = d.ville_id && d.ville_id !== '__autre' ? await obLocs('commune', d.ville_id) : []; const quartiers = (d.commune_id || (d.ville_id && d.ville_id !== '__autre')) ? await obLocs('quartier', d.commune_id || d.ville_id) : [];
@@ -1827,18 +1872,18 @@ async function obRender(){
   if (st === 6) body = `<p class="muted" style="margin:0 0 10px">Combien de ${['residence','appartement','particulier'].includes(d.ptype) ? 'logements' : 'chambres'} proposez-vous ?</p>` + tiles(OB_SIZES, 'size');
   if (st === 7) body = `<p class="muted" style="margin:0 0 10px">Moyens de paiement acceptés sur place</p>` + tiles(OB_ACC, 'accepted', true)
       + `<h3 style="font-size:15px;margin:18px 0 6px">Numéro de réception des paiements en ligne (facultatif)</h3><p class="muted" style="font-size:13px;margin:0 0 10px">Nuittea y reverse l’argent des réservations payées en ligne.</p>`
-      + obField('obPm', 'Moyen', `<select id="obPm"><option value="">— Plus tard —</option>${OB_PAY.map(([k, l]) => `<option value="${k}" ${d.payout_method === k ? 'selected' : ''}>${l}</option>`).join('')}</select>`)
+      + `<div class="field"><label>Moyen de réception</label>${tiles([...OB_PAY.map(([k, l]) => [k, l]), ['', 'Plus tard']], 'payout_method')}</div>`
       + obField('obPn', 'Numéro', `<input id="obPn" type="tel" inputmode="tel" value="${esc(d.payout_number || '')}">`)
       + obField('obPname', 'Nom du titulaire', `<input id="obPname" value="${esc(d.payout_name || d.contact_name || '')}">`);
-  if (st === 8) body = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">${obField('obCi', 'Arrivée à partir de', `<input id="obCi" type="time" value="${esc(d.checkin)}">`)}${obField('obCo', 'Départ avant', `<input id="obCo" type="time" value="${esc(d.checkout)}">`)}</div>`
+  if (st === 8) body = ''
       + obField('obSrc', 'Comment avez-vous connu Nuittea ?', `<select id="obSrc"><option value="">— Choisir —</option>${OB_SRC.map(([k, l]) => `<option value="${k}" ${d.source === k ? 'selected' : ''}>${l}</option>`).join('')}</select>`)
       + obField('obRef', 'Code de parrainage ou nom du commercial (facultatif)', `<input id="obRef" value="${esc(d.referral || '')}">`)
       + `<details style="margin:4px 0 10px"><summary class="muted" style="cursor:pointer;font-size:13px">Informations légales (facultatif)</summary>${obField('obRccm', 'RCCM', `<input id="obRccm" value="${esc(d.rccm || '')}">`)}${obField('obNcc', 'NCC', `<input id="obNcc" value="${esc(d.ncc || '')}">`)}</details>`
       + `<div class="muted" style="font-size:13px;border:1px solid var(--line,#d9dee3);border-radius:10px;padding:10px;margin-bottom:10px"><b>${esc(d.est_name || '')}</b> · ${esc((OB_TYPES.find(t => t[0] === d.ptype) || ['', ''])[1])} · ${esc(d.city_label || d.city || '')}, ${esc(obCountry()[1])}<br>Tél. ${esc(d.phone || '')} · WhatsApp ${esc(d.same_wa ? d.phone : d.whatsapp || '')}</div>`
       + `<label style="display:flex;gap:8px;align-items:flex-start;font-size:14px"><input type="checkbox" id="obTerms" ${d.terms ? 'checked' : ''} style="margin-top:3px"> <span>J’accepte les <a href="#" data-legal="cgu">CGU</a>, les <a href="#" data-legal="cgv">CGV</a> et la <a href="#" data-legal="confidentialite">politique de confidentialité</a>.</span></label>`;
   box.innerHTML = `<div class="muted" style="font-size:12px;margin-bottom:6px">Étape ${st + 1} sur ${OB_STEPS.length} · ${OB_STEPS[st]}</div><div style="height:4px;background:var(--line,#e3e8ec);border-radius:4px;margin-bottom:16px"><div style="height:4px;width:${Math.round((st + 1) / OB_STEPS.length * 100)}%;background:var(--green);border-radius:4px"></div></div>${body}
-    <div class="row between" style="margin-top:18px;gap:10px">${st ? '<button type="button" id="obBack">Retour</button>' : '<span></span>'}<button type="button" class="primary" id="obNext">${st === OB_STEPS.length - 1 ? 'Commencer l’essai gratuit' : (st === 4 && !d.lat) || st === 7 ? 'Continuer (facultatif)' : 'Continuer'}</button></div>`;
-  box.querySelectorAll('.obt').forEach(b => b.onclick = () => { const k = b.dataset.k, v = b.dataset.v; if (b.dataset.m) { const a = new Set(d[k] || []); a.has(v) ? a.delete(v) : a.add(v); d[k] = [...a]; obRender(); } else { if (k === 'country' && d.country !== v) { d.ville_id = d.commune_id = d.quartier_id = null; d.city = d.new_place = ''; d.lat = d.lng = null; } d[k] = v; OB.step++; obRender(); } });
+    <div class="row between" style="margin-top:18px;gap:10px">${st ? '<button type="button" id="obBack">Retour</button>' : '<span></span>'}<button type="button" class="primary" id="obNext">${st === OB_STEPS.length - 1 ? 'Commencer l’essai gratuit' : (st === 4 && !d.lat) ? 'Passer' : 'Continuer'}</button></div>`;
+  box.querySelectorAll('.obt').forEach(b => b.onclick = () => { const k = b.dataset.k, v = b.dataset.v; if (b.dataset.m) { const a = new Set(d[k] || []); a.has(v) ? a.delete(v) : a.add(v); d[k] = [...a]; obRender(); } else { if (k === 'country' && d.country !== v) { d.ville_id = d.commune_id = d.quartier_id = null; d.city = d.new_place = ''; d.lat = d.lng = null; } d[k] = v; if (['ptype', 'country', 'size'].includes(k)) OB.step++; obRender(); } });
   if ($('obBack')) $('obBack').onclick = () => { obSave(); OB.step--; obRender(); };
   $('obNext').onclick = obNext;
   if (st === 3) {
@@ -1870,7 +1915,7 @@ function obSave(){
   const d = OB.d, v = id => $(id) ? $(id).value.trim() : undefined, set = (k, id) => { const x = v(id); if (x !== undefined) d[k] = x; };
   set('est_name', 'obEst'); set('org_name', 'obOrg'); set('city', 'obCity'); set('new_place', 'obNew'); set('landmark', 'obLm');
   set('phone', 'obPhone'); set('whatsapp', 'obWa'); set('email', 'obMail'); set('contact_name', 'obCn'); set('contact_role', 'obCr');
-  set('payout_method', 'obPm'); set('payout_number', 'obPn'); set('payout_name', 'obPname'); set('checkin', 'obCi'); set('checkout', 'obCo');
+  set('payout_number', 'obPn'); set('payout_name', 'obPname');
   set('source', 'obSrc'); set('referral', 'obRef'); set('rccm', 'obRccm'); set('ncc', 'obNcc'); if ($('obTerms')) d.terms = $('obTerms').checked;
 }
 async function obNext(){

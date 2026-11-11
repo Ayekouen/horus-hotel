@@ -1343,7 +1343,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.11.11-36';
+const APP_VERSION = '2026.11.11-37';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -7234,6 +7234,18 @@ async function openReviews(){
     $('rvB').onclick = openReviews;
     $('rvF').onsubmit = async (e) => { e.preventDefault(); const { error } = await sb.from('reviews').update({ reply: $('rvT').value.trim() || null }).eq('id', v.id); if (error) return toast(errMsg(error), true); toast('Réponse publiée.'); openReviews(); }; });
 }
+/* ---------- Vérification anti-robot (Cloudflare Turnstile) pour les avis publics ---------- */
+const TS_SITE = '0x4AAAAAAF8KZrzW1Lb9yTWC'; let TS_LOAD = null;
+function tsLoad(){ if (window.turnstile) return Promise.resolve(window.turnstile); if (!TS_LOAD) TS_LOAD = new Promise(res => { const s = document.createElement('script'); s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit'; s.async = true; s.onload = () => res(window.turnstile || null); s.onerror = () => { TS_LOAD = null; res(null); }; document.head.appendChild(s); }); return TS_LOAD; }
+async function captchaPass(kind){
+  try {
+    const ts = await tsLoad(); if (!ts) return;
+    const tok = await new Promise(res => { let box = document.getElementById('ntCaptcha'); if (!box) { box = document.createElement('div'); box.id = 'ntCaptcha'; box.style.cssText = 'position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:9999'; document.body.appendChild(box); }
+      let done = false, id = ''; const end = (t) => { if (done) return; done = true; try { if (id) ts.remove(id); } catch (_) {} res(t); };
+      id = ts.render(box, { sitekey: TS_SITE, appearance: 'interaction-only', language: 'fr', callback: t => end(t), 'error-callback': () => end(null), 'expired-callback': () => end(null) }); setTimeout(() => end(null), 30000); });
+    if (tok) await sb.functions.invoke('captcha', { body: { token: tok, kind } });
+  } catch (_) {}
+}
 async function renderReviewPage(tok){
   const el = $('public'); show('public');
   el.innerHTML = '<p class="muted" style="text-align:center;padding:80px 16px">Chargement…</p>';
@@ -7253,6 +7265,7 @@ async function renderReviewPage(tok){
   const paint = () => { el.querySelectorAll('[data-st]').forEach(b => { b.style.color = +b.dataset.st <= note ? '#E8A317' : '#D9CDBB'; }); $('rvLbl').textContent = LBL[note] || ''; };
   el.querySelectorAll('[data-st]').forEach(b => b.onclick = () => { note = +b.dataset.st; paint(); });
   $('rvGo').onclick = async () => { if (!note) return toast('Choisissez une note.', true); $('rvGo').disabled = true;
+    await captchaPass('review');
     const { data, error } = await sb.rpc('public_review_submit', { p_token: tok, p_rating: note, p_comment: $('rvC').value });
     if (error || !data || !data.ok) { $('rvGo').disabled = false; return toast(error ? 'Service indisponible, réessayez.' : data.error, true); }
     r.status = 'submitted'; r.rating = note; renderReviewPage(tok); };

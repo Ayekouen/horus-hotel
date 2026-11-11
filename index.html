@@ -1034,6 +1034,7 @@ nav.side [data-view="salles"]{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://
     <div style="height:1px;background:var(--line);margin:24px 0 18px"></div>
     <p style="margin:0;font-size:14px;text-align:center"><span id="authSwitchTxt">Pas encore de compte ?</span> <a href="#" id="authSwitch" style="font-weight:600">Créer un compte – 5 jours gratuits</a></p>
     </div>
+    <button type="button" class="ghost hidden" id="authInstall" style="width:100%;margin-top:18px;gap:10px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M12 7v7M9 11l3 3 3-3"/></svg>Installer l’application</button>
     <p class="muted" id="authLegal" style="margin:22px 0 0;font-size:12px;text-align:center"></p>
   </div>
 </main>
@@ -1343,7 +1344,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.11.11-43';
+const APP_VERSION = '2026.11.11-44';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -1387,7 +1388,7 @@ setTimeout(checkUpdate, 4000); setInterval(checkUpdate, 5 * 60 * 1000);
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') checkUpdate(); });
 const isStandalone = () => window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
 window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); INSTALL_EVT = e; const b = $('navInstall'); if (b) b.classList.remove('hidden'); });
-window.addEventListener('appinstalled', () => { INSTALL_EVT = null; const ib = $('instBar'); if (ib) ib.remove(); const b = $('navInstall'); if (b) b.classList.add('hidden'); toast('Nuittea Manager est installé : retrouvez-le sur votre écran d’accueil.'); });
+window.addEventListener('appinstalled', () => { INSTALL_EVT = null; const ib = $('instBar'); if (ib) ib.remove(); const b = $('navInstall'); if (b) b.classList.add('hidden'); const ai = $('authInstall'); if (ai) ai.classList.add('hidden'); toast('Nuittea Manager est installé : retrouvez-le sur votre écran d’accueil.'); });
 async function installApp(){
   if (INSTALL_EVT) { INSTALL_EVT.prompt(); const r = await INSTALL_EVT.userChoice; INSTALL_EVT = null; if (r.outcome !== 'accepted') toast('Installation annulée.'); return; }
   const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
@@ -1397,6 +1398,10 @@ async function installApp(){
     <p class="muted" style="font-size:13px">L’application s’ouvre ensuite en plein écran avec son icône, comme une vraie application.</p><div class="row"><button class="primary" data-close>Compris</button></div>`);
 }
 
+/* Bouton d'installation sur l'écran de connexion (masqué si l'application est déjà installée) */
+(function(){ const b = $('authInstall'); if (!b || isStandalone()) return;
+  if (!(matchMedia('(max-width: 900px)').matches || /android|iphone|ipad|ipod/i.test(navigator.userAgent))) b.lastChild.textContent = 'Installer sur cet ordinateur';
+  b.classList.remove('hidden'); b.onclick = installApp; })();
 /* Bandeau d'installation sur téléphone (une fois connecté, si l'application n'est pas installée) */
 function installBanner(){
   const phone = matchMedia('(max-width: 900px)').matches || /android|iphone|ipad|ipod/i.test(navigator.userAgent);

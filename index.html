@@ -1351,7 +1351,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.11.11-51';
+const APP_VERSION = '2026.11.13-52';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -4272,6 +4272,19 @@ async function openQuickResa(pre, refresh){
       if (nights() < 1) throw new Error('La date de départ doit suivre la date d’arrivée.');
       if (!st.room) throw new Error('Aucune chambre libre sur ces dates.');
       let gid = st.gid || null;
+      /* Hors connexion : la réservation est mise en file d'attente et envoyée au retour du réseau */
+      if (!navigator.onLine) {
+        const nm = (st.name || '').trim(); if (!gid && nm.length < 2) { $('qNm').focus(); throw new Error('Indiquez le nom du client.'); }
+        if (st.dep > total()) throw new Error('L’acompte dépasse le total du séjour.');
+        const rid = crypto.randomUUID(), rmn = (roomOf(st.room) || {}).number || '';
+        const lab = `Réservation · ${nm || 'client'} · ch. ${rmn} · ${dfr(st.ci)} → ${dfr(st.co)}`;
+        if (!gid) { gid = crypto.randomUUID(); outboxPush({ kind: 'insert', table: 'guests', rows: [{ id: gid, organization_id: S.org, full_name: nm, phone: (st.phone || '').trim() || null }] }, 'Nouveau client · ' + nm); }
+        outboxPush({ kind: 'insert', table: 'reservations', rows: [{ id: rid, establishment_id: S.est, room_id: st.room, guest_id: gid, guest_name: '-', check_in: st.ci, check_out: st.co, nightly_rate: +st.rate || 0, discount: +st.disc || 0, adults: +st.adults || 1, source: st.src, notes: (st.notes || '').trim() || null }] }, lab);
+        if (pre.walkin || st.ckin) outboxPush({ kind: 'rpc', fn: 'check_in_reservation', args: { p_reservation: rid } }, `Arrivée · ${nm} · ch. ${rmn}`);
+        if (st.dep > 0) outboxPush({ kind: 'insert', table: 'cash_movements', rows: [{ establishment_id: S.est, reservation_id: rid, kind: 'payment', method: st.depM, amount: st.dep, label: 'Acompte', reference: (st.depR || '').trim() || null }] }, `Acompte · ${money(st.dep)}`);
+        closeModal(); refresh && refresh();
+        return nextStep('Réservation enregistrée hors connexion', `${esc(nm)} · chambre ${esc(rmn)} · ${dfr(st.ci)} → ${dfr(st.co)}.<br>Elle sera envoyée automatiquement dès le retour du réseau. Si la chambre a été prise entre-temps, vous serez prévenu.`, []);
+      }
       if (!gid) { const nm = (st.name || '').trim(); if (nm.length < 2) { $('qNm').focus(); throw new Error('Indiquez le nom du client.'); }
         const g = await sb.from('guests').insert({ organization_id: S.org, full_name: nm, phone: (st.phone || '').trim() || null }).select('id').single(); if (g.error) throw g.error; gid = g.data.id; }
       if (st.dep > total()) throw new Error('L’acompte dépasse le total du séjour.');
@@ -7219,7 +7232,7 @@ async function syncOutbox(){
   for (const it of l) {
     if (it.failed || it.done) continue;
     const r = await outboxRun(it.op);
-    if (r.error) { if (isNetErr(r.error)) break; it.failed = true; it.error = errMsg(r.error); ko++;}
+    if (r.error) { if (isNetErr(r.error)) break; it.failed = true; it.error = /no_double_booking|exclusion|chevauch/i.test(r.error.message || '') ? 'Chambre déjà prise entre-temps : choisissez une autre chambre et refaites la réservation.' : r.error.code === '23505' ? 'Déjà enregistré.' : errMsg(r.error); if (r.error.code === '23505') { it.failed = false; it.done = true; ok++; } else ko++; }
     else { it.done = true; ok++; }
   }
   outboxSave(outbox().map(x => l.find(y => y.id === x.id) || x).filter(x => !x.done)); OUTBOX_S.busy = false; offBar();

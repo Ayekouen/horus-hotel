@@ -4281,7 +4281,7 @@ async function openQuickResa(pre, refresh){
         if (!gid) { gid = crypto.randomUUID(); outboxPush({ kind: 'insert', table: 'guests', rows: [{ id: gid, organization_id: S.org, full_name: nm, phone: (st.phone || '').trim() || null }] }, 'Nouveau client · ' + nm); }
         outboxPush({ kind: 'insert', table: 'reservations', rows: [{ id: rid, establishment_id: S.est, room_id: st.room, guest_id: gid, guest_name: '-', check_in: st.ci, check_out: st.co, nightly_rate: +st.rate || 0, discount: +st.disc || 0, adults: +st.adults || 1, source: st.src, notes: (st.notes || '').trim() || null }] }, lab);
         if (pre.walkin || st.ckin) outboxPush({ kind: 'rpc', fn: 'check_in_reservation', args: { p_reservation: rid } }, `Arrivée · ${nm} · ch. ${rmn}`);
-        if (st.dep > 0) outboxPush({ kind: 'insert', table: 'cash_movements', rows: [{ establishment_id: S.est, reservation_id: rid, kind: 'payment', method: st.depM, amount: st.dep, label: 'Acompte', reference: (st.depR || '').trim() || null }] }, `Acompte · ${money(st.dep)}`);
+        if (st.dep > 0) outboxPush({ kind: 'insert', table: 'cash_movements', rows: [{ id: crypto.randomUUID(), establishment_id: S.est, reservation_id: rid, kind: 'payment', method: st.depM, amount: st.dep, label: 'Acompte', reference: (st.depR || '').trim() || null }] }, `Acompte · ${money(st.dep)}`);
         closeModal(); refresh && refresh();
         return nextStep('Réservation enregistrée hors connexion', `${esc(nm)} · chambre ${esc(rmn)} · ${dfr(st.ci)} → ${dfr(st.co)}.<br>Elle sera envoyée automatiquement dès le retour du réseau. Si la chambre a été prise entre-temps, vous serez prévenu.`, []);
       }
@@ -5378,7 +5378,7 @@ function openEncaisser(b, done){
     $('ekGo').disabled = true;
     const group = crypto.randomUUID();
     const label = b.status === 'checked_in' || b.status === 'checked_out' ? 'Paiement séjour' : 'Acompte';
-    const { error, queued } = await runOrQueue({ kind: 'insert', table: 'cash_movements', rows: L.map(l => ({ establishment_id: b.establishment_id || S.est, reservation_id: b.id, kind: 'payment', method: l.method, amount: +l.amount, reference: (l.reference || '').trim() || null, label, payment_group: group })) }, `Encaissement · ${b.guest_name} · ${money(t)}`);
+    const { error, queued } = await runOrQueue({ kind: 'insert', table: 'cash_movements', rows: L.map(l => ({ id: crypto.randomUUID(), establishment_id: b.establishment_id || S.est, reservation_id: b.id, kind: 'payment', method: l.method, amount: +l.amount, reference: (l.reference || '').trim() || null, label, payment_group: group })) }, `Encaissement · ${b.guest_name} · ${money(t)}`);
     if (queued) toast('Hors connexion : encaissement enregistré, envoyé au retour du réseau.', false);
     if (error) { $('ekGo').disabled = false; if (/caisse ouverte/i.test(error.message || '')) return askOpenCash(() => openEncaisser(b, done), 'La caisse du jour n’est pas encore ouverte. Ouvrez-la pour encaisser ce paiement en espèces.'); return toast(errMsg(error), true); }
     const rest = bal - t, phone = waPhone(b.guest_phone), change = st.mode === 'cash' && +st.received > t ? +st.received - t : 0;

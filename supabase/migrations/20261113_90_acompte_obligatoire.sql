@@ -3,6 +3,7 @@
 -- Ajouts uniquement : les réservations existantes ne sont pas concernées.
 
 alter table public.establishments add column if not exists online_deposit_required boolean not null default false;
+alter table public.establishments add column if not exists online_deposit_pct int not null default 30 check (online_deposit_pct between 10 and 100);
 alter table public.establishments add column if not exists online_deposit_hours int not null default 2 check (online_deposit_hours between 1 and 48);
 alter table public.reservations add column if not exists payment_due_at timestamptz;
 create index if not exists reservations_payment_due_idx on public.reservations (payment_due_at) where payment_due_at is not null;
@@ -10,7 +11,7 @@ create index if not exists reservations_payment_due_idx on public.reservations (
 -- Politique affichée sur Nuittea.com
 create or replace function public.market_deposit_policy(p_slug text) returns jsonb
 language sql stable security definer set search_path to '' as $$
-  select coalesce((select jsonb_build_object('required', e.online_deposit_required, 'hours', e.online_deposit_hours, 'pct', 30)
+  select coalesce((select jsonb_build_object('required', e.online_deposit_required, 'hours', e.online_deposit_hours, 'pct', e.online_deposit_pct)
                      from public.establishments e where e.slug = lower(p_slug) and e.is_active), jsonb_build_object('required', false))
 $$;
 revoke all on function public.market_deposit_policy(text) from public;

@@ -8544,9 +8544,10 @@ async function renderMaPage(){
         ${canEdit ? `<button class="${e.public_enabled ? 'ghost' : 'primary'}" id="togglePub" type="button" style="width:100%;margin-top:12px">${e.public_enabled ? 'Dépublier la page' : 'Publier la page'}</button>
         <label class="row" style="gap:10px;font-weight:600;color:var(--ink);margin-top:12px;flex-wrap:nowrap"><input type="checkbox" id="autoConf" ${e.public_auto_confirm ? 'checked' : ''} style="width:20px;min-height:20px"> Confirmer automatiquement les demandes</label>
         <div style="margin-top:14px;padding:12px 14px;border:1px solid var(--line);border-radius:14px;background:var(--bg)">
-          <label class="row" style="gap:10px;font-weight:600;color:var(--ink);flex-wrap:nowrap;margin:0"><input type="checkbox" id="depReq" ${e.online_deposit_required ? 'checked' : ''} style="width:20px;min-height:20px"> Exiger un acompte de 30 % pour les réservations en ligne</label>
+          <label class="row" style="gap:10px;font-weight:600;color:var(--ink);flex-wrap:nowrap;margin:0"><input type="checkbox" id="depReq" ${e.online_deposit_required ? 'checked' : ''} style="width:20px;min-height:20px"> Exiger un acompte pour les réservations en ligne</label>
           <p class="muted" style="font-size:13px;margin:6px 0 8px">Protège contre les fausses réservations : le client paie l’acompte par Mobile Money ou carte. Sans paiement dans le délai, la réservation est annulée automatiquement et la chambre libérée.</p>
-          <label class="row" style="gap:8px;margin:0;font-weight:500;flex-wrap:nowrap">Délai pour payer : <select id="depH" style="width:auto;min-height:38px">${[1, 2, 3, 6, 12, 24].map(h => `<option value="${h}" ${(e.online_deposit_hours || 2) === h ? 'selected' : ''}>${h} h</option>`).join('')}</select></label>
+          <div class="row" style="gap:14px"><label class="row" style="gap:8px;margin:0;font-weight:500;flex-wrap:nowrap">Montant : <select id="depP" style="width:auto;min-height:38px">${[10, 20, 25, 30, 40, 50, 100].map(v => `<option value="${v}" ${(e.online_deposit_pct || 30) === v ? 'selected' : ''}>${v === 100 ? 'Totalité du séjour' : v + ' % du séjour'}</option>`).join('')}</select></label>
+          <label class="row" style="gap:8px;margin:0;font-weight:500;flex-wrap:nowrap">Délai pour payer : <select id="depH" style="width:auto;min-height:38px">${[1, 2, 3, 6, 12, 24].map(h => `<option value="${h}" ${(e.online_deposit_hours || 2) === h ? 'selected' : ''}>${h} h</option>`).join('')}</select></label></div>
         </div>` : ''}
       </section>
       <section class="card" style="padding:0;overflow:hidden" id="pvCard"></section>
@@ -8590,7 +8591,7 @@ async function renderMaPage(){
     save({ public_enabled: !e.public_enabled }, e.public_enabled ? 'Page dépubliée.' : 'Page publiée. Partagez son adresse !');
   };
   $('autoConf').onchange = () => save({ public_auto_confirm: $('autoConf').checked }, 'Réglage enregistré.');
-  if ($('depReq')) { $('depReq').onchange = () => save({ online_deposit_required: $('depReq').checked }, $('depReq').checked ? 'Acompte en ligne désormais obligatoire.' : 'Acompte en ligne facultatif.'); $('depH').onchange = () => save({ online_deposit_hours: +$('depH').value }, 'Délai enregistré.'); }
+  if ($('depReq')) { $('depReq').onchange = () => save({ online_deposit_required: $('depReq').checked }, $('depReq').checked ? 'Acompte en ligne désormais obligatoire.' : 'Acompte en ligne facultatif.'); $('depH').onchange = () => save({ online_deposit_hours: +$('depH').value }, 'Délai enregistré.'); $('depP').onchange = () => save({ online_deposit_pct: +$('depP').value }, 'Montant de l’acompte enregistré.'); }
   const upload = async (file) => {
     if (!/^image\/(jpeg|png|webp)$/.test(file.type)) throw new Error('Format accepté : JPEG, PNG ou WebP.');
     if (file.size > 3 * 1024 * 1024) throw new Error('Image trop lourde (3 Mo maximum).');

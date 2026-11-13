@@ -2,7 +2,8 @@
 // • Code de l'établissement : nouveau format NTXXXX (organizations.login_code), ou ancien code (organizations.staff_code), toujours accepté.
 //   Le code interne staff_code reste la base de l'adresse et du mot de passe des comptes : les comptes existants ne changent pas.
 // • Le mot de passe réel est dérivé avec une clé secrète serveur : impossible de tester les codes directement auprès de l'authentification.
-// • Verrouillage : 5 échecs sur un compte => 15 min (1 h en cas de récidive dans les 24 h, et alerte au propriétaire) ; 30 échecs depuis une même adresse => 1 h.
+// • Verrouillage : 5 échecs sur un compte => 15 min (1 h en cas de récidive dans les 24 h, et alerte au propriétaire) ; 30 échecs depuis une même adresse => 1 h ;
+//   50 échecs sur un même établissement => connexions du personnel suspendues 1 h et alerte critique au propriétaire.
 // • Action « change_pin » (utilisateur connecté) : changement du code personnel.
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
 
@@ -18,7 +19,7 @@ async function staffPassword(code: string, user: string, pin: string) {
   const sig = new Uint8Array(await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(`${code}|${user}|${pin}`)));
   return "hk1:" + btoa(String.fromCharCode(...sig)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
-// Code saisi -> code interne (staff_code). Nouveau format NTXXXX d'abord, puis ancien code.
+// Code saisi -> code interne (staff_code). Nouveau format NT-XXXX d'abord, puis ancien code.
 async function internalCode(raw: string): Promise<string | null> {
   const t = String(raw || "").trim().replace(/\s+/g, "");
   const m = t.toUpperCase().match(/^NT-?([A-Z0-9]{4})$/);
@@ -30,8 +31,11 @@ async function internalCode(raw: string): Promise<string | null> {
   return /^[a-z0-9]{3,20}$/.test(legacy) ? legacy : null;
 }
 async function attempt(key: string) { const { data } = await admin.from("staff_login_attempts").select("*").eq("key", key).maybeSingle(); return data; }
-async function fail(key: string, max: number, lockMin: number) {
-  const a = await attempt(key); const n = (a && (!a.locked_until || new Date(a.locked_until) < new Date()) && a.failures >= max ? 0 : (a ? a.failures : 0)) + 1;
+async function fail(key: string, max: number, lockMin: number, windowMin = 0) {
+  const a = await attempt(key);
+  // Fenêtre glissante (limite par établissement) : les échecs de plus de windowMin minutes ne comptent plus
+  const stale = !!(windowMin && a && a.updated_at && Date.now() - new Date(a.updated_at).getTime() > windowMin * 60000 && !(a.locked_until && new Date(a.locked_until) > new Date()));
+  const n = (a && !stale && !((!a.locked_until || new Date(a.locked_until) < new Date()) && a.failures >= max) ? a.failures : 0) + 1;
   // Récidive : déjà bloqué dans les dernières 24 h => blocage d'une heure
   const repeat = !!(a && a.locked_until && Date.now() - new Date(a.locked_until).getTime() < 864e5);
   const mins = n >= max ? (repeat ? Math.max(lockMin, 60) : lockMin) : 0;
@@ -46,6 +50,15 @@ async function alertOwner(code: string, user: string, mins: number) {
     await admin.rpc("raise_owner_alert", { p_org: org.id, p_est: null, p_sev: mins >= 60 ? "critical" : "warning", p_kind: "staff_login_locked",
       p_msg: `Compte « ${user} » bloqué ${mins >= 60 ? "1 heure" : mins + " minutes"} après 5 codes erronés${mins >= 60 ? " (récidive)" : ""}.`, p_entity: "equipe", p_id: null });
   } catch (_) { /* l'alerte ne doit jamais empêcher la réponse */ }
+}
+// Limite globale par établissement : 50 échecs (tous comptes confondus) => connexions du personnel suspendues 1 h, alerte critique
+async function alertOrg(code: string) {
+  try {
+    const { data: org } = await admin.from("organizations").select("id").eq("staff_code", code).maybeSingle();
+    if (!org) return;
+    await admin.rpc("raise_owner_alert", { p_org: org.id, p_est: null, p_sev: "critical", p_kind: "staff_login_org_locked",
+      p_msg: "Nombreux codes erronés sur les comptes du personnel : connexions du personnel suspendues 1 heure par sécurité. Si ce n’est pas votre équipe, changez le code d’établissement (Équipe › Nouveau code).", p_entity: "equipe", p_id: null });
+  } catch (_) { }
 }
 const locked = (a: any) => a && a.locked_until && new Date(a.locked_until) > new Date();
 
@@ -69,17 +82,23 @@ Deno.serve(async (req) => {
   const user = String(b.username || "").trim().toLowerCase(), pin = String(b.pin || "");
   const code = await internalCode(String(b.code || ""));
   if (!code || !/^[a-z0-9]{2,20}$/.test(user) || !/^\d{4}$/.test(pin)) return json({ error: "Code de l’établissement, identifiant ou code incorrect." }, 400);
-  const ip = (req.headers.get("x-forwarded-for") || "").split(",")[0].trim() || "inconnue";
-  const kAcc = `acc:${code}:${user}`, kIp = `ip:${ip}`;
-  const [aAcc, aIp] = await Promise.all([attempt(kAcc), attempt(kIp)]);
+  // Adresse du client : en-tête posé par le réseau Cloudflare de Supabase, sinon la dernière valeur ajoutée par la passerelle
+  // (la première valeur de X-Forwarded-For peut être fournie par l'attaquant).
+  const xff = (req.headers.get("x-forwarded-for") || "").split(",").map((x) => x.trim()).filter(Boolean);
+  const ip = (req.headers.get("cf-connecting-ip") || "").trim() || xff[xff.length - 1] || "inconnue";
+  const kAcc = `acc:${code}:${user}`, kIp = `ip:${ip}`, kOrg = `org:${code}`;
+  const [aAcc, aIp, aOrg] = await Promise.all([attempt(kAcc), attempt(kIp), attempt(kOrg)]);
   if (locked(aAcc)) { const m = Math.max(1, Math.ceil((new Date(aAcc.locked_until).getTime() - Date.now()) / 60000)); return json({ error: `Trop d’essais : ce compte est bloqué encore ${m} minute${m > 1 ? "s" : ""}. Votre responsable peut le débloquer ou vous donner un nouveau code.`, locked: true }, 429); }
   if (locked(aIp)) return json({ error: "Trop d’essais depuis cet appareil. Réessayez dans une heure.", locked: true }, 429);
+  if (locked(aOrg)) return json({ error: "Trop d’essais sur cet établissement : connexions du personnel suspendues une heure. Le propriétaire a été prévenu et peut toujours se connecter par e-mail.", locked: true }, 429);
   const uc = createClient(URL_, ANON, { auth: { persistSession: false } });
   const { data, error } = await uc.auth.signInWithPassword({ email: staffEmail(code, user), password: await staffPassword(code, user, pin) });
   if (error || !data.session) {
     if (/banned/i.test(error?.message || "")) return json({ error: "Ce compte est suspendu. Contactez votre responsable." }, 403);
     const { n, mins } = await fail(kAcc, 5, 15); await fail(kIp, 30, 60);
+    const o = await fail(kOrg, 50, 60, 60);
     if (mins) await alertOwner(code, user, mins);
+    if (o.mins) await alertOrg(code);
     const left = Math.max(0, 5 - n);
     return json({ error: left ? `Code de l’établissement, identifiant ou code incorrect. ${left} essai${left > 1 ? "s" : ""} restant${left > 1 ? "s" : ""}.` : `Trop d’essais : ce compte est bloqué ${mins >= 60 ? "1 heure" : mins + " minutes"}.` }, 401);
   }

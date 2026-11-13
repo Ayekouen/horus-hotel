@@ -1569,11 +1569,13 @@ async function ensureLegalAccepted(){
   if (error || (data && data.length)) return true;
   let pending = null; try { pending = localStorage.getItem('hh_legal_ok'); } catch (_) {}
   if (pending === LEGAL_VERSION) { const { error } = await sb.from('legal_acceptances').insert({ version: LEGAL_VERSION, user_agent: navigator.userAgent.slice(0, 300) }); try { localStorage.removeItem('hh_legal_ok'); } catch (_) {} if (!error || error.code === '23505') return true; }
+  // Personnel (connexion par code) : les conditions de vente des abonnements ne le concernent pas
+  const staff = !!(S.session.user.user_metadata && S.session.user.user_metadata.staff), docs = staff ? ['cgu', 'confidentialite'] : ['cgu', 'cgv', 'confidentialite'];
   return new Promise((resolve) => {
     modal(`<div class="eyebrow">Avant de continuer</div><h2 style="font-size:24px;margin:4px 0 8px">Conditions d’utilisation</h2>
       <p class="muted" style="margin:0 0 12px">Pour utiliser ${LEGAL_ENTITY.name}, merci de lire et d’accepter nos documents (version du ${LEGAL_DATE}).</p>
-      <div style="display:grid;gap:6px;margin-bottom:12px">${['cgu', 'cgv', 'confidentialite'].map(k => `<button type="button" class="ghost" data-legal="${k}" style="justify-content:space-between;align-items:center;display:flex;text-align:left;gap:8px"><span>${LEGAL_DOCS[k][0]}</span><span>Lire →</span></button>`).join('')}</div>
-      <label class="row" style="gap:10px;flex-wrap:nowrap;font-weight:600;align-items:flex-start;margin-bottom:14px"><input type="checkbox" id="lgOk" style="width:22px;min-height:22px;margin-top:2px"> <span>J’ai lu et j’accepte les conditions générales d’utilisation, les conditions générales de vente et la politique de confidentialité.</span></label>
+      <div style="display:grid;gap:6px;margin-bottom:12px">${docs.map(k => `<button type="button" class="ghost" data-legal="${k}" style="justify-content:space-between;align-items:center;display:flex;text-align:left;gap:8px"><span>${LEGAL_DOCS[k][0]}</span><span>Lire →</span></button>`).join('')}</div>
+      <label class="row" style="gap:10px;flex-wrap:nowrap;font-weight:600;align-items:flex-start;margin-bottom:14px"><input type="checkbox" id="lgOk" style="width:22px;min-height:22px;margin-top:2px"> <span>J’ai lu et j’accepte les conditions générales d’utilisation, ${staff ? '' : 'les conditions générales de vente '}et la politique de confidentialité.</span></label>
       <button class="primary" id="lgGo" style="width:100%;min-height:52px" disabled>Accepter et continuer</button>
       <button class="ghost" type="button" id="lgOut" style="width:100%;margin-top:8px">Refuser et se déconnecter</button>`);
     $('modal').dataset.locked = '1';
@@ -6693,7 +6695,9 @@ async function renderEquipe(){
   el.querySelectorAll('[data-role]').forEach(sel => sel.onchange = async () => { const { error } = await sb.from('organization_members').update({ role: sel.value }).eq('id', sel.dataset.role); if (error) { toast(errMsg(error), true); return renderEquipe(); } toast('Poste modifié.'); });
   el.querySelectorAll('[data-reset]').forEach(b => b.onclick = async () => { const m = members.find(x => x.member_id === b.dataset.reset); const p = randPin(); b.disabled = true;
     try { await staffAdmin({ action: 'reset', member_id: m.member_id, pin: p }); renderEquipe(); showCredentials(m.display_name, code, m.username, p); } catch (err) { toast(err.message, true); b.disabled = false; } });
-  el.querySelectorAll('[data-active]').forEach(b => b.onclick = async () => { const on = b.dataset.on !== 'true'; b.disabled = true;
+  el.querySelectorAll('[data-active]').forEach(b => b.onclick = async () => { const on = b.dataset.on !== 'true';
+    if (!on && !b.dataset.confirm) { b.dataset.confirm = '1'; b.textContent = 'Confirmer la suspension'; b.classList.add('k-danger'); setTimeout(() => { if (b.isConnected) { delete b.dataset.confirm; b.textContent = 'Suspendre'; b.classList.remove('k-danger'); } }, 5000); return; }
+    b.disabled = true;
     try {
       if (b.dataset.staff) await staffAdmin({ action: on ? 'reactivate' : 'suspend', member_id: b.dataset.active });
       else { const { error } = await sb.from('organization_members').update({ is_active: on }).eq('id', b.dataset.active); if (error) throw new Error(errMsg(error)); }

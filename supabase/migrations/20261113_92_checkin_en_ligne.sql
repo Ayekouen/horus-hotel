@@ -43,7 +43,7 @@ create or replace function public.public_checkin_get(p_token uuid) returns jsonb
 language sql stable security definer set search_path to '' as $$
   select case when f.id is null then jsonb_build_object('ok', false) else jsonb_build_object('ok', true, 'status', f.status,
     'guest', split_part(coalesce(g.full_name, r.guest_name, ''), ' ', 1), 'hotel', coalesce(e.public_name, e.name), 'logo', e.public_logo_url,
-    'check_in', r.check_in, 'check_out', r.check_out, 'arrival_from', to_char(e.checkin_time, 'HH24:MI'), 'room_type', rm.room_type) end
+    'check_in', r.check_in, 'check_out', r.check_out, 'arrival_from', left(e.checkin_time::text, 5), 'room_type', rm.room_type) end
   from (select 1) d
   left join public.checkin_forms f on f.token = p_token
   left join public.reservations r on r.id = f.reservation_id

@@ -22,7 +22,7 @@ create or replace function public._actor_name(p_org uuid, p_user uuid) returns t
 $$;
 revoke all on function public._actor_name(uuid, uuid) from public, anon, authenticated;
 
--- 1. Réservation annulée, ou montant baissé, alors qu'un paiement a déjà été encaissé
+-- 1. Montant de la réservation baissé alors qu'un paiement a déjà été encaissé
 create or replace function public._fraud_resa() returns trigger language plpgsql security definer set search_path to '' as $$
 declare v_paid numeric; v_who text; v_n int; r jsonb;
 begin
@@ -31,10 +31,8 @@ begin
   if tg_op = 'UPDATE' then
     select coalesce(sum(amount) filter (where kind = 'payment'), 0) - coalesce(sum(amount) filter (where kind = 'refund'), 0)
       into v_paid from public.cash_movements where reservation_id = new.id;
-    if v_paid > 0 and new.status in ('cancelled', 'no_show') and old.status not in ('cancelled', 'no_show') then
-      perform public._fraud_alert(new.organization_id, new.establishment_id, 'fraud_cancel_paid', coalesce(new.guest_name, 'un client'),
-        format('Réservation de %s annulée par %s alors que %s F avaient été encaissés.', coalesce(new.guest_name, 'un client'), v_who, public._fcfa(v_paid)), 'critical');
-    elsif v_paid > 0 and coalesce(new.total_amount, 0) < coalesce(old.total_amount, 0) then
+    -- (annulation après encaissement : déjà signalée par audit_reservations ; no-show avec trop-perçu : migration 93)
+    if v_paid > 0 and coalesce(new.total_amount, 0) < coalesce(old.total_amount, 0) and new.status not in ('cancelled', 'no_show') then
       perform public._fraud_alert(new.organization_id, new.establishment_id, 'fraud_amount_down', coalesce(new.guest_name, 'un client'),
         format('Montant de la réservation de %s baissé par %s après encaissement : %s F → %s F.', coalesce(new.guest_name, 'un client'), v_who, public._fcfa(old.total_amount), public._fcfa(new.total_amount)));
     end if;
@@ -106,6 +104,7 @@ begin
     'room_without_booking', coalesce((p_rules->>'room_without_booking')::boolean, true));
   perform set_config('app.fraud_rules', 'on', true);
   update public.organizations set fraud_rules = v where id = p_org;
+  perform set_config('app.fraud_rules', '', true);
   return v;
 end $$;
 revoke all on function public.set_fraud_rules(uuid, jsonb) from public, anon;

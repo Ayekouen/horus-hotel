@@ -1351,7 +1351,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.11.13-52';
+const APP_VERSION = '2026.11.13-53';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -4563,7 +4563,33 @@ async function openGroup(gid, refresh){
     } catch (e) { if (w) w.close(); toast(errMsg(e), true); } };
 }
 
-async function openResa(id, refresh, focusCheckout){ await openResaCore(id, refresh, focusCheckout); if (TP().stay || TP().keys) resaExtras(id, refresh); }
+async function openResa(id, refresh, focusCheckout){ await openResaCore(id, refresh, focusCheckout); if (TP().stay || TP().keys) await resaExtras(id, refresh); onlineCheckinBox(id, refresh); }
+/* Check-in en ligne : lien envoyé au client, fiche reçue, report sur la réservation */
+const CK_ID = { cni: 'Carte d’identité', passeport: 'Passeport', permis: 'Permis de conduire', carte_consulaire: 'Carte consulaire', autre: 'Autre pièce' };
+async function onlineCheckinBox(id, refresh){
+  const body = $('modalBody'); if (!body || !can(['owner','admin','manager','receptionist'])) return;
+  const [{ data: r }, { data: f }] = await Promise.all([
+    sb.from('reservations').select('id,status,guest_name,guest_phone,check_in,guests(full_name,phone)').eq('id', id).maybeSingle(),
+    sb.from('checkin_forms').select('token,status,data,submitted_at').eq('reservation_id', id).maybeSingle()]);
+  if (!r || !$('modalBody') || $('ckBox')) return;
+  if (!f && !['pending', 'confirmed'].includes(r.status)) return;
+  const box = document.createElement('div'); box.id = 'ckBox'; box.style.cssText = 'border-top:1px solid var(--line);margin-top:14px;padding-top:12px';
+  const d = (f && f.data) || {};
+  let h = '<strong>Check-in en ligne</strong>';
+  if (!f) h += `<p class="muted" style="font-size:13.5px;margin:4px 0 8px">Le client remplit sa fiche avant d’arriver : vous gagnez du temps à la réception.</p><button type="button" class="ghost" id="ckSend" style="width:100%">Envoyer le lien au client (WhatsApp)</button>`;
+  else if (f.status === 'sent') h += `<p class="muted" style="font-size:13.5px;margin:4px 0 8px">Lien envoyé · en attente de la fiche du client.</p><button type="button" class="small ghost" id="ckSend">Renvoyer le lien</button>`;
+  else h += `<span class="pill ${f.status === 'applied' ? 'st-trial' : 'st-active'}" style="margin-left:8px">${f.status === 'applied' ? 'Reportée sur la fiche' : 'Fiche reçue'}</span>
+    <div style="font-size:14px;margin-top:8px;display:grid;gap:2px">${[['Nom', d.full_name], ['Téléphone', d.phone], ['E-mail', d.email], ['Nationalité', d.nationality], ['Pièce', d.id_type ? (CK_ID[d.id_type] || d.id_type) + (d.id_number ? ' n° ' + d.id_number : '') : null], ['Arrivée prévue', d.arrival_time], ['Personnes', d.guests], ['Demandes', d.requests]].filter(([, v]) => v).map(([k, v]) => `<div><span class="muted">${k} :</span> ${esc(v)}</div>`).join('')}</div>
+    ${f.status === 'submitted' ? '<button type="button" class="primary" id="ckApply" style="width:100%;margin-top:10px">Reporter sur la fiche du client</button>' : ''}`;
+  box.innerHTML = h;
+  const last = body.querySelector(':scope > .row:last-of-type'); if (last) body.insertBefore(box, last); else body.appendChild(box);
+  const snd = $('ckSend'); if (snd) snd.onclick = async () => {
+    const { data: tok, error } = await sb.rpc('request_online_checkin', { p_reservation: id }); if (error) return toast(errMsg(error), true);
+    const g = r.guests || {}, ph = String(g.phone || r.guest_phone || '').replace(/\D/g, ''), link = location.origin + location.pathname.replace(/[^/]*$/, '') + 'checkin.html?t=' + tok;
+    const msg = `Bonjour ${(g.full_name || r.guest_name || '').split(' ')[0]},\n\nPour gagner du temps à votre arrivée le ${dfr(r.check_in)}, remplissez votre fiche en une minute :\n${link}\n\nÀ bientôt.`;
+    window.open('https://wa.me/' + ph + '?text=' + encodeURIComponent(msg), '_blank', 'noopener'); closeModal(); openResa(id, refresh); };
+  const ap = $('ckApply'); if (ap) ap.onclick = async () => { const { error } = await sb.rpc('apply_online_checkin', { p_reservation: id }); if (error) return toast(errMsg(error), true); toast('Fiche du client mise à jour.'); closeModal(); openResa(id, refresh); refresh && refresh(); };
+}
 const CAU_ST = { none: 'Aucune', held: 'Encaissée', returned: 'Rendue', partial: 'Rendue en partie', kept: 'Retenue' };
 async function resaExtras(id, refresh){
   const body = $('modalBody'); if (!body) return;
@@ -6438,7 +6464,7 @@ async function renderControle(){
   if (onlyUnread) aq = aq.is('read_at', null);
   let lq = sb.from('audit_log').select('*').eq('organization_id', S.org).gte('created_at', day + 'T00:00:00').lt('created_at', addDays(day, 1) + 'T00:00:00').order('created_at', { ascending: false }).limit(500);
   if (ent) lq = lq.eq('entity', ent);
-  const [al, lg, rp, org] = await Promise.all([aq, lq, sb.rpc('daily_report', { p_org: S.org, p_day: day }), sb.from('organizations').select('alert_discount_pct,alert_expense_amount,alert_cash_gap_amount').eq('id', S.org).single()]);
+  const [al, lg, rp, org] = await Promise.all([aq, lq, sb.rpc('daily_report', { p_org: S.org, p_day: day }), sb.from('organizations').select('alert_discount_pct,alert_expense_amount,alert_cash_gap_amount,fraud_rules').eq('id', S.org).single()]);
   const r = rp.data || {}, o = org.data || {};
   const team = can(['owner','admin']) ? ((await sb.rpc('org_team', { p_org: S.org })).data || []) : [];
   const who = (id, role) => { const m = team.find(t => t.user_id === id); return (m ? m.email : (role === 'systeme' ? 'Page publique' : 'Inconnu')) + (role && role !== 'systeme' ? ' · ' + (ROLE_LABEL[role] || role) : ''); };
@@ -6463,7 +6489,17 @@ async function renderControle(){
       <div class="row"><div class="field" style="flex:1 1 160px"><label for="tDisc">Remise ou baisse de prix au-delà de (%)</label><input id="tDisc" type="number" min="0" max="100" value="${o.alert_discount_pct ?? 10}"></div>
       <div class="field" style="flex:1 1 160px"><label for="tExp">Dépense à partir de (F)</label><input id="tExp" type="number" min="0" value="${o.alert_expense_amount ?? 20000}"></div>
       <div class="field" style="flex:1 1 160px"><label for="tGap">Écart de caisse à partir de (F)</label><input id="tGap" type="number" min="0" value="${o.alert_cash_gap_amount ?? 1000}"></div></div>
-      <button class="primary">Enregistrer les seuils</button></form>` : ''}`;
+      <button class="primary">Enregistrer les seuils</button></form>` : ''}
+    ${can(['owner']) ? (() => { const f = o.fraud_rules || { enabled: true, discount_count: 3, discount_days: 7, gap_count: 3, gap_days: 30, room_without_booking: true };
+      return `<form class="card" id="cFraud" style="margin-top:16px"><h3 style="font-size:20px;margin-bottom:6px">Alertes antifraude</h3>
+      <p class="muted" style="font-size:13px;margin:0 0 12px">Vous recevez une alerte (cloche et téléphone) dans ces situations. Seul le propriétaire peut modifier ces réglages.</p>
+      <label class="row" style="gap:8px;margin-bottom:10px;font-weight:600"><input type="checkbox" id="fOn" ${f.enabled !== false ? 'checked' : ''} style="width:20px;min-height:20px"> Activer les alertes antifraude</label>
+      <ul style="margin:0 0 12px;padding-left:18px;font-size:14px;line-height:1.7">
+        <li>Réservation annulée, ou montant baissé, <strong>après un encaissement</strong></li>
+        <li>Remises répétées par un même employé : <input id="fDc" type="number" min="1" max="50" value="${f.discount_count}" style="width:64px;min-height:34px;display:inline-block"> remises en <input id="fDd" type="number" min="1" max="90" value="${f.discount_days}" style="width:64px;min-height:34px;display:inline-block"> jours</li>
+        <li>Écarts de caisse répétés par la même personne : <input id="fGc" type="number" min="1" max="50" value="${f.gap_count}" style="width:64px;min-height:34px;display:inline-block"> écarts en <input id="fGd" type="number" min="1" max="180" value="${f.gap_days}" style="width:64px;min-height:34px;display:inline-block"> jours</li>
+        <li><label style="display:inline-flex;gap:6px;align-items:center;font-weight:500;margin:0"><input type="checkbox" id="fRm" ${f.room_without_booking !== false ? 'checked' : ''} style="width:18px;min-height:18px"> Chambre à nettoyer sans séjour enregistré (occupation non déclarée ?)</label></li>
+      </ul><button class="primary">Enregistrer les alertes antifraude</button></form>`; })() : ''}`;
   $('cDay').onchange = (e) => { S._cday = e.target.value || today(); renderControle(); };
   $('cEnt').onchange = (e) => { S._cent = e.target.value; renderControle(); };
   $('cUnread').onchange = (e) => { S._cunread = e.target.checked; renderControle(); };
@@ -6472,6 +6508,9 @@ async function renderControle(){
   const th = $('cThr'); if (th) th.onsubmit = async (e) => { e.preventDefault();
     const { error } = await sb.from('organizations').update({ alert_discount_pct: Math.min(100, Math.max(0, +$('tDisc').value || 0)), alert_expense_amount: Math.max(0, +$('tExp').value || 0), alert_cash_gap_amount: Math.max(0, +$('tGap').value || 0) }).eq('id', S.org);
     if (error) return toast(errMsg(error), true); toast('Seuils enregistrés.'); renderControle(); };
+  const cf = $('cFraud'); if (cf) cf.onsubmit = async (e) => { e.preventDefault();
+    const { error } = await sb.rpc('set_fraud_rules', { p_org: S.org, p_rules: { enabled: $('fOn').checked, discount_count: +$('fDc').value, discount_days: +$('fDd').value, gap_count: +$('fGc').value, gap_days: +$('fGd').value, room_without_booking: $('fRm').checked } });
+    if (error) return toast(errMsg(error), true); toast('Alertes antifraude enregistrées.'); renderControle(); };
 }
 
 /* ================= Équipe ================= */
@@ -8503,7 +8542,12 @@ async function renderMaPage(){
         ${e.slug ? `<div class="row" style="gap:6px;flex-wrap:nowrap"><input id="pubUrl" readonly value="${esc(publicUrl(e.slug))}" style="flex:1;min-width:0;font-size:13px"><button class="small" id="copyUrl" type="button">Copier</button></div>
           <div class="row" style="margin-top:8px"><a class="btn" style="min-height:36px;padding:0 12px;font-size:13px" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent('Réservez votre séjour chez ' + (e.public_name || e.name) + ' : ' + publicUrl(e.slug))}">Partager sur WhatsApp</a></div>` : ''}
         ${canEdit ? `<button class="${e.public_enabled ? 'ghost' : 'primary'}" id="togglePub" type="button" style="width:100%;margin-top:12px">${e.public_enabled ? 'Dépublier la page' : 'Publier la page'}</button>
-        <label class="row" style="gap:10px;font-weight:600;color:var(--ink);margin-top:12px;flex-wrap:nowrap"><input type="checkbox" id="autoConf" ${e.public_auto_confirm ? 'checked' : ''} style="width:20px;min-height:20px"> Confirmer automatiquement les demandes</label>` : ''}
+        <label class="row" style="gap:10px;font-weight:600;color:var(--ink);margin-top:12px;flex-wrap:nowrap"><input type="checkbox" id="autoConf" ${e.public_auto_confirm ? 'checked' : ''} style="width:20px;min-height:20px"> Confirmer automatiquement les demandes</label>
+        <div style="margin-top:14px;padding:12px 14px;border:1px solid var(--line);border-radius:14px;background:var(--bg)">
+          <label class="row" style="gap:10px;font-weight:600;color:var(--ink);flex-wrap:nowrap;margin:0"><input type="checkbox" id="depReq" ${e.online_deposit_required ? 'checked' : ''} style="width:20px;min-height:20px"> Exiger un acompte de 30 % pour les réservations en ligne</label>
+          <p class="muted" style="font-size:13px;margin:6px 0 8px">Protège contre les fausses réservations : le client paie l’acompte par Mobile Money ou carte. Sans paiement dans le délai, la réservation est annulée automatiquement et la chambre libérée.</p>
+          <label class="row" style="gap:8px;margin:0;font-weight:500;flex-wrap:nowrap">Délai pour payer : <select id="depH" style="width:auto;min-height:38px">${[1, 2, 3, 6, 12, 24].map(h => `<option value="${h}" ${(e.online_deposit_hours || 2) === h ? 'selected' : ''}>${h} h</option>`).join('')}</select></label>
+        </div>` : ''}
       </section>
       <section class="card" style="padding:0;overflow:hidden" id="pvCard"></section>
     </aside>
@@ -8546,6 +8590,7 @@ async function renderMaPage(){
     save({ public_enabled: !e.public_enabled }, e.public_enabled ? 'Page dépubliée.' : 'Page publiée. Partagez son adresse !');
   };
   $('autoConf').onchange = () => save({ public_auto_confirm: $('autoConf').checked }, 'Réglage enregistré.');
+  if ($('depReq')) { $('depReq').onchange = () => save({ online_deposit_required: $('depReq').checked }, $('depReq').checked ? 'Acompte en ligne désormais obligatoire.' : 'Acompte en ligne facultatif.'); $('depH').onchange = () => save({ online_deposit_hours: +$('depH').value }, 'Délai enregistré.'); }
   const upload = async (file) => {
     if (!/^image\/(jpeg|png|webp)$/.test(file.type)) throw new Error('Format accepté : JPEG, PNG ou WebP.');
     if (file.size > 3 * 1024 * 1024) throw new Error('Image trop lourde (3 Mo maximum).');

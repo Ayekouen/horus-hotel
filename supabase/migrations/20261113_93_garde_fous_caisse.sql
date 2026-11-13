@@ -7,12 +7,9 @@
 --   • transfert ou sortie d'espèces supérieurs au contenu de la caisse refusés ;
 --   • une seule facture par séjour : une nouvelle facture n'est émise que si le séjour a changé, avec un avoir sur la précédente ;
 --   • alerte au propriétaire en cas de départ avec impayé et de no-show avec trop-perçu.
--- Ajouts uniquement : aucune donnée existante n'est modifiée. Les paiements en ligne (serveur) ne sont pas concernés.
+-- Appliquée le 13/11/2026. Ajouts uniquement : aucune donnée existante n'est modifiée. Les paiements en ligne (serveur) ne sont pas concernés.
 
--- Montant en francs avec espace des milliers (ex. 20 000)
-create or replace function public._fcfa(p numeric) returns text language sql immutable set search_path to '' as $$
-  select replace(to_char(greatest(round(coalesce(p, 0)), 0), 'FM999,999,999,999'), ',', ' ')
-$$;
+-- Montants affichés avec public._fcfa (fonction existante, espace des milliers)
 
 -- Espèces présentes dans une session de caisse (même calcul que l'écran Caisse)
 create or replace function public._session_cash(p_session uuid) returns numeric
@@ -41,7 +38,7 @@ begin
     end if;
     select balance into v_bal from public.reservation_balances where id = new.reservation_id;
     if v_bal is not null and new.amount > greatest(v_bal, 0) then
-      raise exception 'Montant supérieur au solde du séjour (reste à payer : % F).', public._fcfa(v_bal);
+      raise exception 'Montant supérieur au solde du séjour (reste à payer : % F).', public._fcfa(greatest(v_bal, 0));
     end if;
   end if;
 
@@ -55,19 +52,17 @@ begin
       select coalesce(sum(amount) filter (where kind = 'payment'), 0), coalesce(sum(amount) filter (where kind = 'refund'), 0)
         into v_paid, v_refunded from public.cash_movements where reservation_id = new.reservation_id;
       if new.amount > v_paid - v_refunded then
-        raise exception 'Remboursement supérieur au montant payé sur ce séjour (au plus % F).', public._fcfa(v_paid - v_refunded);
+        raise exception 'Remboursement supérieur au montant payé sur ce séjour (au plus % F).', public._fcfa(greatest(v_paid - v_refunded, 0));
       end if;
-      select guest_name into v_guest from public.reservations where id = new.reservation_id;
     end if;
-    perform public.raise_owner_alert(new.organization_id, new.establishment_id, 'warning', 'refund',
-      format('Remboursement de %s F%s (%s).', public._fcfa(new.amount), coalesce(' à ' || v_guest, ''), left(new.label, 120)), 'caisse', new.reservation_id);
+    -- l'alerte au propriétaire est déjà envoyée par le journal de caisse (audit_cash_movements)
   end if;
 
   if new.method = 'cash' and new.session_id is not null and new.kind in ('transfer_out', 'deposit', 'refund', 'expense') then
     perform pg_advisory_xact_lock(hashtextextended('sess:' || new.session_id::text, 0));
     v_cash := public._session_cash(new.session_id);
     if new.amount > v_cash then
-      raise exception 'Il n''y a que % F en espèces dans cette caisse : sortie impossible.', public._fcfa(v_cash);
+      raise exception 'Il n''y a que % F en espèces dans cette caisse : sortie impossible.', public._fcfa(greatest(v_cash, 0));
     end if;
   end if;
   return new;
@@ -80,12 +75,10 @@ create or replace function public._resa_money_alerts() returns trigger
 language plpgsql security definer set search_path to '' as $$
 declare v_bal numeric;
 begin
-  if new.status is not distinct from old.status or new.status not in ('checked_out', 'no_show') then return new; end if;
+  -- Départ avec impayé : déjà signalé par audit_reservations ; seul le no-show avec trop-perçu est ajouté
+  if new.status is not distinct from old.status or new.status <> 'no_show' then return new; end if;
   select balance into v_bal from public.reservation_balances where id = new.id;
-  if new.status = 'checked_out' and v_bal > 0 then
-    perform public.raise_owner_alert(new.organization_id, new.establishment_id, 'warning', 'checkout_unpaid',
-      format('Départ de %s (chambre %s) avec %s F impayés.', coalesce(new.guest_name, 'un client'), coalesce((select number from public.rooms where id = new.room_id), '?'), public._fcfa(v_bal)), 'reservation', new.id);
-  elsif new.status = 'no_show' and v_bal < 0 then
+  if v_bal < 0 then
     perform public.raise_owner_alert(new.organization_id, new.establishment_id, 'info', 'noshow_overpaid',
       format('No-show de %s : %s F déjà encaissés. Décidez s''il faut rembourser ou conserver l''acompte.', coalesce(new.guest_name, 'un client'), public._fcfa(-v_bal)), 'reservation', new.id);
   end if;

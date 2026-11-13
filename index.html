@@ -1351,7 +1351,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.11.11-51';
+const APP_VERSION = '2026.11.13-52';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -4198,7 +4198,10 @@ async function openQuickResa(pre, refresh){
   const rank = (r) => (r.capacity && r.capacity < st.adults ? 2 : 0) + (['dirty', 'cleaning'].includes(r.housekeeping_status) ? 1 : 0);
   const freeRooms = () => S.rooms.filter(usable).sort((a, b) => rank(a) - rank(b) || (a.base_rate || 0) - (b.base_rate || 0) || String(a.number).localeCompare(String(b.number), 'fr', { numeric: true }));
   const loadBusy = async () => { const { data } = await sb.from('reservations').select('id,room_id').eq('establishment_id', S.est).not('status', 'in', '(cancelled,no_show,checked_out)').lt('check_in', st.co).gt('check_out', st.ci);
-    st.busy = new Set((data || []).map(x => x.room_id)); };
+    st.busy = new Set((data || []).map(x => x.room_id));
+    // Client resté au-delà de sa date de départ (départ non enregistré) : la chambre n'est pas libre pour une arrivée aujourd'hui
+    if (st.ci <= today()) { const { data: od } = await sb.from('reservations').select('room_id').eq('establishment_id', S.est).eq('status', 'checked_in').lte('check_out', st.ci);
+      (od || []).forEach(x => st.busy.add(x.room_id)); } };
   const price = async () => { if (!st.room || nights() < 1) return; const key = st.room + '|' + st.ci + '|' + st.co; if (st.rateKey === key) return; st.rateKey = key; st.rateNote = ''; st.disc = 0;
     st.rate = roomOf(st.room).base_rate || 0;
     try { const { data } = await sb.rpc('stay_price', { p_room: st.room, p_in: st.ci, p_out: st.co });
@@ -4283,7 +4286,8 @@ async function openQuickResa(pre, refresh){
       const res = await sb.from('reservations').insert(row).select('id').single();
       if (res.error) { if ((res.error.message || '').includes('no_double_booking')) { st.rateKey = ''; await refreshAvail(); throw new Error('Cette chambre vient d’être réservée : une autre chambre libre vous est proposée.'); } throw res.error; }
       const id = res.data.id; let depErr = null;
-      if (pre.walkin || st.ckin) { const c = await sb.rpc('check_in_reservation', { p_reservation: id }); if (c.error) throw c.error; }
+      if (pre.walkin || st.ckin) { const c = await sb.rpc('check_in_reservation', { p_reservation: id });
+        if (c.error) { await sb.from('reservations').update({ status: 'cancelled', notes: 'Annulée automatiquement : arrivée impossible à la création' }).eq('id', id); st.rateKey = ''; await refreshAvail(); throw c.error; } }
       if (st.dep > 0) { const p = await sb.from('cash_movements').insert({ establishment_id: S.est, reservation_id: id, kind: 'payment', method: st.depM, amount: st.dep, label: 'Acompte', reference: (st.depR || '').trim() || null, payment_group: crypto.randomUUID() }); depErr = p.error; }
       refresh && refresh();
       const { data: r } = await sb.from('reservation_balances').select('*').eq('id', id).maybeSingle();
@@ -6607,7 +6611,9 @@ async function renderEquipe(){
     </form>
     ${(inv.data || []).length ? `<h3 style="font-size:16px;margin:14px 0 6px">Invitations en attente</h3>${inv.data.map(i => `<div class="row between" style="padding:8px 0;border-bottom:1px solid var(--line)"><span>${esc(i.email)} · <strong>${esc(ROLE_LABEL[i.role])}</strong></span><span class="row"><button class="small" type="button" data-copyinv="${esc(i.id)}">Copier le message</button><button class="small ghost" type="button" data-revoke="${esc(i.id)}">Annuler</button></span></div>`).join('')}` : ''}
     </details>`;
-  $('addStaff').onclick = () => openStaffForm(isOwner, renderEquipe);
+  $('addStaff').onclick = () => { const used = u.users ?? members.filter(m => m.is_active).length;
+    if (u.max_users && used >= u.max_users) return toast(`Limite atteinte : ${used} / ${u.max_users} utilisateurs (formule ${(S.overview && S.overview.plan && S.overview.plan.name) || 'actuelle'}). Suspendez un compte ou passez à une formule supérieure.`, true);
+    openStaffForm(isOwner, renderEquipe); };
   $('eqSec').onclick = () => openSecurity();
   const bindCards = () => el.querySelectorAll('[data-fiche]').forEach(b => b.onclick = () => openMemberSheet(members.find(x => x.member_id === b.dataset.fiche)));
   bindCards();
@@ -7591,7 +7597,6 @@ async function renderReviewPage(tok){
   const paint = () => { el.querySelectorAll('[data-st]').forEach(b => { b.style.color = +b.dataset.st <= note ? '#E8A317' : '#D9CDBB'; }); $('rvLbl').textContent = LBL[note] || ''; };
   el.querySelectorAll('[data-st]').forEach(b => b.onclick = () => { note = +b.dataset.st; paint(); });
   $('rvGo').onclick = async () => { if (!note) return toast('Choisissez une note.', true); $('rvGo').disabled = true;
-    await captchaPass('review');
     const { data, error } = await sb.rpc('public_review_submit', { p_token: tok, p_rating: note, p_comment: $('rvC').value });
     if (error || !data || !data.ok) { $('rvGo').disabled = false; return toast(error ? 'Service indisponible, réessayez.' : data.error, true); }
     r.status = 'submitted'; r.rating = note; renderReviewPage(tok); };

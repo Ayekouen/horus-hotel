@@ -1129,7 +1129,7 @@ if (window.HorusApp && window.HorusApp.postMessage) {
 }
 /* ---------- Mise à jour de l'application sans réinstaller ni perdre la connexion ---------- */
 const plur = (n, one, many) => `${Number(n) || 0} ${Math.abs(Number(n) || 0) >= 2 ? many : one}`;
-const APP_VERSION = '2026.11.13-52';
+const APP_VERSION = '2026.11.14-53';
 async function refreshApp(){
   toast('Actualisation…');
   try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } } catch (_) {}
@@ -6590,8 +6590,8 @@ async function loadDashResult(){
   /* Le détail (bénéfice estimé, charges, canaux) est dans Analyse : l'accueil garde une seule carte résumée */
   { const fa = $('fixAdd'); if (fa) fa.onclick = () => openRecurringForm(null, () => go('dashboard')); }
   box.querySelectorAll('[data-chsrc]').forEach(b => b.onclick = () => { S.resSrc = b.dataset.chsrc; go('reservations'); });
-  $('curSel').onchange = (e) => setCurrency(e.target.value);
-  $('resCard').onclick = (e) => { if (e.target.closest('#curSel')) return; S._rTab = 'renta'; go(allowed('rapports') && !lockedView('rapports') ? 'rapports' : 'dashboard'); if (!allowed('rapports') || lockedView('rapports')) openAnalysis(6); };
+  { const cs = $('curSel'); if (cs) cs.onchange = (e) => setCurrency(e.target.value); }
+  if ($('resCard')) $('resCard').onclick = (e) => { if (e.target.closest('#curSel')) return; S._rTab = 'renta'; go(allowed('rapports') && !lockedView('rapports') ? 'rapports' : 'dashboard'); if (!allowed('rapports') || lockedView('rapports')) openAnalysis(6); };
   /* Régularité, en une ligne factuelle : jours du mois en cours avec au moins un encaissement */
   { const t = today(), a = t.slice(0, 8) + '01', nd = Number(t.slice(8, 10)), seen = new Set();
     for (let f = 0; f < 50000; f += 1000) { const { data: m, error: er } = await sb.from('cash_movements').select('id,created_at').eq('establishment_id', S.est).in('kind', ['payment', 'income']).gte('created_at', a + 'T00:00:00').lt('created_at', addDays(t, 1) + 'T00:00:00').order('id').range(f, f + 999); if (er) return; (m || []).forEach(x => seen.add(String(x.created_at).slice(0, 10))); if (!m || m.length < 1000) break; }
@@ -7378,7 +7378,7 @@ async function renderReviewPage(tok){
     <button class="primary" id="rvGo" style="width:100%;margin-top:12px;min-height:52px">Envoyer mon avis</button>
     <p class="muted" style="font-size:12px;margin:10px 0 0">Votre prénom, votre note et votre commentaire peuvent être affichés sur la page de l’établissement. <a href="#" data-legal="confidentialite">Confidentialité</a></p>`);
   const LBL = ['', 'Décevant', 'Moyen', 'Bien', 'Très bien', 'Excellent'];
-  const paint = () => { el.querySelectorAll('[data-st]').forEach(b => { b.style.color = +b.dataset.st <= note ? 'var(--amber)' : 'var(--amber)'; }); $('rvLbl').textContent = LBL[note] || ''; };
+  const paint = () => { el.querySelectorAll('[data-st]').forEach(b => { b.style.color = +b.dataset.st <= note ? 'var(--amber)' : 'var(--line)'; }); $('rvLbl').textContent = LBL[note] || ''; };
   el.querySelectorAll('[data-st]').forEach(b => b.onclick = () => { note = +b.dataset.st; paint(); });
   $('rvGo').onclick = async () => { if (!note) return toast('Choisissez une note.', true); $('rvGo').disabled = true;
     const { data, error } = await sb.rpc('public_review_submit', { p_token: tok, p_rating: note, p_comment: $('rvC').value });

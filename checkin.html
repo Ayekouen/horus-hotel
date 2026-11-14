@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex">
+<title>Check-in en ligne</title>
+<style>
+:root{--ink:#0B1B33;--mute:#5B6472;--line:#E3E7EE;--bg:#F3F6FA;--card:#fff;--blue:#1E78B8;--ok:#14713D}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:560px;margin:0 auto;padding:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px}
+h1{font-size:23px;margin:0 0 4px}.mute{color:var(--mute);font-size:14px}
+.stay{background:#EAF3FB;border-radius:14px;padding:12px 14px;margin:14px 0 18px;font-size:15px}
+label{display:block;font-weight:600;font-size:14px;margin:14px 0 6px}
+input,select,textarea{width:100%;min-height:48px;border:1px solid #CBD3DE;border-radius:12px;padding:10px 12px;font:inherit;background:#fff;color:var(--ink)}
+textarea{min-height:84px}.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+button{width:100%;min-height:52px;margin-top:20px;border:0;border-radius:14px;background:var(--blue);color:#fff;font:inherit;font-weight:700;font-size:17px;cursor:pointer}
+button:disabled{opacity:.6}.err{color:#B42318;font-weight:600;margin-top:10px}
+.logo{max-height:52px;max-width:150px;margin-bottom:8px}.done{text-align:center;padding:12px 0}
+.done svg{width:64px;height:64px;color:var(--ok)}
+.privacy{font-size:12.5px;color:var(--mute);margin-top:14px}
+</style></head>
+<body><main><div id="app" class="card"><p class="mute">Chargement…</p></div>
+<p class="mute" style="text-align:center;margin-top:12px">Check-in en ligne · Nuittea Manager</p></main>
+<script>
+const API='https://kuuyhtvdnoqyikrcbpot.supabase.co/rest/v1/rpc/', K='sb_publishable_0AT6IoJyfnTlANz0Lf-erg_Sj85F1yT';
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const D=d=>d?new Date(d+'T00:00:00').toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'}):'';
+const rpc=async(fn,body)=>{const r=await fetch(API+fn,{method:'POST',headers:{'Content-Type':'application/json',apikey:K,Authorization:'Bearer '+K},body:JSON.stringify(body)});if(!r.ok)throw new Error('Service indisponible, réessayez dans un instant.');return r.json();};
+const el=document.getElementById('app'), token=new URLSearchParams(location.search).get('t')||'';
+const done=(h)=>{el.innerHTML=`<div class="done"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M8 12l3 3 5-6"/></svg><h1>Merci !</h1><p>${h}</p></div>`;};
+(async()=>{
+ try{
+  if(!/^[0-9a-f-]{36}$/i.test(token)) throw new Error('Lien invalide.');
+  const x=await rpc('public_checkin_get',{p_token:token});
+  if(!x||!x.ok) throw new Error('Ce lien n’est pas valide ou a expiré. Contactez l’établissement.');
+  if(x.status!=='sent') return done(`Votre fiche a bien été transmise à <strong>${esc(x.hotel)}</strong>. À bientôt !`);
+  el.innerHTML=`${x.logo?`<img class="logo" src="${esc(x.logo)}" alt="">`:''}<h1>Bonjour ${esc(x.guest)}</h1>
+   <p class="mute">Gagnez du temps à votre arrivée à <strong>${esc(x.hotel)}</strong> : remplissez votre fiche en une minute.</p>
+   <div class="stay">Arrivée : <strong>${esc(D(x.check_in))}</strong>${x.arrival_from?` à partir de ${esc(x.arrival_from)}`:''}<br>Départ : <strong>${esc(D(x.check_out))}</strong>${x.room_type?`<br>Hébergement : ${esc(x.room_type)}`:''}</div>
+   <form id="f" novalidate>
+    <label for="n">Nom et prénoms *</label><input id="n" required autocomplete="name">
+    <div class="two"><div><label for="p">Téléphone</label><input id="p" type="tel" autocomplete="tel" inputmode="tel"></div><div><label for="m">E-mail</label><input id="m" type="email" autocomplete="email"></div></div>
+    <label for="na">Nationalité</label><input id="na" autocomplete="country-name">
+    <div class="two"><div><label for="it">Pièce d’identité</label><select id="it"><option value="">—</option><option value="cni">Carte d’identité</option><option value="passeport">Passeport</option><option value="permis">Permis de conduire</option><option value="carte_consulaire">Carte consulaire</option><option value="autre">Autre</option></select></div><div><label for="in">Numéro de la pièce</label><input id="in" autocomplete="off"></div></div>
+    <div class="two"><div><label for="at">Heure d’arrivée prévue</label><input id="at" type="time"></div><div><label for="g">Nombre de personnes</label><input id="g" type="number" min="1" max="20" value="1" inputmode="numeric"></div></div>
+    <label for="rq">Demandes particulières</label><textarea id="rq" maxlength="500" placeholder="Lit bébé, arrivée tardive, transfert depuis l’aéroport…"></textarea>
+    <div id="e" class="err" role="alert"></div>
+    <button id="b">Envoyer ma fiche</button>
+    <p class="privacy">Vos informations sont transmises uniquement à l’établissement, pour votre accueil. Elles sont effacées automatiquement 30 jours après votre départ.</p>
+   </form>`;
+  document.getElementById('f').onsubmit=async(ev)=>{ev.preventDefault();const b=document.getElementById('b'),e=document.getElementById('e');e.textContent='';
+   const v=(id)=>document.getElementById(id).value.trim();
+   if(v('n').length<3){e.textContent='Indiquez votre nom complet.';return;}
+   b.disabled=true;b.textContent='Envoi…';
+   try{const r=await rpc('public_checkin_submit',{p_token:token,p:{full_name:v('n'),phone:v('p'),email:v('m'),nationality:v('na'),id_type:v('it'),id_number:v('in'),arrival_time:v('at'),guests:+v('g')||1,requests:v('rq')}});
+    if(!r||!r.ok)throw new Error((r&&r.error)||'Envoi impossible.');
+    done(`Votre fiche a bien été transmise à <strong>${esc(x.hotel)}</strong>. Il ne vous reste qu’à récupérer vos clés à l’arrivée.`);
+   }catch(err){e.textContent=err.message;b.disabled=false;b.textContent='Envoyer ma fiche';}};
+ }catch(err){el.innerHTML=`<h1>Check-in en ligne</h1><p class="err">${esc(err.message)}</p>`;}
+})();
+</script></body></html>
